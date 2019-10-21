@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"turkdev/data"
 )
 
-func main(){
+func main() {
 
 	fmt.Println("Hello world!")
+	data.CreateUser()
 }

@@ -10,10 +10,10 @@ CREATE TABLE public.stories
     text text COLLATE pg_catalog."default",
     tags character varying[] COLLATE pg_catalog."default",
     upvotes integer NOT NULL DEFAULT 0,
-    submittedon time with time zone NOT NULL,
     commentcount integer NOT NULL DEFAULT 0,
     downvotes integer NOT NULL DEFAULT 0,
     userid integer NOT NULL,
+    submittedon timestamp with time zone NOT NULL,
     CONSTRAINT stories_pkey PRIMARY KEY (id),
     CONSTRAINT userid_fk FOREIGN KEY (userid)
         REFERENCES public.users (id) MATCH SIMPLE
