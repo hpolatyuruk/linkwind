@@ -6,7 +6,6 @@ CREATE TABLE public.users
 (
     fullname character varying(50) COLLATE pg_catalog."default",
     email character varying(50) COLLATE pg_catalog."default" NOT NULL,
-    registeredon time with time zone NOT NULL,
     password character varying(50) COLLATE pg_catalog."default" NOT NULL,
     website character varying(50) COLLATE pg_catalog."default",
     about character varying(500) COLLATE pg_catalog."default",
@@ -15,6 +14,7 @@ CREATE TABLE public.users
     karma double precision NOT NULL DEFAULT 0,
     username character varying(15) COLLATE pg_catalog."default" NOT NULL,
     id integer NOT NULL DEFAULT nextval('users_id_seq'::regclass),
+    registeredon timestamp with time zone NOT NULL,
     CONSTRAINT users_pkey PRIMARY KEY (id),
     CONSTRAINT unique_email UNIQUE (email)
 
