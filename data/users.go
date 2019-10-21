@@ -13,8 +13,8 @@ const (
 	host     = "localhost"
 	port     = 5433
 	user     = "postgres"
-	password = "hgjh55_FFF"
-	dbname   = "turkdev"
+	password = "*****"
+	dbname   = "test"
 )
 
 // CreateUser: Creates a user
@@ -33,7 +33,7 @@ func CreateUser() {
 	}
 	sql := "INSERT INTO users (username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma) " +
 		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
-	result, err := db.Exec(sql, "hpy", "huseyin polat yuruk", "h.polatyuruk@gmail.com", time.Now(), "111111", "huseyinpolatyuruk.com", "hakkimda", "anil", "apt123", 12)
+	result, err := db.Exec(sql, "test", "test", "test@test.com", time.Now(), "111111", "test.com", "hakkimda", "test", "test", 12)
 	if err != nil {
 		panic(err)
 	}
