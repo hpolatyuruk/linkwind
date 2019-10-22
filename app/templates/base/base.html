@@ -1,0 +1,24 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <title>{{template "title" .}}</title>
+</head>
+
+<body>
+  <div class="wrapper">
+    {{template "header" .}}
+    {{template "content" .}}
+    {{template "footer" .}}
+  </div>
+  <script src="/static/js/app.js"></script>
+</body>
+
+</html>
+{{end}}
