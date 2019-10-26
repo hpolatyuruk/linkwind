@@ -60,3 +60,39 @@ func CreateStory(story *Story) error {
 	}
 	return nil
 }
+
+/*GetStories retunrs story list by provided paging parameters*/
+func GetStories(pageNumber int, pageRowCount int) ([]*Story, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+	// TODO(Huseyin): Sort it by point algorithim when sedat finishes it
+	sql := "SELECT id, url, title, text, tags, upvotes, downvotes, commentcount, userid, submittedon FROM stories LIMIT $1 OFFSET $2"
+	rows, err := db.Query(sql, pageRowCount, pageNumber*pageRowCount)
+	if err != nil {
+		return nil, &StoryError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), nil, err}
+	}
+	stories := []*Story{}
+	for rows.Next() {
+		var story Story
+		err = rows.Scan(
+			&story.ID,
+			&story.URL,
+			&story.Title,
+			&story.Text,
+			pq.Array(&story.Tags),
+			&story.UpVotes,
+			&story.DownVotes,
+			&story.CommentCount,
+			&story.UserID,
+			&story.SubmittedOn)
+
+		if err != nil {
+			return nil, &StoryError{fmt.Sprintf("Cannot read rows. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), nil, err}
+		}
+		stories = append(stories, &story)
+	}
+	return stories, nil
+}
