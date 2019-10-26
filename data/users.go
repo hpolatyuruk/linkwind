@@ -70,3 +70,24 @@ func CreateUser(user *User) (err error) {
 	}
 	return nil
 }
+
+/*ExistsInviteCode checks whether invite code exists in user db or not*/
+func ExistsInviteCode(inviteCode string) (exists bool, err error) {
+	exists = false
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return exists, err
+	}
+	sql := "SELECT COUNT(*) AS count FROM users WHERE invitecode = $1"
+	row := db.QueryRow(sql, inviteCode)
+	var recordCount int = 0
+	err = row.Scan(&recordCount)
+	if err != nil {
+		return exists, &DBError{fmt.Sprintf("Cannot get record count for inviteCode: %s", inviteCode), err}
+	}
+	if recordCount > 0 {
+		exists = true
+	}
+	return exists, err
+}
