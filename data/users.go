@@ -208,3 +208,18 @@ func GetUserByUserName(userName string) (user *User, err error) {
 	user = &_user
 	return user, nil
 }
+
+/*SaveResetPasswordToken inserts given token and user id to database*/
+func SaveResetPasswordToken(token string, userID int) error {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return err
+	}
+	sql := "INSERT INTO resetpasswordtokens (token, userid) VALUES ($1, $2)"
+	_, err = db.Exec(sql, token, userID)
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot save reset password token. Token: %s, UserID: %d", token, userID), err}
+	}
+	return nil
+}
