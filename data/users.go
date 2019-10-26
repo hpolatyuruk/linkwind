@@ -193,7 +193,6 @@ func GetUserByUserName(userName string) (user *User, err error) {
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot read user by user name from db. UserName: %s", userName), err}
 	}
-	user = &_user
 	return user, nil
 }
 
@@ -224,6 +223,46 @@ func GetUserByResetPasswordToken(token string) (user *User, err error) {
 	user, err = MapSQLRowToUser(row)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot read user by reset password token from db. Token: %s", token), err}
+	}
+	return user, nil
+}
+
+/*FindUserByEmailAndPassword returns user associated with email and password from database*/
+func FindUserByEmailAndPassword(email string, password string) (user *User, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users WHERE email = $1"
+	row := db.QueryRow(sql, email)
+	user, err = MapSQLRowToUser(row)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read user by email and password from db. Email: %s", email), err}
+	}
+	result := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if result != nil && result == bcrypt.ErrMismatchedHashAndPassword {
+		return nil, nil
+	}
+	return user, nil
+}
+
+/*FindUserByUserNameAndPassword returns user associated with user name and password from database*/
+func FindUserByUserNameAndPassword(userName string, password string) (user *User, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users WHERE username = $1"
+	row := db.QueryRow(sql, userName)
+	user, err = MapSQLRowToUser(row)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read user by email and password from db. UserName: %s", userName), err}
+	}
+	result := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if result != nil && result == bcrypt.ErrMismatchedHashAndPassword {
+		return nil, nil
 	}
 	return user, nil
 }

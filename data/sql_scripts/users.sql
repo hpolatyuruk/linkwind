@@ -36,6 +36,15 @@ CREATE INDEX ix_email
     (email COLLATE pg_catalog."default")
     TABLESPACE pg_default;
 
+-- Index: ix_email_password
+
+-- DROP INDEX public.ix_email_password;
+
+CREATE INDEX ix_email_password
+    ON public.users USING btree
+    (email COLLATE pg_catalog."default", password COLLATE pg_catalog."default")
+    TABLESPACE pg_default;
+
 -- Index: ix_username
 
 -- DROP INDEX public.ix_username;
@@ -43,4 +52,13 @@ CREATE INDEX ix_email
 CREATE INDEX ix_username
     ON public.users USING btree
     (username COLLATE pg_catalog."default")
+    TABLESPACE pg_default;
+
+-- Index: ix_username_password
+
+-- DROP INDEX public.ix_username_password;
+
+CREATE INDEX ix_username_password
+    ON public.users USING btree
+    (username COLLATE pg_catalog."default", password COLLATE pg_catalog."default")
     TABLESPACE pg_default;
