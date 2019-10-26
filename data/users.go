@@ -189,36 +189,22 @@ func GetUserByUserName(userName string) (user *User, err error) {
 	}
 	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users WHERE username = $1"
 	row := db.QueryRow(sql, userName)
-	var userID, karma int
-	var _userName, fullName, email, password, website, about, invitedBy, invitedCode string
-	var registeredOn time.Time
+	var _user User
 	err = row.Scan(
-		&userID,
-		&_userName,
-		&fullName,
-		&email,
-		&registeredOn,
-		&password,
-		&website,
-		&about,
-		&invitedBy,
-		&invitedCode,
-		&karma)
+		&_user.ID,
+		&_user.UserName,
+		&_user.FullName,
+		&_user.Email,
+		&_user.RegisteredOn,
+		&_user.Password,
+		&_user.Website,
+		&_user.About,
+		&_user.InvitedBy,
+		&_user.InviteCode,
+		&_user.Karma)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot read user by user name from db. UserName: %s", userName), err}
 	}
-	user = &User{
-		ID:           userID,
-		UserName:     _userName,
-		FullName:     fullName,
-		Email:        email,
-		RegisteredOn: registeredOn,
-		Password:     password,
-		Website:      website,
-		About:        about,
-		InvitedBy:    invitedBy,
-		InviteCode:   invitedCode,
-		Karma:        karma,
-	}
+	user = &_user
 	return user, nil
 }
