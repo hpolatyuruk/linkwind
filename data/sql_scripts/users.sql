@@ -6,9 +6,9 @@ CREATE TABLE public.users
 (
     fullname character varying(50) COLLATE pg_catalog."default",
     email character varying(50) COLLATE pg_catalog."default" NOT NULL,
-    password character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    password character varying(500) COLLATE pg_catalog."default" NOT NULL,
     website character varying(50) COLLATE pg_catalog."default",
-    about character varying(500) COLLATE pg_catalog."default",
+    about character varying(100) COLLATE pg_catalog."default",
     invitedby character varying(15) COLLATE pg_catalog."default",
     invitecode character varying(15) COLLATE pg_catalog."default",
     karma double precision NOT NULL DEFAULT 0,

@@ -1,41 +1,72 @@
 package data
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 
 	/* To install postgresql driver. Check more here: https://www.calhoun.io/why-we-import-sql-drivers-with-the-blank-identifier/ */
 	_ "github.com/lib/pq"
 )
 
-const (
-	host     = "localhost"
-	port     = 5433
-	user     = "postgres"
-	password = "*****"
-	dbname   = "test"
-)
+/*User represents the user in database*/
+type User struct {
+	UserName     string
+	FullName     string
+	Email        string
+	RegisteredOn time.Time
+	Password     string
+	Website      string
+	About        string
+	Invitedby    string
+	InviteCode   string
+	Karma        int
+}
 
-// CreateUser: Creates a user
-func CreateUser() {
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-	db, err := sql.Open("postgres", connStr)
+/*UserError contains the error and user data which caused to error*/
+type UserError struct {
+	Msg         string
+	User        *User
+	OriginalErr error
+}
+
+func (err *UserError) Error() string {
+	return fmt.Sprintf(
+		"%s | OriginalError: %v | User: %+v",
+		err.Msg,
+		err.OriginalErr,
+		err.User)
+}
+
+/*CreateUser creates a user*/
+func CreateUser(user *User) (err error) {
+	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
-		panic(err)
+		return &UserError{"Cannot connect to db", user, err}
 	}
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-	sql := "INSERT INTO users (username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma) " +
+	sql := "INSERT INTO users (username, fullname, email, registeredon," + "password, website, about, invitedby, invitecode, karma) " +
 		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
-	result, err := db.Exec(sql, "test", "test", "test@test.com", time.Now(), "111111", "test.com", "hakkimda", "test", "test", 12)
+
+	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		panic(err)
+		return &UserError{"Cannot encrypt user password", user, err}
 	}
-	fmt.Println(result.RowsAffected())
+	_, err = db.Exec(
+		sql,
+		user.UserName,
+		user.FullName,
+		user.Email,
+		user.RegisteredOn,
+		string(encryptedPassword),
+		user.Website,
+		user.About,
+		user.Invitedby,
+		user.Invitedby,
+		user.Karma)
+	if err != nil {
+		return &UserError{"Cannot insert user to the database!", user, err}
+	}
+	return nil
 }

@@ -2,15 +2,29 @@ package main
 
 import (
 	"net/http"
-
-	//"turkdev/data"
 	"turkdev/app/controllers"
 	"turkdev/app/templates"
 )
 
 func main() {
+
+	/*user := data.User{
+		UserName:     "hpy",
+		FullName:     "Huseyin Polat Yuruk",
+		Email:        "h.poaltyuruk@gmail.com",
+		RegisteredOn: time.Now(),
+		Password:     "111111",
+		Website:      "http://huseyinpolatyuruk.com",
+		About:        "Software Developer",
+		Invitedby:    "anil",
+		InviteCode:   "abcdef",
+		Karma:        12,
+	}
+	err := data.CreateUser(&user)
+	if err != nil {
+		fmt.Println(err)
+	}*/
 	templates.Initialize()
-	//data.CreateUser()
 
 	http.HandleFunc("/", controllers.StoriesHandler)
 	http.HandleFunc("/recent", controllers.RecentStoriesHandler)
