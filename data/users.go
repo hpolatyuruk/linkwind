@@ -131,3 +131,30 @@ func ConfirmPasswordMatch(userID int, password string) (matched bool, err error)
 	matched = ok == nil
 	return matched, nil
 }
+
+/*UpdateUser updates the provided user on database*/
+func UpdateUser(user *User) error {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return &UserError{"Db connection error", user, err}
+	}
+	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return &UserError{"Cannot encrypt passoword", user, err}
+	}
+	sql := "UPDATE users SET username = $1, fullName = $2, email = $3, password = $4, website = $5, about = $6 WHERE Id = $7"
+	_, err = db.Exec(
+		sql,
+		user.UserName,
+		user.FullName,
+		user.Email,
+		string(encryptedPassword),
+		user.Website,
+		user.About,
+		user.ID)
+	if err != nil {
+		return &UserError{"Cannot update user!", user, err}
+	}
+	return nil
+}
