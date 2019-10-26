@@ -158,3 +158,24 @@ func UpdateUser(user *User) error {
 	}
 	return nil
 }
+
+/*ExistsUserByEmail check if user associated with email exists on database*/
+func ExistsUserByEmail(email string) (exists bool, err error) {
+	exists = false
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return exists, err
+	}
+	sql := "SELECT COUNT(*) AS count FROM users WHERE email = $1"
+	row := db.QueryRow(sql, email)
+	var recordCount int = 0
+	err = row.Scan(&recordCount)
+	if err != nil {
+		return exists, &DBError{fmt.Sprintf("Cannot read record count. Email: %s", email), err}
+	}
+	if recordCount > 0 {
+		exists = true
+	}
+	return exists, nil
+}

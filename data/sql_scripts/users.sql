@@ -26,3 +26,21 @@ TABLESPACE pg_default;
 
 ALTER TABLE public.users
     OWNER to postgres;
+
+-- Index: ix_email
+
+-- DROP INDEX public.ix_email;
+
+CREATE INDEX ix_email
+    ON public.users USING btree
+    (email COLLATE pg_catalog."default")
+    TABLESPACE pg_default;
+
+-- Index: ix_username
+
+-- DROP INDEX public.ix_username;
+
+CREATE INDEX ix_username
+    ON public.users USING btree
+    (username COLLATE pg_catalog."default")
+    TABLESPACE pg_default;
