@@ -27,16 +27,16 @@ type User struct {
 
 /*UserError contains the error and user data which caused to error*/
 type UserError struct {
-	Msg         string
-	User        *User
-	OriginalErr error
+	Message       string
+	User          *User
+	OriginalError error
 }
 
 func (err *UserError) Error() string {
 	return fmt.Sprintf(
 		"%s | OriginalError: %v | User: %+v",
-		err.Msg,
-		err.OriginalErr,
+		err.Message,
+		err.OriginalError,
 		err.User)
 }
 

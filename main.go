@@ -23,7 +23,23 @@ func main() {
 	err := data.CreateUser(&user)
 	if err != nil {
 		fmt.Println(err)
-	}*/
+	}
+	story := data.Story{
+		URL:          "http://huseyinpolatyuruk.com",
+		Title:        "Test Title",
+		Text:         "Test Text",
+		Tags:         []string{"programming", "coding", "web"},
+		UpVotes:      0,
+		DownVotes:    0,
+		CommentCount: 0,
+		UserID:       16,
+		SubmittedOn:  time.Now(),
+	}
+	err := data.CreateStory(&story)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Succeded!")*/
 	templates.Initialize()
 
 	http.HandleFunc("/", controllers.StoriesHandler)
