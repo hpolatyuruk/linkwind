@@ -20,7 +20,7 @@ type User struct {
 	Password     string
 	Website      string
 	About        string
-	Invitedby    string
+	InvitedBy    string
 	InviteCode   string
 	Karma        int
 }
@@ -63,8 +63,8 @@ func CreateUser(user *User) (err error) {
 		string(encryptedPassword),
 		user.Website,
 		user.About,
-		user.Invitedby,
-		user.Invitedby,
+		user.InvitedBy,
+		user.InviteCode,
 		user.Karma)
 	if err != nil {
 		return &UserError{"Cannot insert user to the database!", user, err}
@@ -178,4 +178,47 @@ func ExistsUserByEmail(email string) (exists bool, err error) {
 		exists = true
 	}
 	return exists, nil
+}
+
+/*GetUserByUserName get user associated with user name from database*/
+func GetUserByUserName(userName string) (user *User, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users WHERE username = $1"
+	row := db.QueryRow(sql, userName)
+	var userID, karma int
+	var _userName, fullName, email, password, website, about, invitedBy, invitedCode string
+	var registeredOn time.Time
+	err = row.Scan(
+		&userID,
+		&_userName,
+		&fullName,
+		&email,
+		&registeredOn,
+		&password,
+		&website,
+		&about,
+		&invitedBy,
+		&invitedCode,
+		&karma)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read user by user name from db. UserName: %s", userName), err}
+	}
+	user = &User{
+		ID:           userID,
+		UserName:     _userName,
+		FullName:     fullName,
+		Email:        email,
+		RegisteredOn: registeredOn,
+		Password:     password,
+		Website:      website,
+		About:        about,
+		InvitedBy:    invitedBy,
+		InviteCode:   invitedCode,
+		Karma:        karma,
+	}
+	return user, nil
 }
