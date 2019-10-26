@@ -17,6 +17,8 @@ CREATE TABLE public.users
     registeredon timestamp with time zone NOT NULL,
     CONSTRAINT users_pkey PRIMARY KEY (id),
     CONSTRAINT unique_email UNIQUE (email)
+,
+    CONSTRAINT unique_username UNIQUE (username)
 
 )
 

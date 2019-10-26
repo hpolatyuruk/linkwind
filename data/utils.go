@@ -17,7 +17,7 @@ type DBError struct {
 }
 
 func (err *DBError) Error() string {
-	return fmt.Sprintf("%s | OriginalError: %v", err.Message, err.OriginalError)
+	return fmt.Sprintf("%s | Args: | OriginalError: %v", err.Message, err.OriginalError)
 }
 
 func connectionString() (conStr string, err error) {

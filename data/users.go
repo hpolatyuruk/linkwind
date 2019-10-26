@@ -12,6 +12,7 @@ import (
 
 /*User represents the user in database*/
 type User struct {
+	ID           int
 	UserName     string
 	FullName     string
 	Email        string
@@ -90,4 +91,43 @@ func ExistsInviteCode(inviteCode string) (exists bool, err error) {
 		exists = true
 	}
 	return exists, err
+}
+
+/*ChangePassword changes user password associated with provided user id*/
+func ChangePassword(userID int, newPassword string) error {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return err
+	}
+	sql := "UPDATE users SET password = $1 WHERE Id = $2"
+	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot encrypt new password. UserId: %d", userID), err}
+	}
+	_, err = db.Exec(sql, string(encryptedPassword), userID)
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot update user's new password. UserId: %d", userID), err}
+	}
+	return nil
+}
+
+/*ConfirmPasswordMatch checks whether provided password are equal to user's password*/
+func ConfirmPasswordMatch(userID int, password string) (matched bool, err error) {
+	matched = false
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return matched, err
+	}
+	sql := "SELECT password FROM users WHERE Id = $1"
+	row := db.QueryRow(sql, userID)
+	var userPassword string
+	err = row.Scan(&userPassword)
+	if err != nil {
+		return matched, &DBError{fmt.Sprintf("Cannot read password for password match. UserID: %v", userID), err}
+	}
+	ok := bcrypt.CompareHashAndPassword([]byte(userPassword), []byte(password))
+	matched = ok == nil
+	return matched, nil
 }
