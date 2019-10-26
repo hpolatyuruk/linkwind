@@ -56,3 +56,25 @@ func connectToDB() (db *sql.DB, err error) {
 	}
 	return db, err
 }
+
+/*MapSQLRowToUser creates an user struct object by sql row*/
+func MapSQLRowToUser(row *sql.Row) (user *User, err error) {
+	var _user User
+	err = row.Scan(
+		&_user.ID,
+		&_user.UserName,
+		&_user.FullName,
+		&_user.Email,
+		&_user.RegisteredOn,
+		&_user.Password,
+		&_user.Website,
+		&_user.About,
+		&_user.InvitedBy,
+		&_user.InviteCode,
+		&_user.Karma)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot map sql row to user struct"), err}
+	}
+	user = &_user
+	return user, nil
+}

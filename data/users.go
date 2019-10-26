@@ -189,19 +189,7 @@ func GetUserByUserName(userName string) (user *User, err error) {
 	}
 	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users WHERE username = $1"
 	row := db.QueryRow(sql, userName)
-	var _user User
-	err = row.Scan(
-		&_user.ID,
-		&_user.UserName,
-		&_user.FullName,
-		&_user.Email,
-		&_user.RegisteredOn,
-		&_user.Password,
-		&_user.Website,
-		&_user.About,
-		&_user.InvitedBy,
-		&_user.InviteCode,
-		&_user.Karma)
+	user, err = MapSQLRowToUser(row)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot read user by user name from db. UserName: %s", userName), err}
 	}
@@ -222,4 +210,20 @@ func SaveResetPasswordToken(token string, userID int) error {
 		return &DBError{fmt.Sprintf("Cannot save reset password token. Token: %s, UserID: %d", token, userID), err}
 	}
 	return nil
+}
+
+/*GetUserByResetPasswordToken gets user associated with token from database*/
+func GetUserByResetPasswordToken(token string) (user *User, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users INNER JOIN resetpasswordtokens on users.Id = resetpasswordtokens.userid WHERE resetpasswordtokens.token = $1"
+	row := db.QueryRow(sql, token)
+	user, err = MapSQLRowToUser(row)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read user by reset password token from db. Token: %s", token), err}
+	}
+	return user, nil
 }
