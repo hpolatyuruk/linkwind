@@ -139,8 +139,8 @@ func UnVoteStory(userID int, storyID int) error {
 	return nil
 }
 
-/*CheckIfUserUpVoted check if user already upvoted to given story*/
-func CheckIfUserUpVoted(userID int, storyID int) (bool, error) {
+/*CheckIfStoryUpVotedByUser check if user already upvoted to given story*/
+func CheckIfStoryUpVotedByUser(userID int, storyID int) (bool, error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {

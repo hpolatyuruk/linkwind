@@ -91,3 +91,83 @@ func GetComments(storyID int, pageNumber int, pageRowCount int) (comments *[]Com
 	}
 	return comments, nil
 }
+
+/*UpVoteComment increases votes for comment on database*/
+func UpVoteComment(userID int, commentID int) error {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	tran, err := db.Begin()
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	sql := "INSERT INTO commentvotes (userid, commentid) VALUES ($1, $2)"
+	_, err = tran.Exec(sql, userID, commentID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Cannot insert commentvotes. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	sql = "UPDATE comments SET upvotes = upvotes + 1 WHERE id = $1"
+	_, err = tran.Exec(sql, commentID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Cannot update comment's upvotes. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	err = tran.Commit()
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot commit transaction. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	return nil
+}
+
+/*UnVoteComment unvotes the comment on database*/
+func UnVoteComment(userID int, commentID int) error {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	tran, err := db.Begin()
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	sql := "DELETE FROM commentvotes WHERE userid = $1 AND commentid = $2"
+	_, err = tran.Exec(sql, userID, commentID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Cannot delete commentvotes. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	sql = "UPDATE comments SET upvotes = upvotes - 1 WHERE id = $1"
+	_, err = tran.Exec(sql, commentID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Cannot update comment's upvotes. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	err = tran.Commit()
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot commit transaction. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	return nil
+}
+
+/*CheckIfCommentUpVotedByUser check if user already upvoted to given story*/
+func CheckIfCommentUpVotedByUser(userID int, commentID int) (bool, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return false, &DBError{fmt.Sprintf("DB connection error. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	sql := "SELECT COUNT(*) as count FROM commentvotes WHERE userid = $1 and commentid = $2"
+	row := db.QueryRow(sql, userID, commentID)
+	var count int = 0
+	err = row.Scan(&count)
+	if err != nil {
+		return false, &DBError{fmt.Sprintf("Cannot read db row. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	if count > 0 {
+		return true, nil
+	}
+	return false, nil
+}
