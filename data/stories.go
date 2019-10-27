@@ -60,7 +60,7 @@ func CreateStory(story *Story) error {
 }
 
 /*GetStories retunrs story list by provided paging parameters*/
-func GetStories(pageNumber int, pageRowCount int) ([]*Story, error) {
+func GetStories(pageNumber int, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
@@ -70,26 +70,11 @@ func GetStories(pageNumber int, pageRowCount int) ([]*Story, error) {
 	sql := "SELECT id, url, title, text, tags, upvotes, commentcount, userid, submittedon FROM stories LIMIT $1 OFFSET $2"
 	rows, err := db.Query(sql, pageRowCount, pageNumber*pageRowCount)
 	if err != nil {
-		return nil, &StoryError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), nil, err}
+		return nil, &DBError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
 	}
-	stories := []*Story{}
-	for rows.Next() {
-		var story Story
-		err = rows.Scan(
-			&story.ID,
-			&story.URL,
-			&story.Title,
-			&story.Text,
-			pq.Array(&story.Tags),
-			&story.UpVotes,
-			&story.CommentCount,
-			&story.UserID,
-			&story.SubmittedOn)
-
-		if err != nil {
-			return nil, &StoryError{fmt.Sprintf("Cannot read rows. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), nil, err}
-		}
-		stories = append(stories, &story)
+	stories, err := MapSQLRowsToStories(rows)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read rows. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
 	}
 	return stories, nil
 }
@@ -192,4 +177,23 @@ func CheckIfUserSavedStory(userID int, storyID int) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+/*GetRecentStories returns the paging recently published stories*/
+func GetRecentStories(pageNumber int, pageRowCount int) (*[]Story, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("DB connection error. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
+	}
+	sql := "SELECT id, url, title, text, tags, upvotes, commentcount, userid, submittedon FROM stories ORDER BY submittedon ASC LIMIT $1 OFFSET $2"
+	rows, err := db.Query(sql, pageRowCount, pageNumber*pageRowCount)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
+	}
+	stories, err := MapSQLRowsToStories(rows)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read rows. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
+	}
+	return stories, nil
 }

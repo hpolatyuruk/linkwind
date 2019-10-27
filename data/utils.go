@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/lib/pq"
 )
 
 /*DBError represents the database error*/
@@ -77,4 +78,27 @@ func MapSQLRowToUser(row *sql.Row) (user *User, err error) {
 	}
 	user = &_user
 	return user, nil
+}
+
+/*MapSQLRowsToStories creates a story struct array by sql rows*/
+func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
+	var _stories []Story = []Story{}
+	for rows.Next() {
+		var story Story
+		err = rows.Scan(
+			&story.ID,
+			&story.URL,
+			&story.Title,
+			&story.Text,
+			pq.Array(&story.Tags),
+			&story.UpVotes,
+			&story.CommentCount,
+			&story.UserID,
+			&story.SubmittedOn)
+		if err != nil {
+			return nil, &DBError{fmt.Sprintf("Cannot read rows"), err}
+		}
+		_stories = append(_stories, story)
+	}
+	return &_stories, nil
 }
