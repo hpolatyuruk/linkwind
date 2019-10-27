@@ -9,15 +9,15 @@ import (
 func main() {
 
 	/*user := data.User{
-		UserName:     "hpy",
-		FullName:     "Huseyin Polat Yuruk",
-		Email:        "h.poaltyuruk@gmail.com",
+		UserName:     "anil",
+		FullName:     "Anil Yuzener",
+		Email:        "anilyuzener@gmail.com",
 		RegisteredOn: time.Now(),
-		Password:     "111111",
-		Website:      "http://huseyinpolatyuruk.com",
+		Password:     "222222",
+		Website:      "http://anilyuzener.com",
 		About:        "Software Developer",
-		Invitedby:    "anil",
-		InviteCode:   "abcdef",
+		InvitedBy:    "hpy",
+		InviteCode:   "123456",
 		Karma:        12,
 	}
 	err := data.CreateUser(&user)

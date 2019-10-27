@@ -171,3 +171,22 @@ func CheckIfCommentUpVotedByUser(userID int, commentID int) (bool, error) {
 	}
 	return false, nil
 }
+
+/*GetUserReplies returns reply list by provided user id and paging parameters*/
+func GetUserReplies(userID int, pageNumber int, pageRowCount int) (replies *[]Comment, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+	}
+	sql := "SELECT id, comment, upvotes, storyid, parentid, replycount, userid, commentedon FROM comments WHERE userid = $1 ORDER BY commentedon DESC LIMIT $2 OFFSET $3"
+	rows, err := db.Query(sql, userID, pageRowCount, pageNumber*pageRowCount)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot query comments. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+	}
+	replies, err = MapSQLRowsToComments(rows)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read comment row. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+	}
+	return replies, nil
+}
