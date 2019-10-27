@@ -4,17 +4,16 @@
 
 CREATE TABLE public.comments
 (
-    id integer NOT NULL,
     comment text COLLATE pg_catalog."default" NOT NULL,
     upvotes integer NOT NULL,
     storyid integer NOT NULL,
     parentid integer,
-    downvotes integer NOT NULL DEFAULT 0,
     replycount integer NOT NULL DEFAULT 0,
     userid integer NOT NULL,
     commentedon timestamp with time zone NOT NULL,
+    id integer NOT NULL DEFAULT nextval('comments_id_seq'::regclass),
     CONSTRAINT comments_pkey PRIMARY KEY (id),
-    CONSTRAINT parentid_fk FOREIGN KEY (parentid)
+    CONSTRAINT "parentId_fk" FOREIGN KEY (parentid)
         REFERENCES public.comments (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE CASCADE,

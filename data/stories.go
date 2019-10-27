@@ -91,16 +91,46 @@ func UpVoteStory(userID int, storyID int) error {
 		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
 	sql := "INSERT INTO storyvotes(storyid, userid) VALUES($1, $2)"
-	_, err = db.Exec(sql, storyID, userID)
+	_, err = tran.Exec(sql, storyID, userID)
 	if err != nil {
-		err = tran.Rollback()
+		tran.Rollback()
 		return &DBError{fmt.Sprintf("Error occurred while inserting storyvotes. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
 	sql = "UPDATE stories SET upvotes = upvotes + 1 WHERE id = $1"
-	_, err = db.Exec(sql, storyID)
+	_, err = tran.Exec(sql, storyID)
 	if err != nil {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Error occurred while increasing story upvotes. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	err = tran.Commit()
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot commit transaction. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	return nil
+}
+
+/*UnVoteStory unvotes the story on database*/
+func UnVoteStory(userID int, storyID int) error {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	tran, err := db.Begin()
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	sql := "DELETE FROM storyvotes WHERE userid = $1 AND storyid = $2"
+	_, err = tran.Exec(sql, userID, storyID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Cannot delete story vote. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	sql = "UPDATE stories SET upvotes = upvotes - 1 WHERE id = $1"
+	_, err = tran.Exec(sql, storyID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Cannot update story's vote. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
 	err = tran.Commit()
 	if err != nil {

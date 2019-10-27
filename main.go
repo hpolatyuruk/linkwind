@@ -39,8 +39,22 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Succeded!")*/
+	fmt.Println("Succeded!")
 
+	comment := data.Comment{
+		StoryID:     1,
+		UserID:      16,
+		ParentID:    data.CommentRootID,
+		Upvotes:     0,
+		ReplyCount:  0,
+		Comment:     "Ilk comment",
+		CommentedOn: time.Now(),
+	}
+	err := data.WriteComment(&comment)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Done!")*/
 	templates.Initialize()
 
 	http.HandleFunc("/", controllers.StoriesHandler)

@@ -5,14 +5,12 @@
 CREATE TABLE public.commentvotes
 (
     commentid integer NOT NULL,
-    votetype integer NOT NULL,
     userid integer NOT NULL,
     CONSTRAINT commentvotes_pkey PRIMARY KEY (commentid, userid),
     CONSTRAINT commentid_fk FOREIGN KEY (commentid)
         REFERENCES public.comments (id) MATCH SIMPLE
         ON UPDATE NO ACTION
-        ON DELETE CASCADE
-        NOT VALID,
+        ON DELETE CASCADE,
     CONSTRAINT userid_fk FOREIGN KEY (userid)
         REFERENCES public.users (id) MATCH SIMPLE
         ON UPDATE NO ACTION
