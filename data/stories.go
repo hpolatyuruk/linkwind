@@ -143,3 +143,53 @@ func CheckIfUserUpVoted(userID int, storyID int) (bool, error) {
 	}
 	return false, nil
 }
+
+/*SaveStory saves the given story to user's favorites*/
+func SaveStory(userID int, storyID int) error {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	sql := "INSERT INTO saved (userid, storyid) VALUES ($1, $2)"
+	_, err = db.Exec(sql, userID, storyID)
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot save story to user's favotires. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	return nil
+}
+
+/*UnSaveStory removes the given story from user's favorites*/
+func UnSaveStory(userID int, storyID int) error {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	sql := "DELETE FROM saved WHERE userid = $1 AND storyid = $2"
+	_, err = db.Exec(sql, userID, storyID)
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot remove the story from user's favorites. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	return nil
+}
+
+/*CheckIfUserSavedStory check if user already saved the story*/
+func CheckIfUserSavedStory(userID int, storyID int) (bool, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return false, &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	sql := "SELECT COUNT(*) as count FROM saved WHERE userid = $1 AND storyid = $2"
+	row := db.QueryRow(sql, userID, storyID)
+	var count int = 0
+	err = row.Scan(&count)
+	if err != nil {
+		return false, &DBError{fmt.Sprintf("Cannot read count from db. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	if count > 0 {
+		return true, nil
+	}
+	return false, nil
+}
