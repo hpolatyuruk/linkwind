@@ -10,7 +10,6 @@ CREATE TABLE public.stories
     text text COLLATE pg_catalog."default",
     upvotes integer NOT NULL DEFAULT 0,
     commentcount integer NOT NULL DEFAULT 0,
-    downvotes integer NOT NULL DEFAULT 0,
     userid integer NOT NULL,
     submittedon timestamp with time zone NOT NULL,
     tags text[] COLLATE pg_catalog."default",

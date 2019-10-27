@@ -5,7 +5,6 @@
 CREATE TABLE public.storyvotes
 (
     storyid integer NOT NULL,
-    votetype integer NOT NULL,
     userid integer NOT NULL,
     CONSTRAINT storyvotes_pkey PRIMARY KEY (storyid, userid),
     CONSTRAINT story_fk FOREIGN KEY (storyid)

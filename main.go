@@ -1,8 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"turkdev/data"
+	"net/http"
+	"turkdev/app/controllers"
+	"turkdev/app/templates"
 )
 
 func main() {
@@ -39,12 +40,8 @@ func main() {
 		fmt.Println(err)
 	}
 	fmt.Println("Succeded!")*/
-	stories, err := data.GetStories(1, 3)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(len(stories))
-	/*templates.Initialize()
+
+	templates.Initialize()
 
 	http.HandleFunc("/", controllers.StoriesHandler)
 	http.HandleFunc("/recent", controllers.RecentStoriesHandler)
@@ -60,5 +57,5 @@ func main() {
 
 	http.Handle("/static/", http.StripPrefix("/static/", staticFileServer))
 
-	http.ListenAndServe(":80", nil)*/
+	http.ListenAndServe(":80", nil)
 }

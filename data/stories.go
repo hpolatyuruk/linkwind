@@ -15,7 +15,6 @@ type Story struct {
 	Text         string
 	Tags         []string
 	UpVotes      int
-	DownVotes    int
 	CommentCount int
 	UserID       int
 	SubmittedOn  time.Time
@@ -43,14 +42,13 @@ func CreateStory(story *Story) error {
 	if err != nil {
 		return err
 	}
-	sql := "INSERT INTO stories (url, title, text, tags, upvotes, downvotes, commentcount, userid, submittedon) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+	sql := "INSERT INTO stories (url, title, text, tags, upvotes, commentcount, userid, submittedon) VALUES($1, $2, $3, $4, $5, $6, $7, $8)"
 	_, err = db.Exec(
 		sql,
 		story.URL,
 		story.Title,
 		story.Text,
 		pq.Array(story.Tags),
-		0,
 		0,
 		0,
 		story.UserID,
@@ -69,7 +67,7 @@ func GetStories(pageNumber int, pageRowCount int) ([]*Story, error) {
 		return nil, err
 	}
 	// TODO(Huseyin): Sort it by point algorithim when sedat finishes it
-	sql := "SELECT id, url, title, text, tags, upvotes, downvotes, commentcount, userid, submittedon FROM stories LIMIT $1 OFFSET $2"
+	sql := "SELECT id, url, title, text, tags, upvotes, commentcount, userid, submittedon FROM stories LIMIT $1 OFFSET $2"
 	rows, err := db.Query(sql, pageRowCount, pageNumber*pageRowCount)
 	if err != nil {
 		return nil, &StoryError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), nil, err}
@@ -84,7 +82,6 @@ func GetStories(pageNumber int, pageRowCount int) ([]*Story, error) {
 			&story.Text,
 			pq.Array(&story.Tags),
 			&story.UpVotes,
-			&story.DownVotes,
 			&story.CommentCount,
 			&story.UserID,
 			&story.SubmittedOn)
@@ -95,4 +92,54 @@ func GetStories(pageNumber int, pageRowCount int) ([]*Story, error) {
 		stories = append(stories, &story)
 	}
 	return stories, nil
+}
+
+/*UpVoteStory increases votes for story on database*/
+func UpVoteStory(userID int, storyID int) error {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	tran, err := db.Begin()
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	sql := "INSERT INTO storyvotes(storyid, userid) VALUES($1, $2)"
+	_, err = db.Exec(sql, storyID, userID)
+	if err != nil {
+		err = tran.Rollback()
+		return &DBError{fmt.Sprintf("Error occurred while inserting storyvotes. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	sql = "UPDATE stories SET upvotes = upvotes + 1 WHERE id = $1"
+	_, err = db.Exec(sql, storyID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Error occurred while increasing story upvotes. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	err = tran.Commit()
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot commit transaction. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	return nil
+}
+
+/*CheckIfUserUpVoted check if user already upvoted to given story*/
+func CheckIfUserUpVoted(userID int, storyID int) (bool, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return false, &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	sql := "SELECT COUNT(*) as count FROM storyvotes WHERE userid = $1 and storyid = $2"
+	row := db.QueryRow(sql, userID, storyID)
+	var count int = 0
+	err = row.Scan(&count)
+	if err != nil {
+		return false, &DBError{fmt.Sprintf("Cannot read db row. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	if count > 0 {
+		return true, nil
+	}
+	return false, nil
 }
