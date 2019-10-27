@@ -102,3 +102,31 @@ func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
 	}
 	return &_stories, nil
 }
+
+/*MapSQLRowsToComments creates a comment struct array by sql rows*/
+func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
+	var _comments []Comment = []Comment{}
+	for rows.Next() {
+		var comment Comment = Comment{}
+		var parentID sql.NullInt32
+		err = rows.Scan(
+			&comment.ID,
+			&comment.Comment,
+			&comment.UpVotes,
+			&comment.StoryID,
+			&parentID,
+			&comment.ReplyCount,
+			&comment.UserID,
+			&comment.CommentedOn)
+		if err != nil {
+			return nil, &DBError{"Cannot read comment row.", err}
+		}
+		if parentID.Valid {
+			comment.ParentID = int(parentID.Int32)
+		} else {
+			comment.ParentID = CommentRootID
+		}
+		_comments = append(_comments, comment)
+	}
+	return &_comments, nil
+}

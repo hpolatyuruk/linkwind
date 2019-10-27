@@ -17,7 +17,7 @@ type Comment struct {
 	StoryID     int
 	UserID      int
 	ParentID    int
-	Upvotes     int
+	UpVotes     int
 	ReplyCount  int
 	Comment     string
 	CommentedOn time.Time
@@ -62,7 +62,7 @@ func WriteComment(comment *Comment) error {
 		comment.StoryID,
 		comment.UserID,
 		nullCommentParentID(comment.ParentID),
-		comment.Upvotes,
+		comment.UpVotes,
 		comment.ReplyCount,
 		comment.Comment,
 		comment.CommentedOn)
@@ -70,4 +70,24 @@ func WriteComment(comment *Comment) error {
 		return &CommentError{"Cannot inser comment to the db.", comment, err}
 	}
 	return nil
+}
+
+/*GetComments retunrs comment list by provided story id and paging parameters*/
+func GetComments(storyID int, pageNumber int, pageRowCount int) (comments *[]Comment, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("DB connection error. StoryID: %d, PageNumber: %d, PageRowCount: %d", storyID, pageNumber, pageRowCount), err}
+	}
+	// TODO(Huseyin): Order by special algorithm when Sedat finishes it
+	sql := "SELECT id, comment, upvotes, storyid, parentid, replycount, userid, commentedon FROM comments WHERE storyid = $1 LIMIT $2 OFFSET $3"
+	rows, err := db.Query(sql, storyID, pageRowCount, pageNumber*pageRowCount)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot query comments. StoryID: %d, PageNumber: %d, PageRowCount: %d", storyID, pageNumber, pageRowCount), err}
+	}
+	comments, err = MapSQLRowsToComments(rows)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read comment row. StoryID: %d, PageNumber: %d, PageRowCount: %d", storyID, pageNumber, pageRowCount), err}
+	}
+	return comments, nil
 }
