@@ -1,9 +1,8 @@
 package main
 
 import (
-	"net/http"
-	"turkdev/app/controllers"
-	"turkdev/app/templates"
+	"fmt"
+	"turkdev/data"
 )
 
 func main() {
@@ -55,7 +54,16 @@ func main() {
 		fmt.Println(err)
 	}
 	fmt.Println("Done!")*/
-	templates.Initialize()
+	replies, err := data.GetUserReplies(16, 0, 5)
+	if err != nil {
+		fmt.Println(err)
+	}
+	for _, reply := range *replies {
+		fmt.Printf("Comment: %v, StoryTitle: %s StoryID: %d, UserName: %s", reply.Comment, reply.StoryTitle, reply.StoryID, reply.UserName)
+		fmt.Println()
+	}
+
+	/*templates.Initialize()
 
 	http.HandleFunc("/", controllers.StoriesHandler)
 	http.HandleFunc("/recent", controllers.RecentStoriesHandler)
@@ -71,5 +79,5 @@ func main() {
 
 	http.Handle("/static/", http.StripPrefix("/static/", staticFileServer))
 
-	http.ListenAndServe(":80", nil)
+	http.ListenAndServe(":80", nil)*/
 }

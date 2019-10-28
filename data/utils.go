@@ -83,6 +83,7 @@ func MapSQLRowToUser(row *sql.Row) (user *User, err error) {
 /*MapSQLRowsToStories creates a story struct array by sql rows*/
 func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
 	var _stories []Story = []Story{}
+	var username string
 	for rows.Next() {
 		var story Story
 		err = rows.Scan(
@@ -90,14 +91,16 @@ func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
 			&story.URL,
 			&story.Title,
 			&story.Text,
-			pq.Array(&story.Tags),
 			&story.UpVotes,
 			&story.CommentCount,
 			&story.UserID,
-			&story.SubmittedOn)
+			&story.SubmittedOn,
+			pq.Array(&story.Tags),
+			&username)
 		if err != nil {
 			return nil, &DBError{fmt.Sprintf("Cannot read rows"), err}
 		}
+		story.UserName = username
 		_stories = append(_stories, story)
 	}
 	return &_stories, nil
@@ -109,15 +112,17 @@ func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
 	for rows.Next() {
 		var comment Comment = Comment{}
 		var parentID sql.NullInt32
+		var userName string
 		err = rows.Scan(
-			&comment.ID,
 			&comment.Comment,
 			&comment.UpVotes,
 			&comment.StoryID,
 			&parentID,
 			&comment.ReplyCount,
 			&comment.UserID,
-			&comment.CommentedOn)
+			&comment.CommentedOn,
+			&comment.ID,
+			&userName)
 		if err != nil {
 			return nil, &DBError{"Cannot read comment row.", err}
 		}
@@ -126,7 +131,47 @@ func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
 		} else {
 			comment.ParentID = CommentRootID
 		}
+		comment.UserName = userName
 		_comments = append(_comments, comment)
 	}
 	return &_comments, nil
+}
+
+/*MapSQLRowsToReplies creates a reply struct array by sql rows*/
+func MapSQLRowsToReplies(rows *sql.Rows) (replies *[]Reply, err error) {
+	var _replies []Reply = []Reply{}
+	for rows.Next() {
+		var reply Reply = Reply{}
+		var comment Comment = Comment{}
+		var storyID int
+		var storyTitle string
+		var userName string
+		var parentID sql.NullInt32
+		err = rows.Scan(
+			&comment.Comment,
+			&comment.UpVotes,
+			&comment.StoryID,
+			&parentID,
+			&comment.ReplyCount,
+			&comment.UserID,
+			&comment.CommentedOn,
+			&comment.ID,
+			&storyTitle,
+			&storyID,
+			&userName)
+		if err != nil {
+			return nil, &DBError{"Cannot read comment row.", err}
+		}
+		if parentID.Valid {
+			comment.ParentID = int(parentID.Int32)
+		} else {
+			comment.ParentID = CommentRootID
+		}
+		reply.Comment = &comment
+		reply.StoryID = storyID
+		reply.StoryTitle = storyTitle
+		reply.UserName = userName
+		_replies = append(_replies, reply)
+	}
+	return &_replies, nil
 }

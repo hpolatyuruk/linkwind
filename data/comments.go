@@ -16,6 +16,7 @@ type Comment struct {
 	ID          int
 	StoryID     int
 	UserID      int
+	UserName    string
 	ParentID    int
 	UpVotes     int
 	ReplyCount  int
@@ -36,6 +37,14 @@ func (err *CommentError) Error() string {
 		err.Message,
 		err.Comment,
 		err.OriginalError)
+}
+
+/*Reply represents the comments which belongs to a story.*/
+type Reply struct {
+	Comment    *Comment
+	StoryTitle string
+	StoryID    int
+	UserName   string
 }
 
 func nullCommentParentID(i int) sql.NullInt32 {
@@ -80,7 +89,7 @@ func GetComments(storyID int, pageNumber int, pageRowCount int) (comments *[]Com
 		return nil, &DBError{fmt.Sprintf("DB connection error. StoryID: %d, PageNumber: %d, PageRowCount: %d", storyID, pageNumber, pageRowCount), err}
 	}
 	// TODO(Huseyin): Order by special algorithm when Sedat finishes it
-	sql := "SELECT id, comment, upvotes, storyid, parentid, replycount, userid, commentedon FROM comments WHERE storyid = $1 LIMIT $2 OFFSET $3"
+	sql := "SELECT comments.*, users.username FROM comments INNER JOIN users ON users.id = comments.userid WHERE storyid = $1 LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, storyID, pageRowCount, pageNumber*pageRowCount)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot query comments. StoryID: %d, PageNumber: %d, PageRowCount: %d", storyID, pageNumber, pageRowCount), err}
@@ -173,20 +182,20 @@ func CheckIfCommentUpVotedByUser(userID int, commentID int) (bool, error) {
 }
 
 /*GetUserReplies returns reply list by provided user id and paging parameters*/
-func GetUserReplies(userID int, pageNumber int, pageRowCount int) (replies *[]Comment, err error) {
+func GetUserReplies(userID int, pageNumber int, pageRowCount int) (replies *[]Reply, err error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
 	}
-	sql := "SELECT id, comment, upvotes, storyid, parentid, replycount, userid, commentedon FROM comments WHERE userid = $1 ORDER BY commentedon DESC LIMIT $2 OFFSET $3"
+	sql := "SELECT comments.*, stories.title, stories.id, users.username FROM comments INNER JOIN stories ON comments.storyid = stories.id INNER JOIN users ON users.id = stories.userid WHERE stories.userid = $1 ORDER BY comments.commentedon DESC LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, userID, pageRowCount, pageNumber*pageRowCount)
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("Cannot query comments. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+		return nil, &DBError{fmt.Sprintf("Cannot query replies. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
 	}
-	replies, err = MapSQLRowsToComments(rows)
+	replies, err = MapSQLRowsToReplies(rows)
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("Cannot read comment row. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+		return nil, &DBError{fmt.Sprintf("Cannot read reply row. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
 	}
 	return replies, nil
 }

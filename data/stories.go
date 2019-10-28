@@ -17,6 +17,7 @@ type Story struct {
 	UpVotes      int
 	CommentCount int
 	UserID       int
+	UserName     string
 	SubmittedOn  time.Time
 }
 
@@ -67,7 +68,7 @@ func GetStories(pageNumber int, pageRowCount int) (*[]Story, error) {
 		return nil, err
 	}
 	// TODO(Huseyin): Sort it by point algorithim when sedat finishes it
-	sql := "SELECT id, url, title, text, tags, upvotes, commentcount, userid, submittedon FROM stories LIMIT $1 OFFSET $2"
+	sql := "SELECT stories.*, users.UserName FROM stories INNER JOIN users ON users.id = stories.userid LIMIT $1 OFFSET $2"
 	rows, err := db.Query(sql, pageRowCount, pageNumber*pageRowCount)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
@@ -216,7 +217,7 @@ func GetRecentStories(pageNumber int, pageRowCount int) (*[]Story, error) {
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
 	}
-	sql := "SELECT id, url, title, text, tags, upvotes, commentcount, userid, submittedon FROM stories ORDER BY submittedon ASC LIMIT $1 OFFSET $2"
+	sql := "SELECT stories.*, users.username FROM stories INNER JOIN users ON stories.userid = users.id ORDER BY submittedon ASC LIMIT $1 OFFSET $2"
 	rows, err := db.Query(sql, pageRowCount, pageNumber*pageRowCount)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
