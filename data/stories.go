@@ -228,3 +228,21 @@ func GetRecentStories(pageNumber int, pageRowCount int) (*[]Story, error) {
 	}
 	return stories, nil
 }
+
+/*GetUserSavedStories returns the paging user's favorite stories*/
+func GetUserSavedStories(userID int, pageNumber int, pageRowCount int) (*[]Story, error) {
+	db, err := connectToDB()
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d PageNo: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+	}
+	sql := "SELECT stories.*, users.username FROM stories INNER JOIN saved ON stories.id = saved.storyid INNER JOIN users ON users.id = saved.userid WHERE saved.userid = $1 ORDER BY savedon DESC LIMIT $2 OFFSET $3"
+	rows, err := db.Query(sql, userID, pageRowCount, pageNumber*pageRowCount)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot query user's saved stories. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+	}
+	stories, err := MapSQLRowsToStories(rows)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot map sql rows to story struct array. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+	}
+	return stories, nil
+}

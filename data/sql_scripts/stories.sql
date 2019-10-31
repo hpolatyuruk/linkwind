@@ -25,6 +25,15 @@ TABLESPACE pg_default;
 ALTER TABLE public.stories
     OWNER to postgres;
 
+-- Index: ix_submittedon
+
+-- DROP INDEX public.ix_submittedon;
+
+CREATE INDEX ix_submittedon
+    ON public.stories USING btree
+    (submittedon DESC)
+    TABLESPACE pg_default;
+
 -- Index: ix_tags
 
 -- DROP INDEX public.ix_tags;

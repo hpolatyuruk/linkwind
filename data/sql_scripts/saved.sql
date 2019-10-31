@@ -6,6 +6,7 @@ CREATE TABLE public.saved
 (
     storyid integer NOT NULL,
     userid integer NOT NULL,
+    savedon timestamp with time zone NOT NULL,
     CONSTRAINT saved_pkey PRIMARY KEY (userid, storyid),
     CONSTRAINT storyid_fk FOREIGN KEY (storyid)
         REFERENCES public.stories (id) MATCH SIMPLE
@@ -22,3 +23,12 @@ TABLESPACE pg_default;
 
 ALTER TABLE public.saved
     OWNER to postgres;
+
+-- Index: ix_savedon
+
+-- DROP INDEX public.ix_savedon;
+
+CREATE INDEX ix_savedon
+    ON public.saved USING btree
+    (savedon DESC)
+    TABLESPACE pg_default;

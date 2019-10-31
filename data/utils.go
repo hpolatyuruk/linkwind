@@ -27,14 +27,14 @@ func connectionString() (conStr string, err error) {
 		log.Fatalf("Error loading staging.env file. Error: %v", err)
 	}
 
-	host := os.Getenv("dbHost")
-	port, err := strconv.Atoi(os.Getenv("dbPort"))
+	host := os.Getenv("DBHost")
+	port, err := strconv.Atoi(os.Getenv("DBPort"))
 	if err != nil {
 		log.Fatalf("Cannot parse db port. Error: %v", err)
 	}
-	user := os.Getenv("dbUser")
-	password := os.Getenv("dbPassword")
-	name := os.Getenv("dbName")
+	user := os.Getenv("DBUser")
+	password := os.Getenv("DBPassword")
+	name := os.Getenv("DBName")
 
 	conStr = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, name)

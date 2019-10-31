@@ -82,21 +82,21 @@ func WriteComment(comment *Comment) error {
 }
 
 /*GetComments retunrs comment list by provided story id and paging parameters*/
-func GetComments(storyID int, pageNumber int, pageRowCount int) (comments *[]Comment, err error) {
+func GetComments(storyID int) (comments *[]Comment, err error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("DB connection error. StoryID: %d, PageNumber: %d, PageRowCount: %d", storyID, pageNumber, pageRowCount), err}
+		return nil, &DBError{fmt.Sprintf("DB connection error. StoryID: %d.", storyID), err}
 	}
 	// TODO(Huseyin): Order by special algorithm when Sedat finishes it
-	sql := "SELECT comments.*, users.username FROM comments INNER JOIN users ON users.id = comments.userid WHERE storyid = $1 LIMIT $2 OFFSET $3"
-	rows, err := db.Query(sql, storyID, pageRowCount, pageNumber*pageRowCount)
+	sql := "SELECT comments.*, users.username FROM comments INNER JOIN users ON users.id = comments.userid WHERE storyid = $1"
+	rows, err := db.Query(sql, storyID)
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("Cannot query comments. StoryID: %d, PageNumber: %d, PageRowCount: %d", storyID, pageNumber, pageRowCount), err}
+		return nil, &DBError{fmt.Sprintf("Cannot query comments. StoryID: %d.", storyID), err}
 	}
 	comments, err = MapSQLRowsToComments(rows)
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("Cannot read comment row. StoryID: %d, PageNumber: %d, PageRowCount: %d", storyID, pageNumber, pageRowCount), err}
+		return nil, &DBError{fmt.Sprintf("Cannot read comment row. StoryID: %d.", storyID), err}
 	}
 	return comments, nil
 }
@@ -182,20 +182,20 @@ func CheckIfCommentUpVotedByUser(userID int, commentID int) (bool, error) {
 }
 
 /*GetUserReplies returns reply list by provided user id and paging parameters*/
-func GetUserReplies(userID int, pageNumber int, pageRowCount int) (replies *[]Reply, err error) {
+func GetUserReplies(userID int) (replies *[]Reply, err error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d.", userID), err}
 	}
-	sql := "SELECT comments.*, stories.title, stories.id, users.username FROM comments INNER JOIN stories ON comments.storyid = stories.id INNER JOIN users ON users.id = stories.userid WHERE stories.userid = $1 ORDER BY comments.commentedon DESC LIMIT $2 OFFSET $3"
-	rows, err := db.Query(sql, userID, pageRowCount, pageNumber*pageRowCount)
+	sql := "SELECT comments.*, stories.title, stories.id, users.username FROM comments INNER JOIN stories ON comments.storyid = stories.id INNER JOIN users ON users.id = stories.userid WHERE stories.userid = $1 ORDER BY comments.commentedon DESC"
+	rows, err := db.Query(sql, userID)
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("Cannot query replies. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+		return nil, &DBError{fmt.Sprintf("Cannot query replies. UserID: %d.", userID), err}
 	}
 	replies, err = MapSQLRowsToReplies(rows)
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("Cannot read reply row. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+		return nil, &DBError{fmt.Sprintf("Cannot read reply row. UserID: %d.", userID), err}
 	}
 	return replies, nil
 }

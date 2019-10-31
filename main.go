@@ -1,69 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"turkdev/data"
+	"net/http"
+	"turkdev/app/controllers"
+	"turkdev/app/templates"
 )
 
 func main() {
 
-	/*user := data.User{
-		UserName:     "anil",
-		FullName:     "Anil Yuzener",
-		Email:        "anilyuzener@gmail.com",
-		RegisteredOn: time.Now(),
-		Password:     "222222",
-		Website:      "http://anilyuzener.com",
-		About:        "Software Developer",
-		InvitedBy:    "hpy",
-		InviteCode:   "123456",
-		Karma:        12,
-	}
-	err := data.CreateUser(&user)
-	if err != nil {
-		fmt.Println(err)
-	}
-	story := data.Story{
-		URL:          "http://huseyinpolatyuruk6.com",
-		Title:        "Test Title6",
-		Text:         "Test Text6",
-		Tags:         []string{"programming", "coding", "web"},
-		UpVotes:      0,
-		DownVotes:    0,
-		CommentCount: 0,
-		UserID:       16,
-		SubmittedOn:  time.Now(),
-	}
-	err := data.CreateStory(&story)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("Succeded!")
-
-	comment := data.Comment{
-		StoryID:     1,
-		UserID:      16,
-		ParentID:    2,
-		UpVotes:     0,
-		ReplyCount:  0,
-		Comment:     "Comment0",
-		CommentedOn: time.Now(),
-	}
-	err := data.WriteComment(&comment)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("Done!")*/
-	replies, err := data.GetUserReplies(16, 0, 5)
-	if err != nil {
-		fmt.Println(err)
-	}
-	for _, reply := range *replies {
-		fmt.Printf("Comment: %v, StoryTitle: %s StoryID: %d, UserName: %s", reply.Comment, reply.StoryTitle, reply.StoryID, reply.UserName)
-		fmt.Println()
-	}
-
-	/*templates.Initialize()
+	templates.Initialize()
 
 	http.HandleFunc("/", controllers.StoriesHandler)
 	http.HandleFunc("/recent", controllers.RecentStoriesHandler)
@@ -79,5 +24,5 @@ func main() {
 
 	http.Handle("/static/", http.StripPrefix("/static/", staticFileServer))
 
-	http.ListenAndServe(":80", nil)*/
+	http.ListenAndServe(":80", nil)
 }
