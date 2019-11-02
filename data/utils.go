@@ -175,3 +175,19 @@ func MapSQLRowsToReplies(rows *sql.Rows) (replies *[]Reply, err error) {
 	}
 	return &_replies, nil
 }
+
+/*SetEmailBody combine parameters and return body for UserInviteMail*/
+func SetEmailBody(to, userName, memo, inviteCode string) string {
+
+	content := ""
+	content += "<p>Merhaba: " + to + "</p>"
+	content += "<p>" + userName + " adlı kullanıcı sizi TurkDev'e davet etti.</p>"
+	if memo != "" {
+		content += "<p><i>Mesaj: " + memo + "</i></p>"
+	}
+
+	content += "<p>TurkDev'e katılmak için aşağıdaki linke tıklayarak hesap oluşturabilirsiniz.</p>"
+	content += "<p>https://turkdev.com/davet/" + inviteCode + "</p>"
+
+	return content
+}

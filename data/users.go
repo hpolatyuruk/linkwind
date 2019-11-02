@@ -2,6 +2,8 @@ package data
 
 import (
 	"fmt"
+	"log"
+	"net/smtp"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -265,4 +267,28 @@ func FindUserByUserNameAndPassword(userName string, password string) (user *User
 		return nil, nil
 	}
 	return user, nil
+}
+
+/*SendInviteEmail send mail for invite to join*/
+/*These configurations are not perminant. These conf for gmail.We should add
+pass and etc*/
+func SendInviteEmail(emailAddress, memo, inviteCode, userName string) {
+
+	pass := "...."
+	from := "our smtp mail adrress"
+	to := emailAddress
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	subject := "Subject: " + "TurkDev'e katılmaya davet edildiniz\n"
+
+	body := setEmailBody(to, userName, memo, inviteCode)
+	msg := []byte(subject + mime + "\n" + body)
+
+	err := smtp.SendMail("smtp.gmail.com:587",
+		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
+		from, []string{to}, msg)
+
+	if err != nil {
+		log.Printf("smtp error: %s", err)
+		return
+	}
 }
