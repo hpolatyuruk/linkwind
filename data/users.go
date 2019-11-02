@@ -269,18 +269,44 @@ func FindUserByUserNameAndPassword(userName string, password string) (user *User
 	return user, nil
 }
 
-/*SendInviteEmail send mail for invite to join*/
-/*These configurations are not perminant. These conf for gmail.We should add
-pass and etc*/
-func SendInviteEmail(emailAddress, memo, inviteCode, userName string) {
+func LoginUser() {
+
+}
+
+/*SendInvitemail send mail for invite to join*/
+/*TODO : These configurations are not perminant. These conf for gmail.We should add pass and etc*/
+func SendInvitemail(mailAddress, memo, inviteCode, userName string) {
 
 	pass := "...."
 	from := "our smtp mail adrress"
-	to := emailAddress
+	to := mailAddress
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	subject := "Subject: " + "TurkDev'e katılmaya davet edildiniz\n"
 
-	body := setEmailBody(to, userName, memo, inviteCode)
+	body := SetInviteMailBody(to, userName, memo, inviteCode)
+	msg := []byte(subject + mime + "\n" + body)
+
+	err := smtp.SendMail("smtp.gmail.com:587",
+		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
+		from, []string{to}, msg)
+
+	if err != nil {
+		log.Printf("smtp error: %s", err)
+		return
+	}
+}
+
+/*SendForgotPasswordMail send to mail for reset password with resetPassword token*/
+//TODO: In lobsters they add coming ip for reset pass request. Should we do that? Do not forget to change "pass" and "to" variables.
+func SendForgotPasswordMail(token, mailAddress string) {
+
+	pass := "..."
+	from := "our smtp mail adrress"
+	to := mailAddress
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	subject := "Subject: " + "Şifre Sıfırlama\n"
+
+	body := SetResetPasswordMailBody(token)
 	msg := []byte(subject + mime + "\n" + body)
 
 	err := smtp.SendMail("smtp.gmail.com:587",

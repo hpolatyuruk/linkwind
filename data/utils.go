@@ -176,8 +176,8 @@ func MapSQLRowsToReplies(rows *sql.Rows) (replies *[]Reply, err error) {
 	return &_replies, nil
 }
 
-/*SetInivteEmailBody combine parameters and return body for UserInviteMail*/
-func SetInivteEmailBody(to, userName, memo, inviteCode string) string {
+/*SetInviteMailBody combine parameters and return body for UserInviteMail*/
+func SetInviteMailBody(to, userName, memo, inviteCode string) string {
 
 	content := ""
 	content += "<p>Merhaba: " + to + "</p>"
@@ -188,6 +188,18 @@ func SetInivteEmailBody(to, userName, memo, inviteCode string) string {
 
 	content += "<p>TurkDev'e katılmak için aşağıdaki linke tıklayarak hesap oluşturabilirsiniz.</p>"
 	content += "<p>https://turkdev.com/davet/" + inviteCode + "</p>"
+
+	return content
+}
+
+/*SetResetPasswordMailBody set mail's body with resetToken*/
+func SetResetPasswordMailBody(token string) string {
+
+	content := ""
+	content += "<p>Şifre yenileme isteğinde bulunduz.</p>"
+	content += "<p>Aşağıdaki linke tıklayarak şifrenizi sıfırlayabilirsiniz.</p>"
+	content += "<p>Böyle bir istekte bulunmadıysanız, bu mesajı önemsemeyin.</p>"
+	content += "<p>https://turkdev.com/login/set_new_password?token=" + token + "</p>"
 
 	return content
 }
