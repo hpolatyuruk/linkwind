@@ -176,8 +176,8 @@ func MapSQLRowsToReplies(rows *sql.Rows) (replies *[]Reply, err error) {
 	return &_replies, nil
 }
 
-/*SetEmailBody combine parameters and return body for UserInviteMail*/
-func SetEmailBody(to, userName, memo, inviteCode string) string {
+/*SetInivteEmailBody combine parameters and return body for UserInviteMail*/
+func SetInivteEmailBody(to, userName, memo, inviteCode string) string {
 
 	content := ""
 	content += "<p>Merhaba: " + to + "</p>"
