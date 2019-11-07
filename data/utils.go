@@ -4,12 +4,24 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
+	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/lib/pq"
 )
+
+const (
+	regexForEmailValid = `^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`
+	charset            = "abcdefghijklmnopqrstuvwxyz" +
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+)
+
+var seededRand *rand.Rand = rand.New(
+	rand.NewSource(time.Now().UnixNano()))
 
 /*DBError represents the database error*/
 type DBError struct {
@@ -202,4 +214,42 @@ func SetResetPasswordMailBody(token string) string {
 	content += "<p>https://turkdev.com/login/set_new_password?token=" + token + "</p>"
 
 	return content
+}
+
+/*IsEmailAdrressValid take mail adrres, if adrress is valid return true.*/
+func IsEmailAdrressValid(email string) bool {
+	Re := regexp.MustCompile(regexForEmailValid)
+	return Re.MatchString(email)
+}
+
+/*InviteCodeGenerator generates the invite code*/
+func InviteCodeGenerator() string {
+
+	c := ""
+	for i := 0; i < 4; i++ {
+		i := seededRand.Intn(10)
+		s := stringWithCharset(1)
+		c = c + strconv.Itoa(i) + s
+	}
+	return c
+}
+
+/*GenerateResetPasswordToken generates the token for password reset*/
+func GenerateResetPasswordToken() string {
+
+	c := ""
+	for i := 0; i < 4; i++ {
+		s := stringWithCharset(1)
+		i := seededRand.Intn(10)
+		c = c + strconv.Itoa(i) + s
+	}
+	return c
+}
+
+func stringWithCharset(length int) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
 }

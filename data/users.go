@@ -12,6 +12,14 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const (
+	LoginError = iota
+	LoginSuccessful
+	WrongPassword
+	NoUserWithEmail
+	NoUserWithUserName
+)
+
 /*User represents the user in database*/
 type User struct {
 	ID           int
@@ -182,6 +190,27 @@ func ExistsUserByEmail(email string) (exists bool, err error) {
 	return exists, nil
 }
 
+/*ExistsUserByEmail check if user associated with user name exists on database*/
+func ExistsUserByUserName(userName string) (exists bool, err error) {
+	exists = false
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return exists, err
+	}
+	sql := "SELECT COUNT(*) AS count FROM users WHERE username = $1"
+	row := db.QueryRow(sql, userName)
+	var recordCount int = 0
+	err = row.Scan(&recordCount)
+	if err != nil {
+		return exists, &DBError{fmt.Sprintf("Cannot read record count. UserName: %s", userName), err}
+	}
+	if recordCount > 0 {
+		exists = true
+	}
+	return exists, nil
+}
+
 /*GetUserByUserName get user associated with user name from database*/
 func GetUserByUserName(userName string) (user *User, err error) {
 	db, err := connectToDB()
@@ -269,8 +298,44 @@ func FindUserByUserNameAndPassword(userName string, password string) (user *User
 	return user, nil
 }
 
-func LoginUser() {
+func LoginUser(emailOrUserName, password string) (int, error) {
 
+	if IsEmailAdrressValid(emailOrUserName) {
+		exists, err := ExistsUserByEmail(emailOrUserName)
+		if err != nil {
+			return LoginError, err
+		}
+
+		if exists {
+			user, err := FindUserByEmailAndPassword(emailOrUserName, password)
+			if err != nil {
+				return LoginError, err
+			}
+			if user == nil {
+				return WrongPassword, nil
+			}
+			return LoginSuccessful, nil
+		}
+		return NoUserWithEmail, nil
+	}
+
+	exists, err := ExistsUserByUserName(emailOrUserName)
+	if err != nil {
+		return LoginError, err
+	}
+
+	if exists {
+		user, err := FindUserByUserNameAndPassword(emailOrUserName, password)
+		if err != nil {
+			return LoginError, err
+		}
+
+		if user == nil {
+			return WrongPassword, nil
+		}
+		return LoginSuccessful, nil
+	}
+	return NoUserWithUserName, nil
 }
 
 /*SendInvitemail send mail for invite to join*/
@@ -283,7 +348,7 @@ func SendInvitemail(mailAddress, memo, inviteCode, userName string) {
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	subject := "Subject: " + "TurkDev'e katılmaya davet edildiniz\n"
 
-	body := SetInviteMailBody(to, userName, memo, inviteCode)
+	body := SetInviteMailBody(to, userName, memo, InviteCodeGenerator())
 	msg := []byte(subject + mime + "\n" + body)
 
 	err := smtp.SendMail("smtp.gmail.com:587",
@@ -298,7 +363,7 @@ func SendInvitemail(mailAddress, memo, inviteCode, userName string) {
 
 /*SendForgotPasswordMail send to mail for reset password with resetPassword token*/
 //TODO: In lobsters they add coming ip for reset pass request. Should we do that? Do not forget to change "pass" and "to" variables.
-func SendForgotPasswordMail(token, mailAddress string) {
+func SendForgotPasswordMail(mailAddress string) {
 
 	pass := "..."
 	from := "our smtp mail adrress"
@@ -306,6 +371,7 @@ func SendForgotPasswordMail(token, mailAddress string) {
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	subject := "Subject: " + "Şifre Sıfırlama\n"
 
+	token := GenerateResetPasswordToken()
 	body := SetResetPasswordMailBody(token)
 	msg := []byte(subject + mime + "\n" + body)
 
