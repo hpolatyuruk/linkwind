@@ -384,3 +384,20 @@ func SendForgotPasswordMail(mailAddress string) {
 		return
 	}
 }
+
+func CalculateKarma(userID int) int {
+
+	stories, err := GetUserStoriesNotPaging(userID)
+	sVotes := 0
+	for _, s := range *stories {
+		sVotes += (s.UpVotes - s.DownVotes)
+	}
+
+	comments, err := GetUserCommentsNotPaging(userID)
+	cVotes := 0
+	for _, c := range *comments {
+		cVotes += (c.UpVotes - c.DownVotes)
+	}
+
+	return sVotes + cVotes
+}

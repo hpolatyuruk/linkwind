@@ -105,6 +105,7 @@ func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
 			&story.Title,
 			&story.Text,
 			&story.UpVotes,
+			&story.DownVotes,
 			&story.CommentCount,
 			&story.UserID,
 			&story.SubmittedOn,
@@ -129,6 +130,7 @@ func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
 		err = rows.Scan(
 			&comment.Comment,
 			&comment.UpVotes,
+			&comment.DownVotes,
 			&comment.StoryID,
 			&parentID,
 			&comment.ReplyCount,
@@ -163,6 +165,7 @@ func MapSQLRowsToReplies(rows *sql.Rows) (replies *[]Reply, err error) {
 		err = rows.Scan(
 			&comment.Comment,
 			&comment.UpVotes,
+			&comment.DownVotes,
 			&comment.StoryID,
 			&parentID,
 			&comment.ReplyCount,

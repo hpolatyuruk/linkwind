@@ -19,6 +19,7 @@ type Comment struct {
 	UserName    string
 	ParentID    int
 	UpVotes     int
+	DownVotes   int
 	ReplyCount  int
 	Comment     string
 	CommentedOn time.Time
@@ -64,7 +65,7 @@ func WriteComment(comment *Comment) error {
 	if err != nil {
 		return &CommentError{"DB connection error", comment, err}
 	}
-	sql := "INSERT INTO comments (storyid, userid, parentid, upvotes, replycount, comment, commentedon) VALUES ($1, $2, $3, $4, $5, $6, $7)"
+	sql := "INSERT INTO comments (storyid, userid, parentid, upvotes,downvotes, replycount, comment, commentedon) VALUES ($1, $2, $3, $4, $5, $6, $7)"
 
 	_, err = db.Exec(
 		sql,
@@ -72,6 +73,7 @@ func WriteComment(comment *Comment) error {
 		comment.UserID,
 		nullCommentParentID(comment.ParentID),
 		comment.UpVotes,
+		comment.DownVotes,
 		comment.ReplyCount,
 		comment.Comment,
 		comment.CommentedOn)
@@ -198,4 +200,23 @@ func GetUserReplies(userID int) (replies *[]Reply, err error) {
 		return nil, &DBError{fmt.Sprintf("Cannot read reply row. UserID: %d.", userID), err}
 	}
 	return replies, nil
+}
+
+func GetUserCommentsNotPaging(userID int) (comments *[]Comment, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d.", userID), err}
+	}
+	// TODO(Huseyin): Order by special algorithm when Sedat finishes it
+	sql := "SELECT * FROM public.comments WHERE userid = $1"
+	rows, err := db.Query(sql, userID)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot query comments. UserID: %d.", userID), err}
+	}
+	comments, err = MapSQLRowsToComments(rows)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read comment row. UserID: %d.", userID), err}
+	}
+	return comments, nil
 }

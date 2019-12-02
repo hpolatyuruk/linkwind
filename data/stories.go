@@ -15,6 +15,7 @@ type Story struct {
 	Text         string
 	Tags         []string
 	UpVotes      int
+	DownVotes    int
 	CommentCount int
 	UserID       int
 	UserName     string
@@ -43,13 +44,14 @@ func CreateStory(story *Story) error {
 	if err != nil {
 		return err
 	}
-	sql := "INSERT INTO stories (url, title, text, tags, upvotes, commentcount, userid, submittedon) VALUES($1, $2, $3, $4, $5, $6, $7, $8)"
+	sql := "INSERT INTO stories (url, title, text, tags, upvotes,downvotes,  commentcount, userid, submittedon) VALUES($1, $2, $3, $4, $5, $6, $7, $8)"
 	_, err = db.Exec(
 		sql,
 		story.URL,
 		story.Title,
 		story.Text,
 		pq.Array(story.Tags),
+		0,
 		0,
 		0,
 		story.UserID,
@@ -232,6 +234,7 @@ func GetRecentStories(pageNumber int, pageRowCount int) (*[]Story, error) {
 /*GetUserSavedStories returns the paging user's favorite stories*/
 func GetUserSavedStories(userID int, pageNumber int, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
+	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d PageNo: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
 	}
@@ -243,6 +246,26 @@ func GetUserSavedStories(userID int, pageNumber int, pageRowCount int) (*[]Story
 	stories, err := MapSQLRowsToStories(rows)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot map sql rows to story struct array. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+	}
+	return stories, nil
+}
+
+func GetUserStoriesNotPaging(userID int) (*[]Story, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	sql := "SELECT * FROM public.stories WHERE userid = $1"
+	rows, err := db.Query(sql, userID)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot query user's posted stories. UserID: %d", userID), err}
+	}
+
+	stories, err := MapSQLRowsToStories(rows)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot map sql rows to story struct array. UserID: %s", userID), err}
 	}
 	return stories, nil
 }
