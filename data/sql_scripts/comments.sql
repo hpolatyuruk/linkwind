@@ -6,6 +6,7 @@ CREATE TABLE public.comments
 (
     comment text COLLATE pg_catalog."default" NOT NULL,
     upvotes integer NOT NULL,
+    downvotes integer NOT NULL,
     storyid integer NOT NULL,
     parentid integer,
     replycount integer NOT NULL DEFAULT 0,

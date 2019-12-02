@@ -9,6 +9,7 @@ CREATE TABLE public.stories
     title character varying(150) COLLATE pg_catalog."default" NOT NULL,
     text text COLLATE pg_catalog."default",
     upvotes integer NOT NULL DEFAULT 0,
+    downvotes integer NOT NULL DEFAULT 0,
     commentcount integer NOT NULL DEFAULT 0,
     userid integer NOT NULL,
     submittedon timestamp with time zone NOT NULL,

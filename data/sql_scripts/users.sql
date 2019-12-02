@@ -2,6 +2,8 @@
 
 -- DROP TABLE public.users;
 
+/* id oluşturmada sorun çıkan yerlerde --> "CREATE SEQUENCE table_name_id_seq;"
+kodunu kodun tepesine ekledim.*/
 CREATE TABLE public.users
 (
     fullname character varying(50) COLLATE pg_catalog."default",
