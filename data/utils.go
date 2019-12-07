@@ -3,11 +3,14 @@ package data
 import (
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -256,4 +259,35 @@ func stringWithCharset(length int) string {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+/*Send request to url that given as parameter and fetch title from HTML code.*/
+func FetchURL(url string) (string, error) {
+	response, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+
+	dataInBytes, err := ioutil.ReadAll(response.Body)
+	pageContent := string(dataInBytes)
+
+	titleStartIndex := strings.Index(pageContent, "<title>")
+	if titleStartIndex == -1 {
+		return "", fmt.Errorf("No title element found")
+	}
+	// The start index of the title is the index of the first
+	// character, the < symbol. We don't want to include
+	// <title> as part of the final value, so let's offset
+	// the index by the number of characers in <title>
+	titleStartIndex += 7
+
+	titleEndIndex := strings.Index(pageContent, "</title>")
+	if titleEndIndex == -1 {
+		fmt.Println("No closing tag for title found.")
+		os.Exit(0)
+	}
+
+	pageTitle := []byte(pageContent[titleStartIndex:titleEndIndex])
+	return string(pageTitle), nil
 }
