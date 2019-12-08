@@ -5,6 +5,14 @@ import (
 	"turkdev/app/models"
 	"turkdev/app/templates"
 	"turkdev/data"
+
+	"github.com/gorilla/sessions"
+)
+
+var (
+	// key must be 16, 24 or 32 bytes long (AES-128, AES-192 or AES-256)
+	key   = []byte("super-secret-key")
+	store = sessions.NewCookieStore(key)
 )
 
 /*UserSettingsHandler handles showing user profile detail*/
@@ -60,6 +68,13 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 			data,
 		},
 	)
+
+	session, _ := store.Get(r, "cookie-name")
+	status, err := data.LoginUser(userName, password)
+	if status == data.LoginSuccessful {
+		session.Values["authenticated"] = true
+		session.Save(r, w)
+	}
 }
 
 /*InviteUserHandler handles sending invitations to user*/
@@ -79,4 +94,22 @@ func InviteUserHandler(w http.ResponseWriter, r *http.Request) {
 			data,
 		},
 	)
+}
+
+/*LogoutHandler set cookie authenticated is false.*/
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "cookie-name")
+	session.Values["authenticated"] = false
+	session.Save(r, w)
+
+	// TODO : Redirect bla bla.
+}
+
+/*CheckCookieSet check cookie is "authenticated" or not.*/
+func CheckCookieSet(w http.ResponseWriter, r *http.Request) bool {
+	session, _ := store.Get(r, "cookie-name")
+	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+		return false
+	}
+	return true
 }
