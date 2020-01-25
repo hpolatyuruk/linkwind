@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/smtp"
 	"os"
 	"regexp"
 	"strconv"
@@ -290,4 +291,118 @@ func FetchURL(url string) (string, error) {
 
 	pageTitle := []byte(pageContent[titleStartIndex:titleEndIndex])
 	return string(pageTitle), nil
+}
+
+func setCookie(w http.ResponseWriter, userNameOrEmail, password string) {
+	expire := time.Now().AddDate(0, 0, 1)
+	cookie := http.Cookie{
+		Name:    userNameOrEmail,
+		Value:   password,
+		Expires: expire,
+	}
+	http.SetCookie(w, &cookie)
+}
+
+func LoginUser(emailOrUserName, password string) (int, error) {
+
+	if IsEmailAdrressValid(emailOrUserName) {
+		exists, err := ExistsUserByEmail(emailOrUserName)
+		if err != nil {
+			return LoginError, err
+		}
+
+		if exists {
+			user, err := FindUserByEmailAndPassword(emailOrUserName, password)
+			if err != nil {
+				return LoginError, err
+			}
+			if user == nil {
+				return WrongPassword, nil
+			}
+			return LoginSuccessful, nil
+		}
+		return NoUserWithEmail, nil
+	}
+
+	exists, err := ExistsUserByUserName(emailOrUserName)
+	if err != nil {
+		return LoginError, err
+	}
+
+	if exists {
+		user, err := FindUserByUserNameAndPassword(emailOrUserName, password)
+		if err != nil {
+			return LoginError, err
+		}
+
+		if user == nil {
+			return WrongPassword, nil
+		}
+		return LoginSuccessful, nil
+	}
+	return NoUserWithUserName, nil
+}
+
+/*SendInvitemail send mail for invite to join*/
+/*TODO : These configurations are not perminant. These conf for gmail.We should add pass and etc*/
+func SendInvitemail(mailAddress, memo, inviteCode, userName string) {
+
+	pass := "...."
+	from := "our smtp mail adrress"
+	to := mailAddress
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	subject := "Subject: " + "TurkDev'e katılmaya davet edildiniz\n"
+
+	body := SetInviteMailBody(to, userName, memo, InviteCodeGenerator())
+	msg := []byte(subject + mime + "\n" + body)
+
+	err := smtp.SendMail("smtp.gmail.com:587",
+		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
+		from, []string{to}, msg)
+
+	if err != nil {
+		log.Printf("smtp error: %s", err)
+		return
+	}
+}
+
+/*SendForgotPasswordMail send to mail for reset password with resetPassword token*/
+//TODO: In lobsters they add coming ip for reset pass request. Should we do that? Do not forget to change "pass" and "to" variables.
+func SendForgotPasswordMail(mailAddress string) {
+
+	pass := "..."
+	from := "our smtp mail adrress"
+	to := mailAddress
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	subject := "Subject: " + "Şifre Sıfırlama\n"
+
+	token := GenerateResetPasswordToken()
+	body := SetResetPasswordMailBody(token)
+	msg := []byte(subject + mime + "\n" + body)
+
+	err := smtp.SendMail("smtp.gmail.com:587",
+		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
+		from, []string{to}, msg)
+
+	if err != nil {
+		log.Printf("smtp error: %s", err)
+		return
+	}
+}
+
+func CalculateKarma(userID int) int {
+
+	stories, err := GetUserStoriesNotPaging(userID)
+	sVotes := 0
+	for _, s := range *stories {
+		sVotes += (s.UpVotes - s.DownVotes)
+	}
+
+	comments, err := GetUserCommentsNotPaging(userID)
+	cVotes := 0
+	for _, c := range *comments {
+		cVotes += (c.UpVotes - c.DownVotes)
+	}
+
+	return sVotes + cVotes
 }
