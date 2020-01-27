@@ -7,10 +7,11 @@ import (
 )
 
 var templatesPath = "./app/templates/"
-var categories = []string{"comments", "stories", "user"}
+var categories = []string{"comments", "stories", "users"}
 var pseudoTmpl string = `{{define "main"}}{{template "base" .}}{{end}}`
 var templates map[string]*template.Template
 
+/*Initialize initializes all base and child templates*/
 func Initialize() {
 	if templates == nil {
 		templates = make(map[string]*template.Template)
@@ -44,6 +45,7 @@ func Initialize() {
 	}
 }
 
+/*Render renders templates by given parameters*/
 func Render(w http.ResponseWriter, tmpl string, data interface{}) {
 	t, found := templates[tmpl]
 

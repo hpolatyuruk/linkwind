@@ -69,12 +69,12 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
-	session, _ := store.Get(r, "cookie-name")
+	/*session, _ := store.Get(r, "cookie-name")
 	status, err := data.LoginUser(userName, password)
 	if status == data.LoginSuccessful {
 		session.Values["authenticated"] = true
 		session.Save(r, w)
-	}
+	}*/
 }
 
 /*InviteUserHandler handles sending invitations to user*/

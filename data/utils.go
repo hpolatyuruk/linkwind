@@ -390,9 +390,14 @@ func SendForgotPasswordMail(mailAddress string) {
 	}
 }
 
-func CalculateKarma(userID int) int {
+/*CalculateKarma calculates user's karma by its upvotes and downvotes*/
+func CalculateKarma(userID int) (int, error) {
 
 	stories, err := GetUserStoriesNotPaging(userID)
+	if err != nil {
+		log.Printf("An error occurred while calculating user's karma error: %s", err)
+		return 0, err
+	}
 	sVotes := 0
 	for _, s := range *stories {
 		sVotes += (s.UpVotes - s.DownVotes)
@@ -404,5 +409,5 @@ func CalculateKarma(userID int) int {
 		cVotes += (c.UpVotes - c.DownVotes)
 	}
 
-	return sVotes + cVotes
+	return sVotes + cVotes, nil
 }
