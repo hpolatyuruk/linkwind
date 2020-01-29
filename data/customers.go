@@ -32,3 +32,26 @@ func (err *CustomerError) Error() string {
 		err.OriginalError,
 		err.Customer)
 }
+
+/*CreateCustomer creates a customer*/
+func CreateCustomer(customer *Customer) (err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return &CustomerError{"Cannot connect to db", customer, err}
+	}
+	sql := "INSERT INTO customers (email, name, description, domain,registeredon)" +
+		"VALUES ($1, $2, $3, $4, $5)"
+
+	_, err = db.Exec(
+		sql,
+		customer.Email,
+		customer.Name,
+		customer.Description,
+		customer.Domain,
+		customer.RegisteredOn)
+	if err != nil {
+		return &CustomerError{"Cannot insert customer to the database!", customer, err}
+	}
+	return nil
+}
