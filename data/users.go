@@ -23,6 +23,7 @@ type User struct {
 	InvitedBy    string
 	InviteCode   string
 	Karma        int
+	CustomerID   int
 }
 
 /*UserError contains the error and user data which caused to error*/
@@ -47,8 +48,8 @@ func CreateUser(user *User) (err error) {
 	if err != nil {
 		return &UserError{"Cannot connect to db", user, err}
 	}
-	sql := "INSERT INTO users (username, fullname, email, registeredon," + "password, website, about, invitedby, invitecode, karma) " +
-		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
+	sql := "INSERT INTO users (username, fullname, email, registeredon," + "password, website, about, invitedby, invitecode, karma, customerid) " +
+		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
 
 	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -65,7 +66,8 @@ func CreateUser(user *User) (err error) {
 		user.About,
 		user.InvitedBy,
 		user.InviteCode,
-		user.Karma)
+		user.Karma,
+		user.CustomerID)
 	if err != nil {
 		return &UserError{"Cannot insert user to the database!", user, err}
 	}

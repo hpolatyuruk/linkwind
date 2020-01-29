@@ -63,7 +63,7 @@ func CreateStory(story *Story) error {
 }
 
 /*GetStories retunrs story list by provided paging parameters*/
-func GetStories(pageNumber int, pageRowCount int) (*[]Story, error) {
+func GetStories(pageNumber, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
