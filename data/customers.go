@@ -8,7 +8,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-/*Customer represents the user in database*/
+/*Customer represents the customer in database*/
 type Customer struct {
 	ID           int
 	Email        string
@@ -18,7 +18,7 @@ type Customer struct {
 	Domain       string
 }
 
-/*UserError contains the error and user data which caused to error*/
+/*CustomerError contains the error and customer data which caused to error*/
 type CustomerError struct {
 	Message       string
 	Customer      *Customer
@@ -52,6 +52,29 @@ func CreateCustomer(customer *Customer) (err error) {
 		customer.RegisteredOn)
 	if err != nil {
 		return &CustomerError{"Cannot insert customer to the database!", customer, err}
+	}
+	return nil
+}
+
+/*UpdateCustomer updates the provided customer on database*/
+func UpdateCustomer(customer *Customer) error {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return &CustomerError{"Db connection error", customer, err}
+	}
+
+	sql := "UPDATE customers SET name = $1, email = $2, description = $3, domain = $4, registeredon = $5 WHERE id = $6"
+	_, err = db.Exec(
+		sql,
+		customer.Name,
+		customer.Email,
+		customer.Description,
+		customer.Domain,
+		customer.RegisteredOn,
+		customer.ID)
+	if err != nil {
+		return &CustomerError{"Cannot update customer!", customer, err}
 	}
 	return nil
 }
