@@ -156,6 +156,32 @@ func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
 	return &_comments, nil
 }
 
+/*MapSQLRowsToUsers creates a user struct array by sql rows*/
+func MapSQLRowsToUsers(rows *sql.Rows) (users *[]User, err error) {
+	_users := []User{}
+	for rows.Next() {
+		user := User{}
+		err = rows.Scan(
+			&user.ID,
+			&user.UserName,
+			&user.FullName,
+			&user.Email,
+			&user.RegisteredOn,
+			&user.Password,
+			&user.Website,
+			&user.About,
+			&user.InvitedBy,
+			&user.InviteCode,
+			&user.Karma)
+		if err != nil {
+			return nil, &DBError{"Cannot read comment row.", err}
+		}
+
+		_users = append(_users, user)
+	}
+	return &_users, nil
+}
+
 /*MapSQLRowsToReplies creates a reply struct array by sql rows*/
 func MapSQLRowsToReplies(rows *sql.Rows) (replies *[]Reply, err error) {
 	_replies := []Reply{}

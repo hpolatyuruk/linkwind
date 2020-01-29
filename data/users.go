@@ -219,6 +219,26 @@ func GetUserByUserName(userName string) (user *User, err error) {
 	return user, nil
 }
 
+/*GetUsersByCustomerID retunrs users list by provided customerID parameter*/
+func GetUsersByCustomerID(customerID int) (*[]User, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users WHERE customerID = $1"
+	rows, err := db.Query(sql, customerID)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot get users. CustomerID: %d", customerID), err}
+	}
+	users, err := MapSQLRowsToUsers(rows)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read rows. CustomerID: %d", customerID), err}
+	}
+	return users, nil
+}
+
 /*SaveResetPasswordToken inserts given token and user id to database*/
 func SaveResetPasswordToken(token string, userID int) error {
 	db, err := connectToDB()
