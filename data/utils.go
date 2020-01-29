@@ -3,30 +3,13 @@ package data
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"math/rand"
-	"net/http"
-	"net/smtp"
 	"os"
-	"regexp"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/lib/pq"
 )
-
-const (
-	slash              = "`"
-	regexForEmailValid = `^(?("")("".+?(?<!\\)""@)|(([0-9a-z]((\.(?!\.))|[-!#\$%&'\*\+/=\?\^` + slash + `\{\}\|~\w])*)(?<=[0-9a-z])@))(?(\[)(\[(\d{1,3}\.){3}\d{1,3}\])|(([0-9a-z][-\w]*[0-9a-z]*\.)+[a-z0-9][\-a-z0-9]{0,22}[a-z0-9]))$`
-	charset            = "abcdefghijklmnopqrstuvwxyz" +
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-)
-
-var seededRand *rand.Rand = rand.New(
-	rand.NewSource(time.Now().UnixNano()))
 
 /*DBError represents the database error*/
 type DBError struct {
@@ -99,7 +82,7 @@ func MapSQLRowToUser(row *sql.Row) (user *User, err error) {
 
 /*MapSQLRowsToStories creates a story struct array by sql rows*/
 func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
-	var _stories []Story = []Story{}
+	_stories := []Story{}
 	var username string
 	for rows.Next() {
 		var story Story
@@ -126,9 +109,9 @@ func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
 
 /*MapSQLRowsToComments creates a comment struct array by sql rows*/
 func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
-	var _comments []Comment = []Comment{}
+	_comments := []Comment{}
 	for rows.Next() {
-		var comment Comment = Comment{}
+		comment := Comment{}
 		var parentID sql.NullInt32
 		var userName string
 		err = rows.Scan(
@@ -158,10 +141,10 @@ func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
 
 /*MapSQLRowsToReplies creates a reply struct array by sql rows*/
 func MapSQLRowsToReplies(rows *sql.Rows) (replies *[]Reply, err error) {
-	var _replies []Reply = []Reply{}
+	_replies := []Reply{}
 	for rows.Next() {
-		var reply Reply = Reply{}
-		var comment Comment = Comment{}
+		reply := Reply{}
+		comment := Comment{}
 		var storyID int
 		var storyTitle string
 		var userName string
@@ -196,203 +179,8 @@ func MapSQLRowsToReplies(rows *sql.Rows) (replies *[]Reply, err error) {
 	return &_replies, nil
 }
 
-/*SetInviteMailBody combine parameters and return body for UserInviteMail*/
-func SetInviteMailBody(to, userName, memo, inviteCode string) string {
-
-	content := ""
-	content += "<p>Merhaba: " + to + "</p>"
-	content += "<p>" + userName + " adlı kullanıcı sizi TurkDev'e davet etti.</p>"
-	if memo != "" {
-		content += "<p><i>Mesaj: " + memo + "</i></p>"
-	}
-
-	content += "<p>TurkDev'e katılmak için aşağıdaki linke tıklayarak hesap oluşturabilirsiniz.</p>"
-	content += "<p>https://turkdev.com/davet/" + inviteCode + "</p>"
-
-	return content
-}
-
-/*SetResetPasswordMailBody set mail's body with resetToken*/
-func SetResetPasswordMailBody(token string) string {
-
-	content := ""
-	content += "<p>Şifre yenileme isteğinde bulunduz.</p>"
-	content += "<p>Aşağıdaki linke tıklayarak şifrenizi sıfırlayabilirsiniz.</p>"
-	content += "<p>Böyle bir istekte bulunmadıysanız, bu mesajı önemsemeyin.</p>"
-	content += "<p>https://turkdev.com/login/set_new_password?token=" + token + "</p>"
-
-	return content
-}
-
-/*IsEmailAdrressValid take mail adrres, if adrress is valid return true.*/
-func IsEmailAdrressValid(email string) bool {
-	Re := regexp.MustCompile(regexForEmailValid)
-	return Re.MatchString(email)
-}
-
-/*InviteCodeGenerator generates the invite code*/
-func InviteCodeGenerator() string {
-
-	c := ""
-	for i := 0; i < 4; i++ {
-		i := seededRand.Intn(10)
-		s := stringWithCharset(1)
-		c = c + strconv.Itoa(i) + s
-	}
-	return c
-}
-
-/*GenerateResetPasswordToken generates the token for password reset*/
-func GenerateResetPasswordToken() string {
-
-	c := ""
-	for i := 0; i < 4; i++ {
-		s := stringWithCharset(1)
-		i := seededRand.Intn(10)
-		c = c + strconv.Itoa(i) + s
-	}
-	return c
-}
-
-func stringWithCharset(length int) string {
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[seededRand.Intn(len(charset))]
-	}
-	return string(b)
-}
-
-/*Send request to url that given as parameter and fetch title from HTML code.*/
-func FetchURL(url string) (string, error) {
-	response, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
-
-	dataInBytes, err := ioutil.ReadAll(response.Body)
-	pageContent := string(dataInBytes)
-
-	titleStartIndex := strings.Index(pageContent, "<title>")
-	if titleStartIndex == -1 {
-		return "", fmt.Errorf("No title element found")
-	}
-	// The start index of the title is the index of the first
-	// character, the < symbol. We don't want to include
-	// <title> as part of the final value, so let's offset
-	// the index by the number of characers in <title>
-	titleStartIndex += 7
-
-	titleEndIndex := strings.Index(pageContent, "</title>")
-	if titleEndIndex == -1 {
-		fmt.Println("No closing tag for title found.")
-		os.Exit(0)
-	}
-
-	pageTitle := []byte(pageContent[titleStartIndex:titleEndIndex])
-	return string(pageTitle), nil
-}
-
-func setCookie(w http.ResponseWriter, userNameOrEmail, password string) {
-	expire := time.Now().AddDate(0, 0, 1)
-	cookie := http.Cookie{
-		Name:    userNameOrEmail,
-		Value:   password,
-		Expires: expire,
-	}
-	http.SetCookie(w, &cookie)
-}
-
-func LoginUser(emailOrUserName, password string) (int, error) {
-
-	if IsEmailAdrressValid(emailOrUserName) {
-		exists, err := ExistsUserByEmail(emailOrUserName)
-		if err != nil {
-			return LoginError, err
-		}
-
-		if exists {
-			user, err := FindUserByEmailAndPassword(emailOrUserName, password)
-			if err != nil {
-				return LoginError, err
-			}
-			if user == nil {
-				return WrongPassword, nil
-			}
-			return LoginSuccessful, nil
-		}
-		return NoUserWithEmail, nil
-	}
-
-	exists, err := ExistsUserByUserName(emailOrUserName)
-	if err != nil {
-		return LoginError, err
-	}
-
-	if exists {
-		user, err := FindUserByUserNameAndPassword(emailOrUserName, password)
-		if err != nil {
-			return LoginError, err
-		}
-
-		if user == nil {
-			return WrongPassword, nil
-		}
-		return LoginSuccessful, nil
-	}
-	return NoUserWithUserName, nil
-}
-
-/*SendInvitemail send mail for invite to join*/
-/*TODO : These configurations are not perminant. These conf for gmail.We should add pass and etc*/
-func SendInvitemail(mailAddress, memo, inviteCode, userName string) {
-
-	pass := "...."
-	from := "our smtp mail adrress"
-	to := mailAddress
-	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	subject := "Subject: " + "TurkDev'e katılmaya davet edildiniz\n"
-
-	body := SetInviteMailBody(to, userName, memo, InviteCodeGenerator())
-	msg := []byte(subject + mime + "\n" + body)
-
-	err := smtp.SendMail("smtp.gmail.com:587",
-		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
-		from, []string{to}, msg)
-
-	if err != nil {
-		log.Printf("smtp error: %s", err)
-		return
-	}
-}
-
-/*SendForgotPasswordMail send to mail for reset password with resetPassword token*/
-//TODO: In lobsters they add coming ip for reset pass request. Should we do that? Do not forget to change "pass" and "to" variables.
-func SendForgotPasswordMail(mailAddress string) {
-
-	pass := "..."
-	from := "our smtp mail adrress"
-	to := mailAddress
-	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	subject := "Subject: " + "Şifre Sıfırlama\n"
-
-	token := GenerateResetPasswordToken()
-	body := SetResetPasswordMailBody(token)
-	msg := []byte(subject + mime + "\n" + body)
-
-	err := smtp.SendMail("smtp.gmail.com:587",
-		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
-		from, []string{to}, msg)
-
-	if err != nil {
-		log.Printf("smtp error: %s", err)
-		return
-	}
-}
-
 /*CalculateKarma calculates user's karma by its upvotes and downvotes*/
 func CalculateKarma(userID int) (int, error) {
-
 	stories, err := GetUserStoriesNotPaging(userID)
 	if err != nil {
 		log.Printf("An error occurred while calculating user's karma error: %s", err)

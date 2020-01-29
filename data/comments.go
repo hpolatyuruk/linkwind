@@ -172,7 +172,7 @@ func CheckIfCommentUpVotedByUser(userID int, commentID int) (bool, error) {
 	}
 	sql := "SELECT COUNT(*) as count FROM commentvotes WHERE userid = $1 and commentid = $2"
 	row := db.QueryRow(sql, userID, commentID)
-	var count int = 0
+	count := 0
 	err = row.Scan(&count)
 	if err != nil {
 		return false, &DBError{fmt.Sprintf("Cannot read db row. UserID: %d, CommentID: %d", userID, commentID), err}
@@ -202,6 +202,7 @@ func GetUserReplies(userID int) (replies *[]Reply, err error) {
 	return replies, nil
 }
 
+/*GetUserCommentsNotPaging get user's comments from db according to userID and not paging*/
 func GetUserCommentsNotPaging(userID int) (comments *[]Comment, err error) {
 	db, err := connectToDB()
 	defer db.Close()

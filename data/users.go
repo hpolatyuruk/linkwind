@@ -10,14 +10,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const (
-	LoginError = iota
-	LoginSuccessful
-	WrongPassword
-	NoUserWithEmail
-	NoUserWithUserName
-)
-
 /*User represents the user in database*/
 type User struct {
 	ID           int
@@ -90,7 +82,7 @@ func ExistsInviteCode(inviteCode string) (exists bool, err error) {
 	}
 	sql := "SELECT COUNT(*) AS count FROM users WHERE invitecode = $1"
 	row := db.QueryRow(sql, inviteCode)
-	var recordCount int = 0
+	recordCount := 0
 	err = row.Scan(&recordCount)
 	if err != nil {
 		return exists, &DBError{fmt.Sprintf("Cannot get record count for inviteCode: %s", inviteCode), err}
@@ -177,7 +169,7 @@ func ExistsUserByEmail(email string) (exists bool, err error) {
 	}
 	sql := "SELECT COUNT(*) AS count FROM users WHERE email = $1"
 	row := db.QueryRow(sql, email)
-	var recordCount int = 0
+	recordCount := 0
 	err = row.Scan(&recordCount)
 	if err != nil {
 		return exists, &DBError{fmt.Sprintf("Cannot read record count. Email: %s", email), err}
@@ -188,7 +180,7 @@ func ExistsUserByEmail(email string) (exists bool, err error) {
 	return exists, nil
 }
 
-/*ExistsUserByEmail check if user associated with user name exists on database*/
+/*ExistsUserByUserName check if user associated with user name exists on database*/
 func ExistsUserByUserName(userName string) (exists bool, err error) {
 	exists = false
 	db, err := connectToDB()
@@ -198,7 +190,7 @@ func ExistsUserByUserName(userName string) (exists bool, err error) {
 	}
 	sql := "SELECT COUNT(*) AS count FROM users WHERE username = $1"
 	row := db.QueryRow(sql, userName)
-	var recordCount int = 0
+	recordCount := 0
 	err = row.Scan(&recordCount)
 	if err != nil {
 		return exists, &DBError{fmt.Sprintf("Cannot read record count. UserName: %s", userName), err}
