@@ -78,3 +78,45 @@ func UpdateCustomer(customer *Customer) error {
 	}
 	return nil
 }
+
+/*ExistsCustomerByName check if customer associated with name exists on database*/
+func ExistsCustomerByName(name string) (exists bool, err error) {
+	exists = false
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return exists, err
+	}
+	sql := "SELECT COUNT(*) AS count FROM customers WHERE name = $1"
+	row := db.QueryRow(sql, name)
+	recordCount := 0
+	err = row.Scan(&recordCount)
+	if err != nil {
+		return exists, &DBError{fmt.Sprintf("Cannot read record count. name: %s", name), err}
+	}
+	if recordCount > 0 {
+		exists = true
+	}
+	return exists, nil
+}
+
+/*ExistsCustomerByEmail check if customer associated with email exists on database*/
+func ExistsCustomerByEmail(email string) (exists bool, err error) {
+	exists = false
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return exists, err
+	}
+	sql := "SELECT COUNT(*) AS count FROM customers WHERE email = $1"
+	row := db.QueryRow(sql, email)
+	recordCount := 0
+	err = row.Scan(&recordCount)
+	if err != nil {
+		return exists, &DBError{fmt.Sprintf("Cannot read record count. Email: %s", email), err}
+	}
+	if recordCount > 0 {
+		exists = true
+	}
+	return exists, nil
+}
