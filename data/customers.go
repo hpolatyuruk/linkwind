@@ -92,7 +92,7 @@ func ExistsCustomerByName(name string) (exists bool, err error) {
 	recordCount := 0
 	err = row.Scan(&recordCount)
 	if err != nil {
-		return exists, &DBError{fmt.Sprintf("Cannot read record count. name: %s", name), err}
+		return exists, &DBError{fmt.Sprintf("Cannot read record count. Name: %s", name), err}
 	}
 	if recordCount > 0 {
 		exists = true
@@ -119,4 +119,20 @@ func ExistsCustomerByEmail(email string) (exists bool, err error) {
 		exists = true
 	}
 	return exists, nil
+}
+
+/*GetCustomerByName get customer associated with name from database*/
+func GetCustomerByName(name string) (customer *Customer, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+	sql := "SELECT id, name, email, description, registeredon, domain FROM customers WHERE name = $1"
+	row := db.QueryRow(sql, name)
+	customer, err = MapSQLRowToCustomer(row)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read customer by name from db. Name: %s", name), err}
+	}
+	return customer, nil
 }
