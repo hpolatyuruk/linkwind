@@ -109,11 +109,11 @@ func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
 			&story.Title,
 			&story.Text,
 			&story.UpVotes,
-			&story.DownVotes,
 			&story.CommentCount,
 			&story.UserID,
 			&story.SubmittedOn,
 			pq.Array(&story.Tags),
+			&story.DownVotes,
 			&username)
 		if err != nil {
 			return nil, &DBError{fmt.Sprintf("Cannot read rows"), err}

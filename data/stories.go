@@ -62,16 +62,16 @@ func CreateStory(story *Story) error {
 	return nil
 }
 
-/*GetStories retunrs story list by provided paging parameters*/
-func GetStories(pageNumber, pageRowCount int) (*[]Story, error) {
+/*GetStories retunrs story list according to customer id by provided paging parameters*/
+func GetStories(customerID, pageNumber, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
 	// TODO(Huseyin): Sort it by point algorithim when sedat finishes it
-	sql := "SELECT stories.*, users.UserName FROM stories INNER JOIN users ON users.id = stories.userid LIMIT $1 OFFSET $2"
-	rows, err := db.Query(sql, pageRowCount, pageNumber*pageRowCount)
+	sql := "SELECT stories.*, users.UserName FROM stories INNER JOIN users ON users.id = stories.userid WHERE users.customerid = $1 LIMIT $2 OFFSET $3"
+	rows, err := db.Query(sql, customerID, pageRowCount, pageNumber*pageRowCount)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
 	}
@@ -213,14 +213,14 @@ func CheckIfUserSavedStory(userID int, storyID int) (bool, error) {
 }
 
 /*GetRecentStories returns the paging recently published stories*/
-func GetRecentStories(pageNumber int, pageRowCount int) (*[]Story, error) {
+func GetRecentStories(customerID, pageNumber, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
 	}
-	sql := "SELECT stories.*, users.username FROM stories INNER JOIN users ON stories.userid = users.id ORDER BY submittedon ASC LIMIT $1 OFFSET $2"
-	rows, err := db.Query(sql, pageRowCount, pageNumber*pageRowCount)
+	sql := "SELECT stories.*, users.username FROM stories INNER JOIN users ON stories.userid = users.id WHERE users.customerid = $1 ORDER BY submittedon ASC LIMIT $2 OFFSET $3"
+	rows, err := db.Query(sql, customerID, pageRowCount, pageNumber*pageRowCount)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
 	}
