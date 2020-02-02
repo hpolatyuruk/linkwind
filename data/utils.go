@@ -4,11 +4,18 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 
-	"github.com/joho/godotenv"
 	"github.com/lib/pq"
+)
+
+var (
+	DBHost        = "localhost"
+	DBPort        = "5432"
+	DBUser        = "postgres"
+	DBPassword    = "3842"
+	DBName        = "postgres"
+	JWTPrivateKey = "jwtprivatekeyfordebug"
 )
 
 /*DBError represents the database error*/
@@ -22,22 +29,13 @@ func (err *DBError) Error() string {
 }
 
 func connectionString() (conStr string, err error) {
-	err = godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading staging.env file. Error: %v", err)
-	}
-
-	host := os.Getenv("DBHost")
-	port, err := strconv.Atoi(os.Getenv("DBPort"))
+	port, err := strconv.Atoi(DBPort)
 	if err != nil {
 		log.Fatalf("Cannot parse db port. Error: %v", err)
 	}
-	user := os.Getenv("DBUser")
-	password := os.Getenv("DBPassword")
-	name := os.Getenv("DBName")
 
 	conStr = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, name)
+		DBHost, port, DBUser, DBPassword, DBName)
 
 	return conStr, err
 }
