@@ -2,6 +2,7 @@ package data
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/lib/pq"
@@ -269,4 +270,25 @@ func GetUserStoriesNotPaging(userID int) (*[]Story, error) {
 		return nil, &DBError{fmt.Sprintf("Cannot map sql rows to story struct array. UserID: %s", userID), err}
 	}
 	return stories, nil
+}
+
+/*CalculateStoryPenalty calculates story's penalty. If commentCount rises, penalty downs*/
+func CalculateStoryPenalty(commentCount int) int {
+	penalty := 40
+	for i := 0; i < 40; i++ {
+		if commentCount == i {
+			return penalty - i
+		}
+	}
+	return 0
+}
+
+/*CalculateStoryRank calcualte story's rank according to this formula :
+	 	  ((upVotes-downVotes)-1)^0.8
+Score =	———————————————————————————————— * penalty
+    	((submittedTime-time.Now)+2)^1.8              */
+func CalculateStoryRank(penalty, votes, timeDiff int) int {
+	floatScore := (math.Pow(float64(votes-1), 0.8) / math.Pow(float64(timeDiff+2), 1.8)) * float64(penalty)
+
+	return int(floatScore)
 }
