@@ -16,14 +16,14 @@ var (
 )
 
 /*UserSettingsHandler handles showing user profile detail*/
-func UserSettingsHandler(w http.ResponseWriter, r *http.Request) {
+func UserSettingsHandler(w http.ResponseWriter, r *http.Request) error {
 	title := "User Settings | Turk Dev"
 	userViewModel := models.User{"Anil Yuzener"}
 
 	userName := r.URL.Query().Get("username")
 	if len(userName) == 0 {
 		// TODO(Anil): There is no user. Show appropriate message here
-		return
+		return nil
 	}
 	user, err := data.GetUserByUserName(userName)
 	if err != nil {
@@ -49,10 +49,11 @@ func UserSettingsHandler(w http.ResponseWriter, r *http.Request) {
 			data,
 		},
 	)
+	return nil
 }
 
 /*SignInHandler handles users' signin operations*/
-func SignInHandler(w http.ResponseWriter, r *http.Request) {
+func SignInHandler(w http.ResponseWriter, r *http.Request) error {
 	title := "Sign-In | Turk Dev"
 	user := models.User{"Anil Yuzener"}
 	data := map[string]interface{}{
@@ -75,10 +76,12 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 		session.Values["authenticated"] = true
 		session.Save(r, w)
 	}*/
+
+	return nil
 }
 
 /*InviteUserHandler handles sending invitations to user*/
-func InviteUserHandler(w http.ResponseWriter, r *http.Request) {
+func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
 	title := "Invite a new user | Turk Dev"
 	user := models.User{"Anil Yuzener"}
 	data := map[string]interface{}{
@@ -94,15 +97,17 @@ func InviteUserHandler(w http.ResponseWriter, r *http.Request) {
 			data,
 		},
 	)
+	return nil
 }
 
 /*LogoutHandler set cookie authenticated is false.*/
-func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+func LogoutHandler(w http.ResponseWriter, r *http.Request) error {
 	session, _ := store.Get(r, "cookie-name")
 	session.Values["authenticated"] = false
 	session.Save(r, w)
 
 	// TODO : Redirect bla bla.
+	return nil
 }
 
 /*CheckCookieSet check cookie is "authenticated" or not.*/
