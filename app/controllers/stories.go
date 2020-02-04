@@ -6,6 +6,7 @@ import (
 	"turkdev/app/models"
 	"turkdev/app/templates"
 	"turkdev/data"
+	"turkdev/shared"
 )
 
 const (
@@ -15,36 +16,53 @@ const (
 
 /*StoriesHandler handles showing the popular published stories*/
 func StoriesHandler(w http.ResponseWriter, r *http.Request) {
-	title := "Turk Dev"
-	user := models.User{"Anil Yuzener"}
+	if r.URL.Path == "/" || r.URL.Path == "/index.html" {
+		title := "Turk Dev"
+		user := models.User{"Anil Yuzener"}
 
-	var page int = 0
-	strPage := r.URL.Query().Get("page")
-	if len(strPage) > 0 {
-		page, _ = strconv.Atoi(strPage)
+		var page int = 0
+		strPage := r.URL.Query().Get("page")
+		if len(strPage) > 0 {
+			page, _ = strconv.Atoi(strPage)
+		}
+		stories, err := data.GetStories(1, page, DefaultStoryCountPerPage)
+		if err != nil {
+			// TODO(Anil): Show error page here
+		}
+		if stories == nil || len(*stories) == 0 {
+			// TODO(Anil): There is no story yet. Show appropriate message here
+		}
+
+		pageData := map[string]interface{}{
+			"Content": "Stories",
+			"Stories": stories,
+		}
+
+		templates.Render(
+			w,
+			"stories/index.html",
+			models.ViewModel{
+				title,
+				user,
+				pageData,
+			},
+		)
+		return
 	}
-	stories, err := data.GetStories(page, DefaultStoryCountPerPage)
+
+	if r.URL.Path == "/robots.txt" {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("User-agent: *\nDisallow: /"))
+		return
+	}
+
+	byteValue, err := shared.ReadFile("app/static/html/404.html")
 	if err != nil {
-		// TODO(Anil): Show error page here
-	}
-	if stories == nil || len(*stories) == 0 {
-		// TODO(Anil): There is no story yet. Show appropriate message here
+		//fmt.Errorf("Error occured in readFile func. Original err : %v", err)
 	}
 
-	pageData := map[string]interface{}{
-		"Content": "Stories",
-		"Stories": stories,
-	}
-
-	templates.Render(
-		w,
-		"stories/index.html",
-		models.ViewModel{
-			title,
-			user,
-			pageData,
-		},
-	)
+	w.WriteHeader(404)
+	w.Write(byteValue)
 }
 
 /*RecentStoriesHandler handles showing recently published stories*/
@@ -57,7 +75,7 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	if len(strPage) > 0 {
 		page, _ = strconv.Atoi(strPage)
 	}
-	stories, err := data.GetRecentStories(page, DefaultStoryCountPerPage)
+	stories, err := data.GetRecentStories(1, page, DefaultStoryCountPerPage)
 	if err != nil {
 		// TODO(Anil): Show error page here
 	}

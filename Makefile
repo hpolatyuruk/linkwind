@@ -4,11 +4,10 @@ ASMFLAGS=-asmflags=-trimpath=$GOPATH
 build:
 	$(eval file := $(FILE))
 	$(eval variables := $(shell cat ${file}))
-	$(eval combinedflags := $(foreach v,$(variables),-X main.$(v)))
-	$(eval combinedflags := $(foreach v,$(variables),-X main.$(v)))
+	$(eval combinedflags := $(foreach v,$(variables),-X turkdev/data.$(v)))
 	$(eval LDFLAGS=-ldflags "$(combinedflags)")
 ifeq ($(FILE), .env.dev)
-	go build $(LDFLAGS) $(GCFLAGS) $(ASMFLAGS) -o main ./settings
+	go build $(LDFLAGS) $(GCFLAGS) $(ASMFLAGS) -o main.exe turkdev
 else
 	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) $(GCFLAGS) $(ASMFLAGS) -o main ./settings
 endif

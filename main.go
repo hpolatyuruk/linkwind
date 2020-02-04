@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	templates.Initialize()
 
 	http.HandleFunc("/", controllers.StoriesHandler)
