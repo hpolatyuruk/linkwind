@@ -16,7 +16,7 @@ CREATE TABLE public.users
     invitecode character varying(15) COLLATE pg_catalog."default",
     karma double precision NOT NULL DEFAULT 0,
     username character varying(15) COLLATE pg_catalog."default" NOT NULL,
-    id integer NOT NULL DEFAULT nextval('users_id_seq'::regclass),
+    id serial,
     registeredon timestamp with time zone NOT NULL,
     customerid integer,
     CONSTRAINT users_pkey PRIMARY KEY (id),

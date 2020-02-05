@@ -45,7 +45,7 @@ func CreateStory(story *Story) error {
 	if err != nil {
 		return err
 	}
-	sql := "INSERT INTO stories (url, title, text, tags, upvotes,downvotes,  commentcount, userid, submittedon) VALUES($1, $2, $3, $4, $5, $6, $7, $8)"
+	sql := "INSERT INTO stories (url, title, text, tags, upvotes, downvotes,  commentcount, userid, submittedon) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)"
 	_, err = db.Exec(
 		sql,
 		story.URL,

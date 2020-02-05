@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 	"turkdev/app/models"
-	"turkdev/app/templates"
+	"turkdev/app/src/templates"
 	"turkdev/data"
 )
 
@@ -18,12 +20,13 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) {
 	title := "Turk Dev"
 	user := models.User{"Anil Yuzener"}
 
+	var customerID int = 0
 	var page int = 0
 	strPage := r.URL.Query().Get("page")
 	if len(strPage) > 0 {
 		page, _ = strconv.Atoi(strPage)
 	}
-	stories, err := data.GetStories(page, DefaultStoryCountPerPage)
+	stories, err := data.GetStories(customerID, page, DefaultStoryCountPerPage)
 	if err != nil {
 		// TODO(Anil): Show error page here
 	}
@@ -32,7 +35,6 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pageData := map[string]interface{}{
-		"Content": "Stories",
 		"Stories": stories,
 	}
 
@@ -52,14 +54,16 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	title := "Recent Stories | Turk Dev"
 	user := models.User{"Anil Yuzener"}
 
+	var customerID int = 0
 	var page int = 0
 	strPage := r.URL.Query().Get("page")
 	if len(strPage) > 0 {
 		page, _ = strconv.Atoi(strPage)
 	}
-	stories, err := data.GetRecentStories(page, DefaultStoryCountPerPage)
+	stories, err := data.GetRecentStories(customerID, page, DefaultStoryCountPerPage)
 	if err != nil {
 		// TODO(Anil): Show error page here
+
 	}
 
 	data := map[string]interface{}{
@@ -122,6 +126,18 @@ func SavedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 
 /*SubmitStoryHandler handles to submit a new story*/
 func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+	case "GET":
+		handleSubmitGET(w, r)
+	case "POST":
+		handleSubmitPOST(w, r)
+	default:
+		handleSubmitGET(w, r)
+	}
+}
+
+func handleSubmitGET(w http.ResponseWriter, r *http.Request) {
 	title := "Submit Story | Turk Dev"
 	user := models.User{"Anil Yuzener"}
 
@@ -146,4 +162,33 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) {
 			data,
 		},
 	)
+}
+
+func handleSubmitPOST(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		// TODO: log err here
+		fmt.Fprintf(w, "Story submit form parsing error: %v", err)
+	}
+
+	title := r.FormValue("title")
+	url := r.FormValue("url")
+	text := r.FormValue("text")
+
+	var story data.Story
+	story.Title = title
+	story.URL = url
+	story.Text = text
+	story.CommentCount = 0
+	story.UpVotes = 0
+	story.SubmittedOn = time.Now()
+	story.UserID = 2 // TODO: use actual user id here
+
+	err := data.CreateStory(&story)
+
+	if err != nil {
+		// TODO: log error here
+		fmt.Fprintf(w, "Error creating story: %v", err)
+		return
+	}
+	fmt.Fprintf(w, "Succeeded!")
 }

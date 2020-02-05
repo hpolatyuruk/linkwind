@@ -1,0 +1,35 @@
+{
+  "name": "turkdev",
+  "version": "1.0.0",
+  "description": "turkdev",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hpolatyuruk/turkdev.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hpolatyuruk/turkdev/issues"
+  },
+  "homepage": "https://github.com/hpolatyuruk/turkdev#readme",
+  "devDependencies": {
+    "@fullhuman/postcss-purgecss": "^2.0.5",
+    "css-loader": "^3.4.2",
+    "mini-css-extract-plugin": "^0.9.0",
+    "optimize-css-assets-webpack-plugin": "^5.0.3",
+    "postcss": "^7.0.26",
+    "postcss-loader": "^3.0.0",
+    "style-loader": "^1.1.3",
+    "tailwindcss": "^1.1.4",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10"
+  },
+  "dependencies": {
+    "stimulus": "^1.1.1"
+  }
+}

@@ -4,16 +4,15 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"strconv"
 
 	"github.com/lib/pq"
 )
 
 var (
 	DBHost        = "localhost"
-	DBPort        = "5432"
+	DBPort        = "5433"
 	DBUser        = "postgres"
-	DBPassword    = "3842"
+	DBPassword    = "123456"
 	DBName        = "postgres"
 	JWTPrivateKey = "jwtprivatekeyfordebug"
 )
@@ -29,13 +28,9 @@ func (err *DBError) Error() string {
 }
 
 func connectionString() (conStr string, err error) {
-	port, err := strconv.Atoi(DBPort)
-	if err != nil {
-		log.Fatalf("Cannot parse db port. Error: %v", err)
-	}
 
-	conStr = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		DBHost, port, DBUser, DBPassword, DBName)
+	conStr = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		DBHost, DBPort, DBUser, DBPassword, DBName)
 
 	return conStr, err
 }

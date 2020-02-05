@@ -1,12 +1,13 @@
 package templates
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"path/filepath"
 )
 
-var templatesPath = "./app/templates/"
+var templatesPath = "./app/src/templates/"
 var categories = []string{"comments", "stories", "users"}
 var pseudoTmpl string = `{{define "main"}}{{template "base" .}}{{end}}`
 var templates map[string]*template.Template
@@ -56,6 +57,7 @@ func Render(w http.ResponseWriter, tmpl string, data interface{}) {
 
 	err := t.Execute(w, data)
 	if err != nil {
+		fmt.Print(err)
 		http.Error(w, "Cannot parse template", http.StatusInternalServerError)
 	}
 }

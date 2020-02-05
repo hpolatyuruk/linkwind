@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 	"turkdev/app/controllers"
-	"turkdev/app/templates"
+	"turkdev/app/src/templates"
 )
 
 func main() {
@@ -13,16 +13,17 @@ func main() {
 	http.HandleFunc("/", controllers.StoriesHandler)
 	http.HandleFunc("/recent", controllers.RecentStoriesHandler)
 	http.HandleFunc("/comments", controllers.CommentsHandler)
-	http.HandleFunc("/stories/new", controllers.SubmitStoryHandler)
+	http.HandleFunc("/submit", controllers.SubmitStoryHandler)
 	http.HandleFunc("/saved", controllers.SavedStoriesHandler)
 	http.HandleFunc("/invite", controllers.InviteUserHandler)
 	http.HandleFunc("/replies", controllers.RepliesHandler)
-	http.HandleFunc("/settings", controllers.UserSettingsHandler)
+	http.HandleFunc("/users/settings", controllers.UserSettingsHandler)
+	http.HandleFunc("/signup", controllers.SignUpHandler)
 	http.HandleFunc("/login", controllers.SignInHandler)
 
-	staticFileServer := http.FileServer(http.Dir("app/static/"))
+	staticFileServer := http.FileServer(http.Dir("app/dist/"))
 
-	http.Handle("/static/", http.StripPrefix("/static/", staticFileServer))
+	http.Handle("/dist/", http.StripPrefix("/dist/", staticFileServer))
 
 	http.ListenAndServe(":80", nil)
 }

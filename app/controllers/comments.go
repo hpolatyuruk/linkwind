@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"turkdev/app/models"
-	"turkdev/app/templates"
+	"turkdev/app/src/templates"
 	"turkdev/data"
 )
 
