@@ -66,7 +66,7 @@ func notFoundHandler(f func(http.ResponseWriter, *http.Request) error) http.Hand
 			return
 		}
 
-		byteValue, err := shared.ReadFile("app/static/html/404.html")
+		byteValue, err := shared.ReadFile("app/src/templates/errors/404.html")
 		if err != nil {
 			log.Printf("Error occured in readFile func. Original err : %v", err)
 		}
