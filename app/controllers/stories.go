@@ -61,7 +61,6 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("Error occured in readFile func. Original err : %v", err)
 	}
-
 	w.WriteHeader(404)
 	w.Write(byteValue)
 	return nil
