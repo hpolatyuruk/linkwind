@@ -8,7 +8,6 @@ import (
 	"turkdev/app/models"
 	"turkdev/app/src/templates"
 	"turkdev/data"
-	"turkdev/shared"
 )
 
 const (
@@ -17,7 +16,7 @@ const (
 )
 
 /*StoriesHandler handles showing the popular published stories*/
-func StoriesHandler(w http.ResponseWriter, r *http.Request) {
+func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	title := "Turk Dev"
 	user := models.User{"Anil Yuzener"}
 
@@ -39,12 +38,15 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) {
 		"Stories": stories,
 	}
 
-	byteValue, err := shared.ReadFile("app/static/html/404.html")
-	if err != nil {
-		return fmt.Errorf("Error occured in readFile func. Original err : %v", err)
-	}
-	w.WriteHeader(404)
-	w.Write(byteValue)
+	templates.Render(
+		w,
+		"stories/index.html",
+		models.ViewModel{
+			title,
+			user,
+			pageData,
+		},
+	)
 	return nil
 }
 
@@ -53,13 +55,13 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	title := "Recent Stories | Turk Dev"
 	user := models.User{"Anil Yuzener"}
 
-	var customerID int = 0
+	var customerID int = 1 // TODO: get actual customer id here
 	var page int = 0
 	strPage := r.URL.Query().Get("page")
 	if len(strPage) > 0 {
 		page, _ = strconv.Atoi(strPage)
 	}
-	stories, err := data.GetRecentStories(1, page, DefaultStoryCountPerPage)
+	stories, err := data.GetRecentStories(customerID, page, DefaultStoryCountPerPage)
 	if err != nil {
 		// TODO(Anil): Show error page here
 
