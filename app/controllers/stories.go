@@ -129,16 +129,20 @@ func SavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*SubmitStoryHandler handles to submit a new story*/
 func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
+	switch r.Method {
+	case "GET":
+		return handlesSubmitGET(w, r)
+	case "POST":
+		return handleSubmitPOST(w, r)
+	default:
+		return handlesSubmitGET(w, r)
+	}
+}
+
+func handlesSubmitGET(w http.ResponseWriter, r *http.Request) error {
+
 	title := "Submit Story | Turk Dev"
 	user := models.User{"Anil Yuzener"}
-
-	// TODO(Anil): Get story data from html form and map them to below story struct
-
-	var story data.Story = data.Story{}
-	err := data.CreateStory(&story)
-	if err != nil {
-		// TODO(Anil): Show error page here
-	}
 
 	data := map[string]interface{}{
 		"Content": "Submit Story",
@@ -156,7 +160,7 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func handleSubmitPOST(w http.ResponseWriter, r *http.Request) {
+func handleSubmitPOST(w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
 		// TODO: log err here
 		fmt.Fprintf(w, "Story submit form parsing error: %v", err)
@@ -180,7 +184,8 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// TODO: log error here
 		fmt.Fprintf(w, "Error creating story: %v", err)
-		return
+		return err
 	}
 	fmt.Fprintf(w, "Succeeded!")
+	return nil
 }
