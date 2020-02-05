@@ -14,7 +14,7 @@ func main() {
 
 	http.HandleFunc("/users/settings", errorHandler(controllers.UserSettingsHandler))
 	http.HandleFunc("/signup", controllers.SignUpHandler)
-	http.HandleFunc("/", errorHandler(controllers.StoriesHandler))
+	http.HandleFunc("/", notFoundHandler(controllers.StoriesHandler))
 	http.HandleFunc("/recent", errorHandler(controllers.RecentStoriesHandler))
 	http.HandleFunc("/comments", errorHandler(controllers.CommentsHandler))
 	http.HandleFunc("/submit", errorHandler(controllers.SubmitStoryHandler))
@@ -43,5 +43,34 @@ func errorHandler(f func(http.ResponseWriter, *http.Request) error) http.Handler
 			w.WriteHeader(500)
 			w.Write(byteValue)
 		}
+	}
+}
+
+func notFoundHandler(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
+			err := f(w, r)
+			if err != nil {
+				byteValue, err := shared.ReadFile("app/src/templates/errors/500.html")
+				if err != nil {
+					log.Printf("Error occured in readFile func. Original err : %v", err)
+				}
+				w.WriteHeader(500)
+				w.Write(byteValue)
+			}
+		}
+
+		if r.URL.Path == "/robots.txt" {
+			w.Header().Set("Content-Type", "text/plain")
+			w.Write([]byte("User-agent: *\nDisallow: /"))
+			return
+		}
+
+		byteValue, err := shared.ReadFile("app/static/html/404.html")
+		if err != nil {
+			log.Printf("Error occured in readFile func. Original err : %v", err)
+		}
+		w.WriteHeader(404)
+		w.Write(byteValue)
 	}
 }
