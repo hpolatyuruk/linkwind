@@ -49,3 +49,18 @@ func setCookie(w http.ResponseWriter, userNameOrEmail, password string) {
 	}
 	http.SetCookie(w, &cookie)
 }
+
+func ReadFile(filePath string) ([]byte, error) {
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0660)
+	if err != nil {
+		return nil, fmt.Errorf("Error occured when open %s file. Original err: %v", filePath, err)
+	}
+	defer file.Close()
+
+	byteValue, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("Error occured when read %s file. Original err: %v", filePath, err)
+	}
+
+	return byteValue, err
+}

@@ -15,3 +15,8 @@
 .env.staging
 .env.production
 node_modules/
+
+# Ignoring env files
+.env.dev
+.env.staging
+.env.prod

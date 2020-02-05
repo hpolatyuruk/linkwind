@@ -8,6 +8,7 @@ import (
 	"turkdev/app/models"
 	"turkdev/app/src/templates"
 	"turkdev/data"
+	"turkdev/shared"
 )
 
 const (
@@ -38,19 +39,17 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) {
 		"Stories": stories,
 	}
 
-	templates.Render(
-		w,
-		"stories/index.html",
-		models.ViewModel{
-			title,
-			user,
-			pageData,
-		},
-	)
+	byteValue, err := shared.ReadFile("app/static/html/404.html")
+	if err != nil {
+		return fmt.Errorf("Error occured in readFile func. Original err : %v", err)
+	}
+	w.WriteHeader(404)
+	w.Write(byteValue)
+	return nil
 }
 
 /*RecentStoriesHandler handles showing recently published stories*/
-func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) {
+func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	title := "Recent Stories | Turk Dev"
 	user := models.User{"Anil Yuzener"}
 
@@ -60,7 +59,7 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	if len(strPage) > 0 {
 		page, _ = strconv.Atoi(strPage)
 	}
-	stories, err := data.GetRecentStories(customerID, page, DefaultStoryCountPerPage)
+	stories, err := data.GetRecentStories(1, page, DefaultStoryCountPerPage)
 	if err != nil {
 		// TODO(Anil): Show error page here
 
@@ -80,10 +79,11 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) {
 			data,
 		},
 	)
+	return nil
 }
 
 /*SavedStoriesHandler handles showing the saved stories of a user*/
-func SavedStoriesHandler(w http.ResponseWriter, r *http.Request) {
+func SavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	title := "Saved Stories | Turk Dev"
 	user := models.User{"Anil Yuzener"}
 
@@ -91,12 +91,12 @@ func SavedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	strUserID := r.URL.Query().Get("userID")
 	if len(strUserID) == 0 {
 		// TODO (Anil): Show user not found message.
-		return
+		return nil
 	}
 	userID, err := strconv.Atoi(strUserID)
 	if err != nil {
 		// TODO(Anil): Cannot parse to int. Show user not found message.
-		return
+		return nil
 	}
 	var page int = 0
 	strPage := r.URL.Query().Get("page")
@@ -122,22 +122,11 @@ func SavedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 			data,
 		},
 	)
+	return nil
 }
 
 /*SubmitStoryHandler handles to submit a new story*/
-func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) {
-
-	switch r.Method {
-	case "GET":
-		handleSubmitGET(w, r)
-	case "POST":
-		handleSubmitPOST(w, r)
-	default:
-		handleSubmitGET(w, r)
-	}
-}
-
-func handleSubmitGET(w http.ResponseWriter, r *http.Request) {
+func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 	title := "Submit Story | Turk Dev"
 	user := models.User{"Anil Yuzener"}
 
@@ -162,6 +151,7 @@ func handleSubmitGET(w http.ResponseWriter, r *http.Request) {
 			data,
 		},
 	)
+	return nil
 }
 
 func handleSubmitPOST(w http.ResponseWriter, r *http.Request) {
