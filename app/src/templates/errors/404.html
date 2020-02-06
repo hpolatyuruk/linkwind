@@ -1,27 +1,54 @@
-{{define "base"}}
 <!DOCTYPE html>
 <html>
   <head>
+    <style>
+      #container
+      {
+        width: 760px;
+        height: 550px;
+        background-color: FFFFFF;
+        position: absolute;
+        left: 27%;
+        top: 19%;
+        margin-left: -50px;
+        margin-top: -50px;  
+      }
+      div.a {
+       text-align: center;
+       font-size: 60px;
+       font-weight: bold;
+      }
+      div.b {
+       text-align: center;
+       font-size: 40px;
+       font-weight: bold;
+      }
+    </style>
     <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
-
     <link rel="stylesheet" href="/dist/app.css" />
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
     <title>404-Page Not Found</title>
   </head>
 
-  <body>
+  <body style="background:rgb(16, 16, 16)">
+    <div id="container">
+      <div class="a" style="color:rgb(59, 59, 59)">
+        <b><h1>404</h1></b>
+      </div>
+      <div class="b" style="color:rgb(59, 59, 59)">
+        <p<h2>Page Not Found : (</h2></p>
+      </div>
+    </div>
     <div class="container mx-auto">
       <div class="flex flex-wrap">
         <div class="w-full">
-            <p><h1>404 - Page Not Found : (</h1></p>
         </div>
       </div>
     </div>
     <script src="/dist/app.js"></script>
   </body>
 </html>
-{{end}}
