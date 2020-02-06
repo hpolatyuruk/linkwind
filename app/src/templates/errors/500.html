@@ -1,7 +1,48 @@
-{{define "base"}}
 <!DOCTYPE html>
 <html>
   <head>
+    <style>
+      #container
+      {
+        width: 760px;
+        height: 550px;
+        background-color: FFFFFF;
+        position: absolute;
+        left: 27%;
+        top: 19%;
+        margin-left: -50px;
+        margin-top: -50px;  
+      }
+      div.a {
+       text-align: center;
+       font-size: 80px;
+       font-weight: bold;
+      }
+      div.b {
+       text-align: center;
+       font-size: 30px;
+       font-weight: bold;
+      }
+      div.c {
+       text-align: center;
+       font-size: 15px;
+      }
+      a:link {
+  color:rgb(29, 61, 169);
+  background-color: transparent;
+  text-decoration: none;
+}
+a:visited {
+  color: rgb(102, 74, 79);
+  background-color: transparent;
+  text-decoration: none;
+}
+a:hover {
+  color: rgb(29, 61, 169);
+  background-color: transparent;
+  text-decoration: underline;
+}
+    </style>
     <meta charset="utf-8" />
     <meta
       name="viewport"
@@ -13,15 +54,27 @@
     <title>500 - Something went wrong :(</title>
   </head>
 
-  <body>
+  <body style="background:rgb(16, 16, 16)">
+    <div id="container">
+      <br /><br />
+      <div class="a" style="color:rgb(59, 59, 59)">
+      <p<h1>:/</h1></p>
+      </div>
+      <br /><br />
+      <div class="b" style="color:rgb(59, 59, 59)">
+        <p<h2>Something went wrong</h2></p>
+      </div>
+      <br /><br />
+      <div class="c" style="color:rgb(59, 59, 59)">
+        <a href="/index.html">Return to home page</a>       
+      </div>
+    </div>
     <div class="container mx-auto">
       <div class="flex flex-wrap">
         <div class="w-full">
-            <p><h1>Something went wrong :(</h1></p>
         </div>
       </div>
     </div>
     <script src="/dist/app.js"></script>
   </body>
 </html>
-{{end}}

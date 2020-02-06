@@ -60,19 +60,16 @@ func notFoundHandler(f func(http.ResponseWriter, *http.Request) error) http.Hand
 				w.WriteHeader(500)
 				w.Write(byteValue)
 			}
-		}
-
-		if r.URL.Path == "/robots.txt" {
+		} else if r.URL.Path == "/robots.txt" {
 			w.Header().Set("Content-Type", "text/plain")
 			w.Write([]byte("User-agent: *\nDisallow: /"))
-			return
+		} else {
+			byteValue, err := shared.ReadFile("app/src/templates/errors/404.html")
+			if err != nil {
+				log.Printf("Error occured in readFile func. Original err : %v", err)
+			}
+			w.WriteHeader(404)
+			w.Write(byteValue)
 		}
-
-		byteValue, err := shared.ReadFile("app/src/templates/errors/404.html")
-		if err != nil {
-			log.Printf("Error occured in readFile func. Original err : %v", err)
-		}
-		w.WriteHeader(404)
-		w.Write(byteValue)
 	}
 }
