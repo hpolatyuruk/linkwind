@@ -10,9 +10,9 @@ import (
 
 var (
 	DBHost        = "localhost"
-	DBPort        = "5433"
+	DBPort        = "5432"
 	DBUser        = "postgres"
-	DBPassword    = "123456"
+	DBPassword    = "3842"
 	DBName        = "postgres"
 	JWTPrivateKey = "jwtprivatekeyfordebug"
 )
