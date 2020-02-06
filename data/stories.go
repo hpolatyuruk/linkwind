@@ -267,7 +267,7 @@ func GetUserStoriesNotPaging(userID int) (*[]Story, error) {
 
 	stories, err := MapSQLRowsToStories(rows)
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("Cannot map sql rows to story struct array. UserID: %s", userID), err}
+		return nil, &DBError{fmt.Sprintf("Cannot map sql rows to story struct array. UserID: %d", userID), err}
 	}
 	return stories, nil
 }
