@@ -11,13 +11,20 @@ import (
 
 func main() {
 
-	templates.Initialize()
+	err := templates.Initialize()
+
+	if err != nil {
+		fmt.Printf("An error occurred while initializing templates. Error: %v", err)
+		http.ListenAndServe(":80", nil)
+		//panic(err)
+		return
+	}
 
 	http.HandleFunc("/users/settings", errorHandler(controllers.UserSettingsHandler))
 	http.HandleFunc("/signup", controllers.SignUpHandler)
 	http.HandleFunc("/", notFoundHandler(controllers.StoriesHandler))
 	http.HandleFunc("/recent", errorHandler(controllers.RecentStoriesHandler))
-	http.HandleFunc("/comments", errorHandler(controllers.CommentsHandler))
+	http.HandleFunc("/detal", errorHandler(controllers.StoryDetailHandler))
 	http.HandleFunc("/submit", errorHandler(controllers.SubmitStoryHandler))
 	http.HandleFunc("/saved", errorHandler(controllers.SavedStoriesHandler))
 	http.HandleFunc("/invite", errorHandler(controllers.InviteUserHandler))
