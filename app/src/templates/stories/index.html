@@ -1,3 +1,21 @@
-{{ define "title" }}{{.Title}}{{ end }} {{define "content"}} {{range .Data}}
-<div>title here</div>
+{{ define "title" }}{{.Title}}{{ end }} {{define "content"}} {{range .Stories}}
+<div class="flex flex-wrap w-full mt-2">
+  <div class="flex-row w-full">
+    <div class="voters">
+      <a class="upvoter" title="Add upvote"></a>
+    </div>
+    <div>
+      <a href="{{.URL}}" target="_blank" class="text-indigo-600 font-semibold"
+        >{{.Title}}</a
+      >
+    </div>
+  </div>
+  <div class="flex-row w-full text-xs font-medium text-gray-600 ml-10">
+    <span
+      >{{.Points}} points by {{.UserName}} {{.SubmittedOnText}} |
+      {{.CommentCount}} comments</span
+    >
+  </div>
+</div>
+
 {{end}} {{end}}

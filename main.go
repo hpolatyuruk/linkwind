@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"turkdev/app/controllers"
@@ -35,6 +36,7 @@ func errorHandler(f func(http.ResponseWriter, *http.Request) error) http.Handler
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := f(w, r)
 		if err != nil {
+			fmt.Printf("Error: %v", err)
 			//logger.Error("Returned 500 internal server error! - " + r.Host + r.RequestURI + " - " + err.Error())
 			byteValue, err := shared.ReadFile("app/src/templates/errors/500.html")
 			if err != nil {
