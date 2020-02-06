@@ -13,37 +13,41 @@ var pseudoTmpl string = `{{define "main"}}{{template "base" .}}{{end}}`
 var templates map[string]*template.Template
 
 /*Initialize initializes all base and child templates*/
-func Initialize() {
+func Initialize() error {
 	if templates == nil {
 		templates = make(map[string]*template.Template)
 	}
 
 	baseTemplates, err := filepath.Glob(templatesPath + "base/*.html")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	base := template.New("main")
 	base, err = base.Parse(pseudoTmpl)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	for _, category := range categories {
 		pages, err := filepath.Glob(templatesPath + category + "/*.html")
 		if err != nil {
-			panic(err)
+			return err
 		}
 		for _, page := range pages {
 			f := category + "/" + filepath.Base(page)
 			files := append(baseTemplates, page)
 			templates[f], err = base.Clone()
 			if err != nil {
-				panic(err)
+				return err
 			}
-			templates[f] = template.Must(templates[f].ParseFiles(files...))
+			templates[f], err = templates[f].ParseFiles(files...)
+			if err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 /*Render renders templates by given parameters*/

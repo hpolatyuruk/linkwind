@@ -22,7 +22,8 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	title := "Turk Dev"
 	user := models.User{"Anil Yuzener"}
 
-	var customerID int = 1
+	var customerID int = 1 // TODO: get actual customer ID here
+	var userID int = 2     // TODO: get actual signedin user ID here
 	var page int = 0
 	strPage := r.URL.Query().Get("page")
 	if len(strPage) > 0 {
@@ -30,10 +31,11 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	stories, err := data.GetStories(customerID, page, DefaultStoryCountPerPage)
 	if err != nil {
-		// TODO(Anil): Show error page here
+		return err
 	}
 	if stories == nil || len(*stories) == 0 {
-		// TODO(Anil): There is no story yet. Show appropriate message here
+		// TODO: There is no story yet. Show appropriate message here
+		return nil
 	}
 
 	templates.Render(
@@ -42,7 +44,7 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		models.StoryPageData{
 			User:    user,
 			Title:   title,
-			Stories: *mapStoriesToStoryViewModel(stories),
+			Stories: *mapStoriesToStoryViewModel(stories, userID),
 			//Stories: []data.Story{{URL: "1"}, {URL: "2"}},
 		},
 	)
@@ -55,6 +57,7 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	user := models.User{"Anil Yuzener"}
 
 	var customerID int = 1 // TODO: get actual customer id here
+	var userID int = 2     // TODO: get actual user id here
 	var page int = 0
 	strPage := r.URL.Query().Get("page")
 	if len(strPage) > 0 {
@@ -72,7 +75,7 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		models.StoryPageData{
 			Title:   title,
 			User:    user,
-			Stories: *mapStoriesToStoryViewModel(stories),
+			Stories: *mapStoriesToStoryViewModel(stories, userID),
 		},
 	)
 	return nil
@@ -133,6 +136,46 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 }
 
+/*StoryDetailHandler handles showing comments by giving story id*/
+func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
+	title := "Comments | Turk Dev"
+	user := models.User{"Anil Yuzener"}
+
+	strStoryID := r.URL.Query().Get("storyid")
+	if len(strStoryID) == 0 {
+		// TODO: Story cannot be found. Show appropriate message here.
+		return nil
+	}
+	storyID, err := strconv.Atoi(strStoryID)
+	if err != nil {
+		// TODO(Anil): Cannot parse to int. Show story not found message.
+		return nil
+	}
+	comments, err := data.GetComments(storyID)
+	if err != nil {
+		// TODO(Anil): show error page here
+	}
+	if comments == nil || len(*comments) == 0 {
+		// TODO(Anil): There is no comment yet. Show appropriate message here
+	}
+
+	data := map[string]interface{}{
+		"Content":  "Comments",
+		"Comments": comments,
+	}
+
+	templates.Render(
+		w,
+		"stories/detail.html",
+		models.ViewModel{
+			title,
+			user,
+			data,
+		},
+	)
+	return nil
+}
+
 func handlesSubmitGET(w http.ResponseWriter, r *http.Request) error {
 
 	title := "Submit Story | Turk Dev"
@@ -191,7 +234,7 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func mapStoriesToStoryViewModel(stories *[]data.Story) *[]models.StoryViewModel {
+func mapStoriesToStoryViewModel(stories *[]data.Story, signedInUserID int) *[]models.StoryViewModel {
 	var viewModels []models.StoryViewModel
 
 	for _, story := range *stories {
@@ -205,6 +248,22 @@ func mapStoriesToStoryViewModel(stories *[]data.Story) *[]models.StoryViewModel 
 			CommentCount:    story.CommentCount,
 			SubmittedOnText: generateSubmittedOnText(story.SubmittedOn),
 		}
+		isUpvoted, err := data.CheckIfStoryUpVotedByUser(signedInUserID, story.ID)
+
+		if err != nil {
+			// TODO: log error here
+			isUpvoted = false
+		}
+
+		isSaved, err := data.CheckIfUserSavedStory(signedInUserID, story.ID)
+
+		if err != nil {
+			// TODO: log error here
+			isSaved = false
+		}
+		viewModel.IsUpvotedSignedInUser = isUpvoted
+		viewModel.IsSavedBySignedInUser = isSaved
+
 		viewModels = append(viewModels, viewModel)
 	}
 	return &viewModels

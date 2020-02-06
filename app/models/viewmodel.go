@@ -7,14 +7,16 @@ type StoryPageData struct {
 }
 
 type StoryViewModel struct {
-	ID              int
-	Title           string
-	URL             string
-	UserID          int
-	UserName        string
-	Points          int
-	CommentCount    int
-	SubmittedOnText string
+	ID                    int
+	Title                 string
+	URL                   string
+	UserID                int
+	UserName              string
+	Points                int
+	CommentCount          int
+	SubmittedOnText       string
+	IsSavedBySignedInUser bool
+	IsUpvotedSignedInUser bool
 }
 
 type ViewModel struct {
