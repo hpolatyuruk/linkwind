@@ -183,23 +183,23 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if err := r.ParseForm(); err != nil {
-		return err
+		return fmt.Errorf("Error occured when parse from. Error : %v", err)
 	}
 
 	userIDStr := r.FormValue("userID")
 	storyIDStr := r.FormValue("storyID")
 	userID, err := strconv.Atoi(userIDStr)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error occured when convert string userID to int userID. Error : %v", err)
 	}
 	storyID, err := strconv.Atoi(storyIDStr)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error occured when convert string storyID to int storyID. Error : %v", err)
 	}
 
 	isUpvoted, err := data.CheckIfStoryUpVotedByUser(userID, storyID)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error occured when check user save story. Error : %v", err)
 	}
 	if isUpvoted {
 		return nil
@@ -207,7 +207,7 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) error {
 
 	err = data.UpVoteStory(userID, storyID)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error occured when upvote story. Error : %v", err)
 	}
 	return nil
 }
@@ -219,23 +219,23 @@ func UnvoteStoryHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if err := r.ParseForm(); err != nil {
-		return err
+		return fmt.Errorf("Error occured when parse from. Error : %v", err)
 	}
 
 	userIDStr := r.FormValue("userID")
 	storyIDStr := r.FormValue("storyID")
 	userID, err := strconv.Atoi(userIDStr)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error occured when convert string userID to int userID. Error : %v", err)
 	}
 	storyID, err := strconv.Atoi(storyIDStr)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error occured when convert string storyID to int storyID. Error : %v", err)
 	}
 
 	isUpvoted, err := data.CheckIfStoryUpVotedByUser(userID, storyID)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error occured when check user save story. Error : %v", err)
 	}
 	if isUpvoted == false {
 		return nil
@@ -243,7 +243,81 @@ func UnvoteStoryHandler(w http.ResponseWriter, r *http.Request) error {
 
 	err = data.UnVoteStory(userID, storyID)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error occured when unvote story. Error : %v", err)
+	}
+	return nil
+}
+
+/*SaveStoryHandler saves a story for user*/
+func SaveStoryHandler(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		return fmt.Errorf("Reqeuest should be POSTm request")
+	}
+
+	if err := r.ParseForm(); err != nil {
+		return fmt.Errorf("Error occured when parse from. Error : %v", err)
+	}
+
+	userIDStr := r.FormValue("userID")
+	storyIDStr := r.FormValue("storyID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		return fmt.Errorf("Error occured when convert string userID to int userID. Error : %v", err)
+	}
+	storyID, err := strconv.Atoi(storyIDStr)
+	if err != nil {
+		return fmt.Errorf("Error occured when convert string storyID to int storyID. Error : %v", err)
+	}
+
+	isSaved, err := data.CheckIfUserSavedStory(userID, storyID)
+	if err != nil {
+		return fmt.Errorf("Error occured when check user save story. Error : %v", err)
+	}
+
+	if isSaved {
+		return nil
+	}
+
+	err = data.SaveStory(userID, storyID)
+	if err != nil {
+		return fmt.Errorf("Error occured when save story. Error : %v", err)
+	}
+	return nil
+}
+
+/*UnSaveStoryHandler unsaves a story if user save that story*/
+func UnSaveStoryHandler(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		return fmt.Errorf("Reqeuest should be POSTm request")
+	}
+
+	if err := r.ParseForm(); err != nil {
+		return fmt.Errorf("Error occured when parse from. Error : %v", err)
+	}
+
+	userIDStr := r.FormValue("userID")
+	storyIDStr := r.FormValue("storyID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		return fmt.Errorf("Error occured when convert string userID to int userID. Error : %v", err)
+	}
+	storyID, err := strconv.Atoi(storyIDStr)
+	if err != nil {
+		return fmt.Errorf("Error occured when convert string storyID to int storyID. Error : %v", err)
+	}
+
+	isSaved, err := data.CheckIfUserSavedStory(userID, storyID)
+	if err != nil {
+		return fmt.Errorf("Error occured when check user save story. Error : %v", err)
+	}
+
+	if isSaved == false {
+		return nil
+	}
+
+	err = data.UnSaveStory(userID, storyID)
+	if err != nil {
+		return fmt.Errorf("Error occured when unsave story. Error : %v", err)
 	}
 	return nil
 }
@@ -296,7 +370,6 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request) error {
 	story.UserID = 2 // TODO: use actual user id here
 
 	err := data.CreateStory(&story)
-
 	if err != nil {
 		// TODO: log error here
 		fmt.Fprintf(w, "Error creating story: %v", err)

@@ -12,7 +12,6 @@ import (
 func main() {
 
 	err := templates.Initialize()
-
 	if err != nil {
 		fmt.Printf("An error occurred while initializing templates. Error: %v", err)
 		http.ListenAndServe(":80", nil)
