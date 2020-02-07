@@ -18,12 +18,7 @@ const (
 	TokenNotCreated
 )
 
-const (
-	slash              = "`"
-	regexForEmailValid = `^(?("")("".+?(?<!\\)""@)|(([0-9a-z]((\.(?!\.))|[-!#\$%&'\*\+/=\?\^` + slash + `\{\}\|~\w])*)(?<=[0-9a-z])@))(?(\[)(\[(\d{1,3}\.){3}\d{1,3}\])|(([0-9a-z][-\w]*[0-9a-z]*\.)+[a-z0-9][\-a-z0-9]{0,22}[a-z0-9]))$`
-)
-
-func LoginUser(emailOrUserName, password string) (int, string, error) {
+func SignInHandler(w http.ResponseWriter, r *http.Request) error {
 	if data.IsEmailAdrressValid(emailOrUserName) {
 		exists, err := ExistsUserByEmail(emailOrUserName)
 		if err != nil {
@@ -73,10 +68,69 @@ func LoginUser(emailOrUserName, password string) (int, string, error) {
 	return NoUserWithUserName,"", nil
 }
 
-/*IsEmailAdrressValid take mail adrres, if adrress is valid return true.*/
-func IsEmailAdrressValid(email string) bool {
-	Re := regexp.MustCompile(regexForEmailValid)
-	return Re.MatchString(email)
+func SignUpHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		handleSignUpGET(w, r)
+	case "POST":
+		handleSignUpPOST(w, r)
+	default:
+		handleSignUpGET(w, r)
+	}
+}
+
+/*LogoutHandler set cookie authenticated is false.*/
+func LogoutHandler(w http.ResponseWriter, r *http.Request) error {
+	session, _ := store.Get(r, "cookie-name")
+	session.Values["authenticated"] = false
+	session.Save(r, w)
+
+	// TODO : Redirect bla bla.
+	return nil
+}
+
+func handleSignUpGET(w http.ResponseWriter, r *http.Request) {
+	title := "Sign Up | Turk Dev"
+	user := models.User{"Anil Yuzener"}
+
+	data := map[string]interface{}{
+		"Content": "Sign Up",
+	}
+
+	templates.Render(
+		w,
+		"users/signup.html",
+		models.ViewModel{
+			title,
+			user,
+			data,
+		},
+	)
+}
+
+func handleSignUpPOST(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "Handling sign up post error: %v", err)
+	}
+
+	userName := r.FormValue("userName")
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+
+	var user data.User
+	user.UserName = userName
+	user.Email = email
+	user.Password = password
+	user.Karma = 0
+	user.RegisteredOn = time.Now()
+	user.CustomerID = 1 // TODO: get it real customer id
+	err := data.CreateUser(&user)
+
+	if err != nil {
+		// TODO: log it here
+		fmt.Fprintf(w, "Error creating user: %v", err)
+	}
+	fmt.Fprintf(w, "Succeded!")
 }
 
 /*GenerateAuthToken generate jwt token for user login. */

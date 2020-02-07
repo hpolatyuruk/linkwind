@@ -5,9 +5,21 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
+
+const (
+	slash              = "`"
+	regexForEmailValid = `^(?("")("".+?(?<!\\)""@)|(([0-9a-z]((\.(?!\.))|[-!#\$%&'\*\+/=\?\^` + slash + `\{\}\|~\w])*)(?<=[0-9a-z])@))(?(\[)(\[(\d{1,3}\.){3}\d{1,3}\])|(([0-9a-z][-\w]*[0-9a-z]*\.)+[a-z0-9][\-a-z0-9]{0,22}[a-z0-9]))$`
+)
+
+/*IsEmailAdrressValid take mail adrres, if adrress is valid return true.*/
+func IsEmailAdrressValid(email string) bool {
+	Re := regexp.MustCompile(regexForEmailValid)
+	return Re.MatchString(email)
+}
 
 /*FetchURL send request to url that given as parameter and fetch title from HTML code.*/
 func FetchURL(url string) (string, error) {

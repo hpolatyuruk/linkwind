@@ -68,7 +68,7 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		// TODO(Anil): Show error page here
 
 	}
-
+	
 	templates.Render(
 		w,
 		"stories/index.html",

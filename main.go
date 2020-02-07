@@ -15,9 +15,7 @@ func main() {
 
 	if err != nil {
 		fmt.Printf("An error occurred while initializing templates. Error: %v", err)
-		http.ListenAndServe(":80", nil)
-		//panic(err)
-		return
+		panic(err)
 	}
 
 	http.HandleFunc("/users/settings", errorHandler(controllers.UserSettingsHandler))
