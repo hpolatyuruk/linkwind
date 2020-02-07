@@ -170,10 +170,10 @@ func SaveStory(userID int, storyID int) error {
 	if err != nil {
 		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
-	sql := "INSERT INTO saved (userid, storyid) VALUES ($1, $2)"
-	_, err = db.Exec(sql, userID, storyID)
+	sql := "INSERT INTO saved (userid, storyid, savedon) VALUES ($1, $2, $3)"
+	_, err = db.Exec(sql, userID, storyID, time.Now())
 	if err != nil {
-		return &DBError{fmt.Sprintf("Cannot save story to user's favotires. UserID: %d, StoryID: %d", userID, storyID), err}
+		return &DBError{fmt.Sprintf("Cannot save story to user's favorites. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
 	return nil
 }
