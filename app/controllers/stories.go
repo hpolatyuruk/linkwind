@@ -176,6 +176,78 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+/*UpvoteStoryHandler runs when click to upvote story button. If not upvoted before by user, upvotes that story*/
+func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		return fmt.Errorf("Reqeuest should be POST request")
+	}
+
+	if err := r.ParseForm(); err != nil {
+		return err
+	}
+
+	userIDStr := r.FormValue("userID")
+	storyIDStr := r.FormValue("storyID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		return err
+	}
+	storyID, err := strconv.Atoi(storyIDStr)
+	if err != nil {
+		return err
+	}
+
+	isUpvoted, err := data.CheckIfStoryUpVotedByUser(userID, storyID)
+	if err != nil {
+		return err
+	}
+	if isUpvoted {
+		return nil
+	}
+
+	err = data.UpVoteStory(userID, storyID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+/*UnvoteStoryHandler handles unvote button. If a story voted by user before, this handler undo that operation*/
+func UnvoteStoryHandler(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		return fmt.Errorf("Reqeuest should be POSTm request")
+	}
+
+	if err := r.ParseForm(); err != nil {
+		return err
+	}
+
+	userIDStr := r.FormValue("userID")
+	storyIDStr := r.FormValue("storyID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		return err
+	}
+	storyID, err := strconv.Atoi(storyIDStr)
+	if err != nil {
+		return err
+	}
+
+	isUpvoted, err := data.CheckIfStoryUpVotedByUser(userID, storyID)
+	if err != nil {
+		return err
+	}
+	if isUpvoted == false {
+		return nil
+	}
+
+	err = data.UnVoteStory(userID, storyID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func handlesSubmitGET(w http.ResponseWriter, r *http.Request) error {
 
 	title := "Submit Story | Turk Dev"
