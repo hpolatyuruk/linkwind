@@ -12,14 +12,17 @@
   </div>
   <div class="flex-row w-full text-xs font-medium text-gray-600 ml-10">
     <span>
-      {{.Points}} points by {{.UserName}} {{.SubmittedOnText}} </span>
-    <span>
-       {{ if .IsUpvotedSignedInUser}} | <a href="/unvotestory" class="text-gray-600">unvote</a> {{end}}
+      {{.Points}} points by {{.UserName}} {{.SubmittedOnText}} 
+    </span>
+    {{if $.IsSignedIn}}
+      <span>
+        {{ if .IsUpvotedSignedInUser}} | <a href="/unvotestory" class="text-gray-600">unvote</a> {{end}}
     </span>
     <span>{{if .IsSavedBySignedInUser}} |
       <a href="/unsavestory" class="text-gray-600">unsave</a> {{else}} |
       <a href="/savestory" class="text-gray-600">save</a> {{end}}</span>
     </span>
+    {{end}}
     <span> | {{.CommentCount}} comments </span>
   </div>
 </div>

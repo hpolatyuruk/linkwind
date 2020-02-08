@@ -1,9 +1,12 @@
 package models
 
 type StoryPageData struct {
-	Title   string
-	User    User
-	Stories []StoryViewModel
+	Title      string
+	UserID     int
+	UserName   string
+	CustomerID int
+	IsSignedIn bool
+	Stories    []StoryViewModel
 }
 
 type StoryViewModel struct {

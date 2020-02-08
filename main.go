@@ -18,7 +18,9 @@ func main() {
 	}
 
 	http.HandleFunc("/users/settings", errorHandler(controllers.UserSettingsHandler))
-	http.HandleFunc("/signup", controllers.SignUpHandler)
+	http.HandleFunc("/signup", errorHandler(controllers.SignUpHandler))
+	http.HandleFunc("/signin", errorHandler(controllers.SignInHandler))
+	http.HandleFunc("/signout", errorHandler(controllers.SignOutHandler))
 	http.HandleFunc("/", notFoundHandler(controllers.StoriesHandler))
 	http.HandleFunc("/recent", errorHandler(controllers.RecentStoriesHandler))
 	http.HandleFunc("/detal", errorHandler(controllers.StoryDetailHandler))

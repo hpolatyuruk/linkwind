@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"path"
 	"path/filepath"
 )
 
 var templatesPath = "./app/src/templates/"
 var categories = []string{"comments", "stories", "users"}
+var excludedFromBase = []string{}
 var pseudoTmpl string = `{{define "main"}}{{template "base" .}}{{end}}`
 var templates map[string]*template.Template
 
@@ -50,8 +52,8 @@ func Initialize() error {
 	return nil
 }
 
-/*Render renders templates by given parameters*/
-func Render(w http.ResponseWriter, tmpl string, data interface{}) {
+/*RenderWithBase renders templates by given parameters*/
+func RenderWithBase(w http.ResponseWriter, tmpl string, data interface{}) {
 	t, found := templates[tmpl]
 
 	if !found {
@@ -62,6 +64,18 @@ func Render(w http.ResponseWriter, tmpl string, data interface{}) {
 	err := t.Execute(w, data)
 	if err != nil {
 		fmt.Print(err)
-		http.Error(w, "Cannot parse template", http.StatusInternalServerError)
+		panic(err)
+	}
+}
+
+/*Render renders a template file excluded from base template.*/
+func Render(w http.ResponseWriter, tmplPath string, data interface{}) {
+	tmpl, err := template.New(path.Base(tmplPath)).ParseFiles(path.Join(templatesPath, tmplPath))
+	if err != nil {
+		panic(err)
+	}
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		panic(err)
 	}
 }

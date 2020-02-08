@@ -40,7 +40,7 @@ func UserSettingsHandler(w http.ResponseWriter, r *http.Request) error {
 		"User":    user,
 	}
 
-	templates.Render(
+	templates.RenderWithBase(
 		w,
 		"user/settings.html",
 		models.ViewModel{
@@ -60,7 +60,7 @@ func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
 		"Content": "Invite a new user",
 	}
 
-	templates.Render(
+	templates.RenderWithBase(
 		w,
 		"user/sign-up.html",
 		models.ViewModel{

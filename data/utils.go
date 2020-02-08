@@ -65,7 +65,8 @@ func MapSQLRowToUser(row *sql.Row) (user *User, err error) {
 		&_user.About,
 		&_user.InvitedBy,
 		&_user.InviteCode,
-		&_user.Karma)
+		&_user.Karma,
+		&_user.CustomerID)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot map sql row to user struct"), err}
 	}

@@ -34,7 +34,7 @@ func RepliesHandler(w http.ResponseWriter, r *http.Request) error {
 		"Replies": replies,
 	}
 
-	templates.Render(
+	templates.RenderWithBase(
 		w,
 		"comments/index.html",
 		models.ViewModel{

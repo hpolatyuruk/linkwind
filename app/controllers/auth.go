@@ -1,114 +1,89 @@
-package services
+package controllers
 
 import (
 	"fmt"
-	"regexp"
+	"net/http"
+	"strings"
 	"time"
+	"turkdev/app/models"
+	"turkdev/app/src/templates"
 	"turkdev/data"
-
-	"github.com/dgrijalva/jwt-go"
+	"turkdev/shared"
 )
 
-const (
-	LoginError = iota
-	LoginSuccessful
-	WrongPassword
-	NoUserWithEmail
-	NoUserWithUserName
-	TokenNotCreated
-)
-
-func SignInHandler(w http.ResponseWriter, r *http.Request) error {
-	if data.IsEmailAdrressValid(emailOrUserName) {
-		exists, err := ExistsUserByEmail(emailOrUserName)
-		if err != nil {
-			return LoginError,"", err
-		}
-
-		if exists {
-			user, err := data.FindUserByEmailAndPassword(emailOrUserName, password)
-			if err != nil {
-				return LoginError,"", err
-			}
-
-			if user == nil {
-				return WrongPassword,"", nil
-			}
-
-			jwtToken, err := user.GenerateAuthToken()
-			if err != nil {
-				return TokenNotCreated,"", err
-			}
-			return LoginSuccessful, jwtToken, nil
-		}
-		return NoUserWithEmail,"", nil
-	}
-
-	exists, err := data.ExistsUserByUserName(emailOrUserName)
-	if err != nil {
-		return LoginError,"", err
-	}
-
-	if exists {
-		user, err := data.FindUserByUserNameAndPassword(emailOrUserName, password)
-		if err != nil {
-			return LoginError,"", err
-		}
-
-		if user == nil {
-			return WrongPassword,"", nil
-		}
-
-		jwtToken, err := user.GenerateAuthToken()
-		if err != nil {
-			return TokenNotCreated,"", err
-		}
-		return LoginSuccessful,jwtToken, nil
-	}
-	return NoUserWithUserName,"", nil
+/*SignInViewModel represents the data which is needed on sigin UI.*/
+type SignInViewModel struct {
+	EmailOrUserName string
+	Password        string
+	Errors          map[string]string
 }
 
-func SignUpHandler(w http.ResponseWriter, r *http.Request) {
+/*Validate validates the SignInViewModel*/
+func (model *SignInViewModel) Validate() bool {
+	model.Errors = make(map[string]string)
+
+	if strings.TrimSpace(model.EmailOrUserName) == "" {
+		model.Errors["EmailOrUserName"] = "Email or user name is required!"
+	}
+	if strings.TrimSpace(model.Password) == "" {
+		model.Errors["Password"] = "Password is required!"
+	}
+
+	return len(model.Errors) == 0
+}
+
+/*SignInHandler handles user signin operations.*/
+func SignInHandler(w http.ResponseWriter, r *http.Request) error {
+
 	switch r.Method {
 	case "GET":
-		handleSignUpGET(w, r)
+		isAuthenticated, _, err := shared.IsAuthenticated(r)
+		if err != nil {
+			return err
+		}
+		if isAuthenticated {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return nil
+		}
+		return handleSignInGET(w, r)
 	case "POST":
-		handleSignUpPOST(w, r)
+		return handleSignInPOST(w, r)
 	default:
-		handleSignUpGET(w, r)
+		return handleSignInGET(w, r)
 	}
 }
 
-/*LogoutHandler set cookie authenticated is false.*/
-func LogoutHandler(w http.ResponseWriter, r *http.Request) error {
-	session, _ := store.Get(r, "cookie-name")
-	session.Values["authenticated"] = false
-	session.Save(r, w)
+/*SignUpHandler handles user signup operations*/
+func SignUpHandler(w http.ResponseWriter, r *http.Request) error {
+	switch r.Method {
+	case "GET":
+		return handleSignUpGET(w, r)
+	case "POST":
+		return handleSignUpPOST(w, r)
+	default:
+		return handleSignUpGET(w, r)
+	}
+}
 
-	// TODO : Redirect bla bla.
+/*SignOutHandler handles user singout operations.*/
+func SignOutHandler(w http.ResponseWriter, r *http.Request) error {
+	shared.SetAuthCookie(w, "", time.Now())
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 	return nil
 }
 
-func handleSignUpGET(w http.ResponseWriter, r *http.Request) {
-	title := "Sign Up | Turk Dev"
-	user := models.User{"Anil Yuzener"}
-
-	data := map[string]interface{}{
-		"Content": "Sign Up",
-	}
-
-	templates.Render(
+func handleSignUpGET(w http.ResponseWriter, r *http.Request) error {
+	templates.RenderWithBase(
 		w,
 		"users/signup.html",
 		models.ViewModel{
-			title,
-			user,
-			data,
+			Title: "Sign Up",
 		},
 	)
+	return nil
 }
 
-func handleSignUpPOST(w http.ResponseWriter, r *http.Request) {
+func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
 		fmt.Fprintf(w, "Handling sign up post error: %v", err)
 	}
@@ -127,21 +102,86 @@ func handleSignUpPOST(w http.ResponseWriter, r *http.Request) {
 	err := data.CreateUser(&user)
 
 	if err != nil {
-		// TODO: log it here
-		fmt.Fprintf(w, "Error creating user: %v", err)
+		return err
 	}
-	fmt.Fprintf(w, "Succeded!")
+	return nil
 }
 
-/*GenerateAuthToken generate jwt token for user login. */
-func (user *data.User)GenerateAuthToken() (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":  user.ID,
-		"email":user.Email,
-		"username": user.UserName,
-		"fullname": user.FullName
-	})
+func handleSignInGET(w http.ResponseWriter, r *http.Request) error {
+	templates.Render(
+		w,
+		"users/signin.html",
+		SignInViewModel{},
+	)
+	return nil
+}
 
-	privateKey := os.Getenv("JWTPrivateKey")
-	return token.SignedString([]byte(privateKey))
+func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
+	model := &SignInViewModel{
+		EmailOrUserName: r.FormValue("emailOrUserName"),
+		Password:        r.FormValue("password"),
+	}
+
+	if model.Validate() == false {
+		templates.Render(w, "users/signin.html", model)
+		return nil
+	}
+
+	var err error
+	var user *data.User
+
+	if shared.IsEmailAdrressValid(model.EmailOrUserName) {
+		user, err = checkUserByEmail(model.EmailOrUserName, model.Password)
+	} else {
+		user, err = checkUserByUserName(model.EmailOrUserName, model.Password)
+	}
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		model.Errors["General"] = "User does not exist!"
+		templates.Render(w, "users/signin.html", model)
+		return nil
+	}
+	// Declare the expiration time of the token
+	// here, we have kept it as 5 minutes
+	expirationTime := time.Now().Add(5 * time.Minute)
+
+	token, err := shared.GenerateAuthToken(*user, expirationTime)
+	if err != nil {
+		return err
+	}
+	shared.SetAuthCookie(w, token, expirationTime)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	return nil
+}
+
+func checkUserByEmail(email string, password string) (*data.User, error) {
+	exists, err := data.ExistsUserByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	if exists == false {
+		return nil, nil
+	}
+	user, err := data.FindUserByEmailAndPassword(email, password)
+	if err != nil {
+		return nil, err
+	}
+	return user, err
+}
+
+func checkUserByUserName(userName string, password string) (*data.User, error) {
+	exists, err := data.ExistsUserByUserName(userName)
+	if err != nil {
+		return nil, err
+	}
+	if exists == false {
+		return nil, nil
+	}
+	user, err := data.FindUserByUserNameAndPassword(userName, password)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }

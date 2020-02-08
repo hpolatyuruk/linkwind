@@ -19,11 +19,26 @@ const (
 
 /*StoriesHandler handles showing the popular published stories*/
 func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	title := "Turk Dev"
-	user := models.User{"Anil Yuzener"}
+	var model = &models.StoryPageData{Title: "Stories"}
 
-	var customerID int = 1 // TODO: get actual customer ID here
-	var userID int = 2     // TODO: get actual signedin user ID here
+	var userID int = -1
+	var customerID int = 1 // TODO: get actual customer id from registered customer website
+
+	isAuthenticated, user, err := shared.IsAuthenticated(r)
+
+	if err != nil {
+		return err
+	}
+
+	if isAuthenticated {
+		userID = user.ID
+		customerID = user.CustomerID
+		model.UserName = user.UserName
+		model.UserID = user.ID
+		model.CustomerID = user.CustomerID
+		model.IsSignedIn = isAuthenticated
+	}
+
 	var page int = 0
 	strPage := r.URL.Query().Get("page")
 	if len(strPage) > 0 {
@@ -37,27 +52,18 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		// TODO: There is no story yet. Show appropriate message here
 		return nil
 	}
-
-	templates.Render(
-		w,
-		"stories/index.html",
-		models.StoryPageData{
-			User:    user,
-			Title:   title,
-			Stories: *mapStoriesToStoryViewModel(stories, userID),
-			//Stories: []data.Story{{URL: "1"}, {URL: "2"}},
-		},
-	)
+	model.Stories = *mapStoriesToStoryViewModel(stories, userID)
+	templates.RenderWithBase(w, "stories/index.html", model)
 	return nil
 }
 
 /*RecentStoriesHandler handles showing recently published stories*/
 func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	title := "Recent Stories | Turk Dev"
-	user := models.User{"Anil Yuzener"}
+	var model = &models.StoryPageData{Title: "Recent Stories | Turk Dev"}
 
+	var userID int = -1    // TODO: get actual user id here
 	var customerID int = 1 // TODO: get actual customer id here
-	var userID int = 2     // TODO: get actual user id here
+
 	var page int = 0
 	strPage := r.URL.Query().Get("page")
 	if len(strPage) > 0 {
@@ -68,16 +74,8 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		// TODO(Anil): Show error page here
 
 	}
-	
-	templates.Render(
-		w,
-		"stories/index.html",
-		models.StoryPageData{
-			Title:   title,
-			User:    user,
-			Stories: *mapStoriesToStoryViewModel(stories, userID),
-		},
-	)
+	model.Stories = *mapStoriesToStoryViewModel(stories, userID)
+	templates.RenderWithBase(w, "stories/index.html", model)
 	return nil
 }
 
@@ -112,7 +110,7 @@ func SavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		"Stories": stories,
 	}
 
-	templates.Render(
+	templates.RenderWithBase(
 		w,
 		"stories/index.html",
 		models.ViewModel{
@@ -164,7 +162,7 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 		"Comments": comments,
 	}
 
-	templates.Render(
+	templates.RenderWithBase(
 		w,
 		"stories/detail.html",
 		models.ViewModel{
@@ -178,6 +176,15 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*UpvoteStoryHandler runs when click to upvote story button. If not upvoted before by user, upvotes that story*/
 func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) error {
+
+	isAuthenticated, _, err := shared.IsAuthenticated(r)
+	if err != nil {
+		return err
+	}
+	if isAuthenticated == false {
+		http.Redirect(w, r, "/signin", http.StatusSeeOther)
+		return nil
+	}
 	if r.Method == "GET" {
 		return fmt.Errorf("Reqeuest should be POST request")
 	}
@@ -331,7 +338,7 @@ func handlesSubmitGET(w http.ResponseWriter, r *http.Request) error {
 		"Content": "Submit Story",
 	}
 
-	templates.Render(
+	templates.RenderWithBase(
 		w,
 		"stories/submit.html",
 		models.ViewModel{
@@ -384,31 +391,35 @@ func mapStoriesToStoryViewModel(stories *[]data.Story, signedInUserID int) *[]mo
 
 	for _, story := range *stories {
 		var viewModel = models.StoryViewModel{
-			ID:              story.ID,
-			Title:           story.Title,
-			URL:             story.URL,
-			Points:          story.UpVotes, // TODO: call point calculation function here
-			UserID:          story.UserID,
-			UserName:        story.UserName,
-			CommentCount:    story.CommentCount,
-			SubmittedOnText: generateSubmittedOnText(story.SubmittedOn),
-		}
-		isUpvoted, err := data.CheckIfStoryUpVotedByUser(signedInUserID, story.ID)
-
-		if err != nil {
-			// TODO: log error here
-			isUpvoted = false
+			ID:                    story.ID,
+			Title:                 story.Title,
+			URL:                   story.URL,
+			Points:                story.UpVotes, // TODO: call point calculation function here
+			UserID:                story.UserID,
+			UserName:              story.UserName,
+			CommentCount:          story.CommentCount,
+			IsUpvotedSignedInUser: false,
+			IsSavedBySignedInUser: false,
+			SubmittedOnText:       generateSubmittedOnText(story.SubmittedOn),
 		}
 
-		isSaved, err := data.CheckIfUserSavedStory(signedInUserID, story.ID)
+		if signedInUserID > -1 {
+			isUpvoted, err := data.CheckIfStoryUpVotedByUser(signedInUserID, story.ID)
 
-		if err != nil {
-			// TODO: log error here
-			isSaved = false
+			if err != nil {
+				// TODO: log error here
+				isUpvoted = false
+			}
+
+			isSaved, err := data.CheckIfUserSavedStory(signedInUserID, story.ID)
+
+			if err != nil {
+				// TODO: log error here
+				isSaved = false
+			}
+			viewModel.IsUpvotedSignedInUser = isUpvoted
+			viewModel.IsSavedBySignedInUser = isSaved
 		}
-		viewModel.IsUpvotedSignedInUser = isUpvoted
-		viewModel.IsSavedBySignedInUser = isSaved
-
 		viewModels = append(viewModels, viewModel)
 	}
 	return &viewModels

@@ -210,7 +210,7 @@ func GetUserByUserName(userName string) (user *User, err error) {
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users WHERE username = $1"
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma, customerid FROM users WHERE username = $1"
 	row := db.QueryRow(sql, userName)
 	user, err = MapSQLRowToUser(row)
 	if err != nil {
@@ -227,7 +227,7 @@ func GetUsersByCustomerID(customerID int) (*[]User, error) {
 		return nil, err
 	}
 
-	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users WHERE customerID = $1"
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma, customerid FROM users WHERE customerID = $1"
 	rows, err := db.Query(sql, customerID)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot get users. CustomerID: %d", customerID), err}
@@ -277,7 +277,7 @@ func FindUserByEmailAndPassword(email string, password string) (user *User, err 
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users WHERE email = $1"
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma, customerid FROM users WHERE email = $1"
 	row := db.QueryRow(sql, email)
 	user, err = MapSQLRowToUser(row)
 	if err != nil {
@@ -297,7 +297,7 @@ func FindUserByUserNameAndPassword(userName string, password string) (user *User
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users WHERE username = $1"
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma, customerid FROM users WHERE username = $1"
 	row := db.QueryRow(sql, userName)
 	user, err = MapSQLRowToUser(row)
 	if err != nil {
