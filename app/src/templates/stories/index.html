@@ -12,9 +12,9 @@
   </div>
   <div class="flex-row w-full text-xs font-medium text-gray-600 ml-10">
     <span>
-      {{.Points}} points by {{.UserName}} {{.SubmittedOnText}} 
+      {{.Points}} points by <a href="/users?user={{.UserName}}" class="text-gray-600">{{.UserName}}</a> {{.SubmittedOnText}} 
     </span>
-    {{if $.IsSignedIn}}
+    {{if $.IsAuthenticated}}
       <span>
         {{ if .IsUpvotedSignedInUser}} | <a href="/unvotestory" class="text-gray-600">unvote</a> {{end}}
     </span>
@@ -23,7 +23,7 @@
       <a href="/savestory" class="text-gray-600">save</a> {{end}}</span>
     </span>
     {{end}}
-    <span> | {{.CommentCount}} comments </span>
+    <span> | <a href="/stories/detail?id={{.ID}}" class="text-gray-600">{{.CommentCount}} comments</a></span>
   </div>
 </div>
 

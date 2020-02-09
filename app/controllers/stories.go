@@ -19,7 +19,7 @@ const (
 
 /*StoriesHandler handles showing the popular published stories*/
 func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	var model = &models.StoryPageData{Title: "Stories"}
+	var model = &models.StoryPageViewModel{Title: "Stories"}
 
 	var userID int = -1
 	var customerID int = 1 // TODO: get actual customer id from registered customer website
@@ -33,10 +33,13 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if isAuthenticated {
 		userID = user.ID
 		customerID = user.CustomerID
-		model.UserName = user.UserName
-		model.UserID = user.ID
-		model.CustomerID = user.CustomerID
-		model.IsSignedIn = isAuthenticated
+		model.IsAuthenticated = isAuthenticated
+		model.SignedInUser = models.SignedInUserViewModel{
+			UserID:     user.ID,
+			UserName:   user.UserName,
+			CustomerID: user.CustomerID,
+			Email:      user.Email,
+		}
 	}
 
 	var page int = 0
@@ -59,7 +62,7 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*RecentStoriesHandler handles showing recently published stories*/
 func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	var model = &models.StoryPageData{Title: "Recent Stories | Turk Dev"}
+	var model = &models.StoryPageViewModel{Title: "Recent Stories | Turk Dev"}
 
 	var userID int = -1    // TODO: get actual user id here
 	var customerID int = 1 // TODO: get actual customer id here
