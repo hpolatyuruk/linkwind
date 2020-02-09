@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -16,6 +17,12 @@ const (
 	/*DefaultStoryCountPerPage represents story count to be listed per page*/
 	DefaultStoryCountPerPage = 20
 )
+
+/*StoryUpvoteModel represents the data in http request body to upvote story.*/
+type StoryUpvoteModel struct {
+	StoryID int
+	UserID  int
+}
 
 /*StoriesHandler handles showing the popular published stories*/
 func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
@@ -178,48 +185,42 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 /*UpvoteStoryHandler runs when click to upvote story button. If not upvoted before by user, upvotes that story*/
-func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) error {
+func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	isAuthenticated, _, err := shared.IsAuthenticated(r)
 	if err != nil {
-		return err
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	if isAuthenticated == false {
 		http.Redirect(w, r, "/signin", http.StatusSeeOther)
-		return nil
+		return
 	}
 	if r.Method == "GET" {
-		return fmt.Errorf("Reqeuest should be POST request")
+		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
+		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		return fmt.Errorf("Error occured when parse from. Error : %v", err)
+	var model StoryUpvoteModel
+	err = json.NewDecoder(r.Body).Decode(&model)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	userIDStr := r.FormValue("userID")
-	storyIDStr := r.FormValue("storyID")
-	userID, err := strconv.Atoi(userIDStr)
+	isUpvoted, err := data.CheckIfStoryUpVotedByUser(model.UserID, model.StoryID)
 	if err != nil {
-		return fmt.Errorf("Error occured when convert string userID to int userID. Error : %v", err)
-	}
-	storyID, err := strconv.Atoi(storyIDStr)
-	if err != nil {
-		return fmt.Errorf("Error occured when convert string storyID to int storyID. Error : %v", err)
-	}
-
-	isUpvoted, err := data.CheckIfStoryUpVotedByUser(userID, storyID)
-	if err != nil {
-		return fmt.Errorf("Error occured when check user save story. Error : %v", err)
+		http.Error(w, fmt.Sprintf("Error occured while checking if user already upvoted. Error : %v", err), http.StatusInternalServerError)
+		return
 	}
 	if isUpvoted {
-		return nil
+		return
 	}
 
-	err = data.UpVoteStory(userID, storyID)
+	err = data.UpVoteStory(model.UserID, model.StoryID)
 	if err != nil {
-		return fmt.Errorf("Error occured when upvote story. Error : %v", err)
+		http.Error(w, fmt.Sprintf("Error occured when upvote story. Error : %v", err), http.StatusInternalServerError)
 	}
-	return nil
 }
 
 /*UnvoteStoryHandler handles unvote button. If a story voted by user before, this handler undo that operation*/
