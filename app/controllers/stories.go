@@ -154,7 +154,7 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	strStoryID := r.URL.Query().Get("id")
 	if len(strStoryID) == 0 {
-		templates.RenderWithBase(w, "errors/404.html", nil)
+		templates.Render(w, "errors/404.html", nil)
 		return errors.New("Cannot get story id from request")
 	}
 	storyID, err := strconv.Atoi(strStoryID)
@@ -166,7 +166,7 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("Cannot get story from db (StoryID : %d). Original err : %v", storyID, err)
 	}
 	if story == nil {
-		templates.RenderWithBase(w, "errors/404.html", nil)
+		templates.Render(w, "errors/404.html", nil)
 		return fmt.Errorf("There is no story in db (StoryID : %d). Original err : %v", storyID, err)
 	}
 	comments, err := data.GetComments(storyID)
@@ -174,7 +174,7 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("Cannot get comments from db (StoryID : %d). Original err : %v", storyID, err)
 	}
 	if comments == nil || len(*comments) == 0 {
-		templates.RenderWithBase(w, "errors/404.html", nil)
+		templates.Render(w, "errors/404.html", nil)
 		return fmt.Errorf("There is no coment that story in db (StoryID : %d). Original err : %v", storyID, err)
 	}
 	isAuth, signedInUserClaims, err := shared.IsAuthenticated(r)
