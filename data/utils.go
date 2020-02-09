@@ -258,3 +258,27 @@ func CalculateKarma(userID int) (int, error) {
 
 	return sVotes + cVotes, nil
 }
+
+/*UpVoteKarma increases votes for story on database*/
+func UpVoteKarma(userID int) error {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return &DBError{fmt.Sprintf("DB connection error. UserID: %d", userID), err}
+	}
+	tran, err := db.Begin()
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d", userID), err}
+	}
+	sql := "UPDATE users SET karma = karma + 1 WHERE id = $1"
+	_, err = tran.Exec(sql, userID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Error occurred while increasing karma. UserID: %d", userID), err}
+	}
+	err = tran.Commit()
+	if err != nil {
+		return &DBError{fmt.Sprintf("Cannot commit transaction. UserID: %d", userID), err}
+	}
+	return nil
+}

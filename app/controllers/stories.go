@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -155,7 +154,7 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	strStoryID := r.URL.Query().Get("id")
 	if len(strStoryID) == 0 {
 		templates.Render(w, "errors/404.html", nil)
-		return errors.New("Cannot get story id from request")
+		return nil
 	}
 	storyID, err := strconv.Atoi(strStoryID)
 	if err != nil {
@@ -167,7 +166,7 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	if story == nil {
 		templates.Render(w, "errors/404.html", nil)
-		return fmt.Errorf("There is no story in db (StoryID : %d). Original err : %v", storyID, err)
+		return nil
 	}
 	comments, err := data.GetComments(storyID)
 	if err != nil {
@@ -175,7 +174,7 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	if comments == nil || len(*comments) == 0 {
 		templates.Render(w, "errors/404.html", nil)
-		return fmt.Errorf("There is no coment that story in db (StoryID : %d). Original err : %v", storyID, err)
+		return nil
 	}
 	isAuth, signedInUserClaims, err := shared.IsAuthenticated(r)
 	if err != nil {
@@ -189,7 +188,6 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*UpvoteStoryHandler runs when click to upvote story button. If not upvoted before by user, upvotes that story*/
 func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
-
 	isAuthenticated, _, err := shared.IsAuthenticated(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -229,6 +227,10 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 	err = data.UpVoteStory(model.UserID, model.StoryID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured when upvote story. Error : %v", err), http.StatusInternalServerError)
+	}
+	err = data.IncreaseKarma(model.UserID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error occured when upvote karma. Error : %v", err), http.StatusInternalServerError)
 	}
 	res, _ := json.Marshal(&JSONResponse{
 		Result: "Upvoted",
