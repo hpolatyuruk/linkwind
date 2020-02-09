@@ -18,10 +18,15 @@ const (
 	DefaultStoryCountPerPage = 20
 )
 
-/*StoryUpvoteModel represents the data in http request body to upvote story.*/
-type StoryUpvoteModel struct {
+/*StoryVoteModel represents the data in http request body to upvote story.*/
+type StoryVoteModel struct {
 	StoryID int
 	UserID  int
+}
+
+/*JSONResponse respresents the json response.*/
+type JSONResponse struct {
+	Result string
 }
 
 /*StoriesHandler handles showing the popular published stories*/
@@ -201,7 +206,7 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var model StoryUpvoteModel
+	var model StoryVoteModel
 	err = json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -214,6 +219,12 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if isUpvoted {
+		res, _ := json.Marshal(&JSONResponse{
+			Result: "AlreadyUpvoted",
+		})
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(res)
 		return
 	}
 
@@ -221,42 +232,54 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured when upvote story. Error : %v", err), http.StatusInternalServerError)
 	}
+	res, _ := json.Marshal(&JSONResponse{
+		Result: "Upvoted",
+	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
 }
 
 /*UnvoteStoryHandler handles unvote button. If a story voted by user before, this handler undo that operation*/
-func UnvoteStoryHandler(w http.ResponseWriter, r *http.Request) error {
+func UnvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		return fmt.Errorf("Reqeuest should be POSTm request")
+		http.Error(w, "Unsupported request method. Only POST method is supported", http.StatusMethodNotAllowed)
+		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		return fmt.Errorf("Error occured when parse from. Error : %v", err)
+	var model StoryVoteModel
+	err := json.NewDecoder(r.Body).Decode(&model)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	userIDStr := r.FormValue("userID")
-	storyIDStr := r.FormValue("storyID")
-	userID, err := strconv.Atoi(userIDStr)
+	isUpvoted, err := data.CheckIfStoryUpVotedByUser(model.UserID, model.StoryID)
 	if err != nil {
-		return fmt.Errorf("Error occured when convert string userID to int userID. Error : %v", err)
-	}
-	storyID, err := strconv.Atoi(storyIDStr)
-	if err != nil {
-		return fmt.Errorf("Error occured when convert string storyID to int storyID. Error : %v", err)
-	}
-
-	isUpvoted, err := data.CheckIfStoryUpVotedByUser(userID, storyID)
-	if err != nil {
-		return fmt.Errorf("Error occured when check user save story. Error : %v", err)
+		http.Error(w, fmt.Sprintf("Error occured while checking user story vote. Error : %v", err), http.StatusInternalServerError)
+		return
 	}
 	if isUpvoted == false {
-		return nil
+		res, _ := json.Marshal(&JSONResponse{
+			Result: "AlreadyUnvoted",
+		})
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(res)
+		return
 	}
 
-	err = data.UnVoteStory(userID, storyID)
+	err = data.UnVoteStory(model.UserID, model.StoryID)
 	if err != nil {
-		return fmt.Errorf("Error occured when unvote story. Error : %v", err)
+		http.Error(w, fmt.Sprintf("Error occured while unvoting story. Error : %v", err), http.StatusInternalServerError)
+		return
 	}
-	return nil
+	res, _ := json.Marshal(&JSONResponse{
+		Result: "Unvoted",
+	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
 }
 
 /*SaveStoryHandler saves a story for user*/

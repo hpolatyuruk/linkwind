@@ -25,6 +25,7 @@ func main() {
 	http.HandleFunc("/recent", errorHandler(controllers.RecentStoriesHandler))
 	http.HandleFunc("/stories/detail", errorHandler(controllers.StoryDetailHandler))
 	http.HandleFunc("/stories/upvote", controllers.UpvoteStoryHandler)
+	http.HandleFunc("/stories/unvote", controllers.UnvoteStoryHandler)
 	http.HandleFunc("/submit", errorHandler(controllers.SubmitStoryHandler))
 	http.HandleFunc("/saved", errorHandler(controllers.SavedStoriesHandler))
 	http.HandleFunc("/invite", errorHandler(controllers.InviteUserHandler))
