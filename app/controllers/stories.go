@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -146,41 +147,38 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*StoryDetailHandler handles showing comments by giving story id*/
 func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
-	title := "Comments | Turk Dev"
-	user := models.User{"Anil Yuzener"}
-
-	strStoryID := r.URL.Query().Get("storyid")
+	strStoryID := r.URL.Query().Get("id")
 	if len(strStoryID) == 0 {
-		// TODO: Story cannot be found. Show appropriate message here.
-		return nil
+		templates.RenderWithBase(w, "errors/404.html", nil)
+		return errors.New("Cannot get story id from request")
 	}
 	storyID, err := strconv.Atoi(strStoryID)
 	if err != nil {
-		// TODO(Anil): Cannot parse to int. Show story not found message.
-		return nil
+		return fmt.Errorf("Cannot convert string StoryID to int. Original err : %v", err)
+	}
+	story, err := data.GetStoryByID(storyID)
+	if err != nil {
+		return fmt.Errorf("Cannot get story from db (StoryID : %d). Original err : %v", storyID, err)
+	}
+	if story == nil {
+		templates.RenderWithBase(w, "errors/404.html", nil)
+		return fmt.Errorf("There is no story in db (StoryID : %d). Original err : %v", storyID, err)
 	}
 	comments, err := data.GetComments(storyID)
 	if err != nil {
-		// TODO(Anil): show error page here
+		return fmt.Errorf("Cannot get comments from db (StoryID : %d). Original err : %v", storyID, err)
 	}
 	if comments == nil || len(*comments) == 0 {
-		// TODO(Anil): There is no comment yet. Show appropriate message here
+		templates.RenderWithBase(w, "errors/404.html", nil)
+		return fmt.Errorf("There is no coment that story in db (StoryID : %d). Original err : %v", storyID, err)
+	}
+	isAuth, signedInUserClaims, err := shared.IsAuthenticated(r)
+	if err != nil {
+		return fmt.Errorf("An error occured when run IsAuthenticated func in StoryDetailHandler")
 	}
 
-	data := map[string]interface{}{
-		"Content":  "Comments",
-		"Comments": comments,
-	}
-
-	templates.RenderWithBase(
-		w,
-		"stories/detail.html",
-		models.ViewModel{
-			title,
-			user,
-			data,
-		},
-	)
+	model := *mapCommentsTostoryDetailPageViewModel(story, signedInUserClaims, comments, isAuth)
+	templates.RenderWithBase(w, "stories/detail.html", model)
 	return nil
 }
 
@@ -429,6 +427,28 @@ func mapStoriesToStoryViewModel(stories *[]data.Story, signedInUserID int) *[]mo
 	return &viewModels
 }
 
+func mapCommentsTostoryDetailPageViewModel(story *data.Story, signedInUserClaims *shared.SignedInUserClaims,
+	comments *[]data.Comment,
+	isAuth bool) *models.StoryDetailPageViewModel {
+	var userViewModel models.SignedInUserViewModel
+
+	if signedInUserClaims != nil {
+		userViewModel.CustomerID = signedInUserClaims.CustomerID
+		userViewModel.Email = signedInUserClaims.Email
+		userViewModel.UserID = signedInUserClaims.ID
+		userViewModel.UserName = signedInUserClaims.UserName
+	}
+
+	var detailPageViewModel models.StoryDetailPageViewModel
+	detailPageViewModel.Comments = comments
+	detailPageViewModel.IsAuthenticated = isAuth
+	detailPageViewModel.SignedInUser = userViewModel
+	detailPageViewModel.Story = story
+	detailPageViewModel.Title = story.Title
+
+	return &detailPageViewModel
+
+}
 func generateSubmittedOnText(submittedOn time.Time) string {
 	var text string = ""
 	diff := time.Now().Sub(submittedOn)

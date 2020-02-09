@@ -83,6 +83,22 @@ func GetStories(customerID, pageNumber, pageRowCount int) (*[]Story, error) {
 	return stories, nil
 }
 
+/*GetStoryByID gets story by id from db*/
+func GetStoryByID(storyID int) (*Story, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+	sql := "SELECT * FROM public.stories WHERE id = $1"
+	row := db.QueryRow(sql, storyID)
+	story, err := MapSQLRowToStory(row)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read row. Story Id: %d", storyID), err}
+	}
+	return story, nil
+}
+
 /*UpVoteStory increases votes for story on database*/
 func UpVoteStory(userID int, storyID int) error {
 	db, err := connectToDB()

@@ -83,7 +83,7 @@ func WriteComment(comment *Comment) error {
 	return nil
 }
 
-/*GetComments retunrs comment list by provided story id and paging parameters*/
+/*GetComments retunrs comment list by provided story id*/
 func GetComments(storyID int) (comments *[]Comment, err error) {
 	db, err := connectToDB()
 	defer db.Close()

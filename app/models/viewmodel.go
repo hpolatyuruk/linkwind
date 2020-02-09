@@ -1,5 +1,7 @@
 package models
 
+import "turkdev/data"
+
 type SignedInUserViewModel struct {
 	UserID     int
 	CustomerID int
@@ -31,4 +33,12 @@ type ViewModel struct {
 	Title string
 	User  User
 	Data  map[string]interface{}
+}
+
+type StoryDetailPageViewModel struct {
+	Title           string
+	Story           *data.Story
+	Comments        *[]data.Comment
+	SignedInUser    SignedInUserViewModel
+	IsAuthenticated bool
 }

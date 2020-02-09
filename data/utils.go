@@ -91,6 +91,27 @@ func MapSQLRowToCustomer(row *sql.Row) (customer *Customer, err error) {
 	return customer, nil
 }
 
+/*MapSQLRowToStory creates a story struct by sql rows*/
+func MapSQLRowToStory(rows *sql.Row) (story *Story, err error) {
+	var _story Story
+	err = rows.Scan(
+		&_story.ID,
+		&_story.URL,
+		&_story.Title,
+		&_story.Text,
+		&_story.UpVotes,
+		&_story.CommentCount,
+		&_story.UserID,
+		&_story.SubmittedOn,
+		pq.Array(&_story.Tags),
+		&_story.DownVotes)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read rows"), err}
+	}
+	story = &_story
+	return story, nil
+}
+
 /*MapSQLRowsToStories creates a story struct array by sql rows*/
 func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
 	_stories := []Story{}
@@ -116,6 +137,7 @@ func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
 		_stories = append(_stories, story)
 	}
 	return &_stories, nil
+
 }
 
 /*MapSQLRowsToComments creates a comment struct array by sql rows*/
@@ -128,14 +150,14 @@ func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
 		err = rows.Scan(
 			&comment.Comment,
 			&comment.UpVotes,
-			&comment.DownVotes,
 			&comment.StoryID,
-			&parentID,
+			&comment.ParentID,
 			&comment.ReplyCount,
 			&comment.UserID,
 			&comment.CommentedOn,
 			&comment.ID,
-			&userName)
+			&comment.DownVotes,
+			&comment.UserName)
 		if err != nil {
 			return nil, &DBError{"Cannot read comment row.", err}
 		}
