@@ -54,42 +54,53 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	var page int = 0
-	strPage := r.URL.Query().Get("page")
-	if len(strPage) > 0 {
-		page, _ = strconv.Atoi(strPage)
-	}
+	var page int = getPage(r)
 	stories, err := data.GetStories(customerID, page, DefaultStoryCountPerPage)
 	if err != nil {
 		return err
 	}
-	if stories == nil || len(*stories) == 0 {
-		// TODO: There is no story yet. Show appropriate message here
-		return nil
+
+	if stories == nil || len(*stories) > 0 {
+		model.Stories = *mapStoriesToStoryViewModel(stories, userID)
 	}
-	model.Stories = *mapStoriesToStoryViewModel(stories, userID)
 	templates.RenderWithBase(w, "stories/index.html", model)
 	return nil
 }
 
 /*RecentStoriesHandler handles showing recently published stories*/
 func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	var model = &models.StoryPageViewModel{Title: "Recent Stories | Turk Dev"}
+	var model = &models.StoryPageViewModel{Title: "Recent Stories"}
 
-	var userID int = -1    // TODO: get actual user id here
-	var customerID int = 1 // TODO: get actual customer id here
+	var userID int = -1
+	var customerID int = 1 // TODO: get actual customer id from registered customer website
 
-	var page int = 0
-	strPage := r.URL.Query().Get("page")
-	if len(strPage) > 0 {
-		page, _ = strconv.Atoi(strPage)
+	isAuthenticated, user, err := shared.IsAuthenticated(r)
+
+	if err != nil {
+		return err
 	}
+
+	if isAuthenticated {
+		userID = user.ID
+		customerID = user.CustomerID
+		model.IsAuthenticated = isAuthenticated
+		model.SignedInUser = models.SignedInUserViewModel{
+			UserID:     user.ID,
+			UserName:   user.UserName,
+			CustomerID: user.CustomerID,
+			Email:      user.Email,
+		}
+	}
+
+	var page int = getPage(r)
 	stories, err := data.GetRecentStories(customerID, page, DefaultStoryCountPerPage)
 	if err != nil {
-		// TODO(Anil): Show error page here
-
+		return err
 	}
-	model.Stories = *mapStoriesToStoryViewModel(stories, userID)
+
+	if stories == nil || len(*stories) > 0 {
+		model.Stories = *mapStoriesToStoryViewModel(stories, userID)
+	}
 	templates.RenderWithBase(w, "stories/index.html", model)
 	return nil
 }
@@ -226,11 +237,12 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = data.UpVoteStory(model.UserID, model.StoryID)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error occured when upvote story. Error : %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error occured while upvoting story. Error : %v", err), http.StatusInternalServerError)
 	}
-	err = data.IncreaseKarma(model.UserID)
+	// TODO(Sedat) : Please fix it :)
+	//err = data.IncreaseKarma(model.UserID)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error occured when upvote karma. Error : %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error occured while increasing karma. Error : %v", err), http.StatusInternalServerError)
 	}
 	res, _ := json.Marshal(&JSONResponse{
 		Result: "Upvoted",
@@ -411,6 +423,15 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request) error {
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 	return nil
+}
+
+func getPage(r *http.Request) int {
+	var page int = 0
+	strPage := r.URL.Query().Get("page")
+	if len(strPage) > 0 {
+		page, _ = strconv.Atoi(strPage)
+	}
+	return page
 }
 
 func mapStoriesToStoryViewModel(stories *[]data.Story, signedInUserID int) *[]models.StoryViewModel {

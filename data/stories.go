@@ -236,7 +236,7 @@ func GetRecentStories(customerID, pageNumber, pageRowCount int) (*[]Story, error
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
 	}
-	sql := "SELECT stories.*, users.username FROM stories INNER JOIN users ON stories.userid = users.id WHERE users.customerid = $1 ORDER BY submittedon ASC LIMIT $2 OFFSET $3"
+	sql := "SELECT stories.*, users.username FROM stories INNER JOIN users ON stories.userid = users.id WHERE users.customerid = $1 ORDER BY stories.submittedon DESC LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, customerID, pageRowCount, pageNumber*pageRowCount)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
@@ -267,18 +267,18 @@ func GetUserSavedStories(userID int, pageNumber int, pageRowCount int) (*[]Story
 	return stories, nil
 }
 
-/*GetUserStoriesNotPaging get user's storis from db according to userID and not paging*/
-func GetUserStoriesNotPaging(userID int) (*[]Story, error) {
+/*GetUserSubmittedStories get user's stories from db according to userID and not paging*/
+func GetUserSubmittedStories(userID int, pageNumber int, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	sql := "SELECT * FROM public.stories WHERE userid = $1"
-	rows, err := db.Query(sql, userID)
+	sql := "SELECT * FROM public.stories WHERE userid = $1 ORDER BY submittedon DESC LIMIT $2 OFFSET $3"
+	rows, err := db.Query(sql, userID, pageRowCount, pageNumber*pageRowCount)
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("Cannot query user's posted stories. UserID: %d", userID), err}
+		return nil, &DBError{fmt.Sprintf("Cannot query user's posted stories. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
 	}
 
 	stories, err := MapSQLRowsToStories(rows)

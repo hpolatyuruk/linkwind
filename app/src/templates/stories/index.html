@@ -28,7 +28,7 @@
   <div class="flex-row w-full text-xs font-medium text-gray-600 ml-10">
     <span data-target="story.points">{{.Points}} points by </span>
     <span>
-      <a href="/users?user={{.UserName}}" class="text-gray-600"
+      <a href="/users/profile?user={{.UserName}}" class="text-gray-600"
         >{{.UserName}}</a
       >
       {{.SubmittedOnText}}
@@ -48,5 +48,8 @@
     >
   </div>
 </div>
-
+{{else}}
+<div class="flex flex-wrap w-full mt-2">
+  <p>No posts submitted yet.</p>
+</div>
 {{end}} {{end}}
