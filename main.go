@@ -17,7 +17,7 @@ func main() {
 		panic(err)
 	}
 
-	http.HandleFunc("/users/settings", errorHandler(controllers.UserSettingsHandler))
+	http.HandleFunc("/users/profile", errorHandler(controllers.UserProfileHandler))
 	http.HandleFunc("/signup", errorHandler(controllers.SignUpHandler))
 	http.HandleFunc("/signin", errorHandler(controllers.SignInHandler))
 	http.HandleFunc("/signout", errorHandler(controllers.SignOutHandler))
@@ -30,7 +30,6 @@ func main() {
 	http.HandleFunc("/saved", errorHandler(controllers.SavedStoriesHandler))
 	http.HandleFunc("/invite", errorHandler(controllers.InviteUserHandler))
 	http.HandleFunc("/replies", errorHandler(controllers.RepliesHandler))
-	http.HandleFunc("/settings", errorHandler(controllers.UserSettingsHandler))
 	http.HandleFunc("/login", errorHandler(controllers.SignInHandler))
 
 	staticFileServer := http.FileServer(http.Dir("app/dist/"))

@@ -7,8 +7,8 @@ import (
 	"turkdev/data"
 )
 
-/*UserSettingsHandler handles showing user profile detail*/
-func UserSettingsHandler(w http.ResponseWriter, r *http.Request) error {
+/*UserProfileHandler handles showing user profile detail*/
+func UserProfileHandler(w http.ResponseWriter, r *http.Request) error {
 	title := "User Settings | Turk Dev"
 	userViewModel := models.User{"Anil Yuzener"}
 
