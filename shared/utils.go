@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"strings"
 	"time"
+
+	"golang.org/x/net/html"
 )
 
 /*IsEmailAdrressValid take mail address, if address is valid return true.*/
@@ -18,43 +19,23 @@ func IsEmailAdrressValid(email string) bool {
 
 /*FetchURL send request to url that given as parameter and fetch title from HTML code.*/
 func FetchURL(url string) (string, error) {
-	response, err := http.Get(url)
+	resp, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Error occured when get url response")
 	}
-	defer response.Body.Close()
+	defer resp.Body.Close()
 
-	dataInBytes, err := ioutil.ReadAll(response.Body)
-	pageContent := string(dataInBytes)
-
-	titleStartIndex := strings.Index(pageContent, "<title>")
-	if titleStartIndex == -1 {
-		return "", fmt.Errorf("No title element found")
-	}
-	// The start index of the title is the index of the first
-	// character, the < symbol. We don't want to include
-	// <title> as part of the final value, so let's offset
-	// the index by the number of characers in <title>
-	titleStartIndex += 7
-
-	titleEndIndex := strings.Index(pageContent, "</title>")
-	if titleEndIndex == -1 {
-		fmt.Println("No closing tag for title found.")
-		os.Exit(0)
+	doc, err := html.Parse(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("Fail to parse html")
 	}
 
-	pageTitle := []byte(pageContent[titleStartIndex:titleEndIndex])
-	return string(pageTitle), nil
-}
-
-func setCookie(w http.ResponseWriter, userNameOrEmail, password string) {
-	expire := time.Now().AddDate(0, 0, 1)
-	cookie := http.Cookie{
-		Name:    userNameOrEmail,
-		Value:   password,
-		Expires: expire,
+	title, ok := traverse(doc)
+	if !ok {
+		return "", fmt.Errorf("Cannot parse title")
 	}
-	http.SetCookie(w, &cookie)
+
+	return title, nil
 }
 
 func ReadFile(filePath string) ([]byte, error) {
@@ -70,4 +51,33 @@ func ReadFile(filePath string) ([]byte, error) {
 	}
 
 	return byteValue, err
+}
+
+func setCookie(w http.ResponseWriter, userNameOrEmail, password string) {
+	expire := time.Now().AddDate(0, 0, 1)
+	cookie := http.Cookie{
+		Name:    userNameOrEmail,
+		Value:   password,
+		Expires: expire,
+	}
+	http.SetCookie(w, &cookie)
+}
+
+func isTitleElement(n *html.Node) bool {
+	return n.Type == html.ElementNode && n.Data == "title"
+}
+
+func traverse(n *html.Node) (string, bool) {
+	if isTitleElement(n) {
+		return n.FirstChild.Data, true
+	}
+
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		result, ok := traverse(c)
+		if ok {
+			return result, ok
+		}
+	}
+
+	return "", false
 }

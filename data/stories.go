@@ -267,7 +267,7 @@ func GetUserSavedStories(userID int, pageNumber int, pageRowCount int) (*[]Story
 	return stories, nil
 }
 
-/*GetUserSubmittedStories get user's stories from db according to userID and not paging*/
+/*GetUserSubmittedStories get user's stories from db according to userID*/
 func GetUserSubmittedStories(userID int, pageNumber int, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
 	defer db.Close()

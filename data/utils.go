@@ -239,8 +239,11 @@ func MapSQLRowsToReplies(rows *sql.Rows) (replies *[]Reply, err error) {
 }
 
 /*CalculateKarma calculates user's karma by its upvotes and downvotes*/
+// TODO : pageNumber ve pageRowCount 0 oalrak verdim. CalculateKarma bu parameterleri dışarıdan mı almalı, yoksa içeride başka bir değer mi verilmeli?
 func CalculateKarma(userID int) (int, error) {
-	stories, err := GetUserStoriesNotPaging(userID)
+	pageNumber := 0
+	pageRowCount := 0
+	stories, err := GetUserSubmittedStories(userID, pageNumber, pageRowCount)
 	if err != nil {
 		log.Printf("An error occurred while calculating user's karma error: %s", err)
 		return 0, err
@@ -259,8 +262,8 @@ func CalculateKarma(userID int) (int, error) {
 	return sVotes + cVotes, nil
 }
 
-/*UpVoteKarma increases votes for story on database*/
-func UpVoteKarma(userID int) error {
+/*IncreaseKarma increases votes for story on database*/
+func IncreaseKarma(userID int) error {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
