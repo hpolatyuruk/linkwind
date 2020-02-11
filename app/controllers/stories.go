@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 	"turkdev/app/models"
@@ -33,7 +34,6 @@ type JSONResponse struct {
 func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	var model = &models.StoryPageViewModel{Title: "Stories"}
 
-	var userID int = -1
 	var customerID int = 1 // TODO: get actual customer id from registered customer website
 
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
@@ -43,10 +43,9 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if isAuthenticated {
-		userID = user.ID
 		customerID = user.CustomerID
 		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = models.SignedInUserViewModel{
+		model.SignedInUser = &models.SignedInUserViewModel{
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
@@ -61,7 +60,7 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if stories == nil || len(*stories) > 0 {
-		model.Stories = *mapStoriesToStoryViewModel(stories, userID)
+		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
 	templates.RenderWithBase(w, "stories/index.html", model)
 	return nil
@@ -71,7 +70,6 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	var model = &models.StoryPageViewModel{Title: "Recent Stories"}
 
-	var userID int = -1
 	var customerID int = 1 // TODO: get actual customer id from registered customer website
 
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
@@ -81,10 +79,9 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if isAuthenticated {
-		userID = user.ID
 		customerID = user.CustomerID
 		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = models.SignedInUserViewModel{
+		model.SignedInUser = &models.SignedInUserViewModel{
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
@@ -99,7 +96,7 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if stories == nil || len(*stories) > 0 {
-		model.Stories = *mapStoriesToStoryViewModel(stories, userID)
+		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
 	templates.RenderWithBase(w, "stories/index.html", model)
 	return nil
@@ -202,7 +199,6 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("An error occured when run IsAuthenticated func in StoryDetailHandler")
 	}
-
 	model := *mapCommentsTostoryDetailPageViewModel(story, signedInUserClaims, comments, isAuth)
 	templates.RenderWithBase(w, "stories/detail.html", model)
 	return nil
@@ -443,14 +439,16 @@ func getPage(r *http.Request) int {
 	return page
 }
 
-func mapStoriesToStoryViewModel(stories *[]data.Story, signedInUserID int) *[]models.StoryViewModel {
+func mapStoriesToStoryViewModel(stories *[]data.Story, signedInUser *models.SignedInUserViewModel) *[]models.StoryViewModel {
 	var viewModels []models.StoryViewModel
 
 	for _, story := range *stories {
+		uri, _ := url.Parse(story.URL)
 		var viewModel = models.StoryViewModel{
 			ID:                    story.ID,
 			Title:                 story.Title,
 			URL:                   story.URL,
+			Host:                  uri.Hostname(),
 			Points:                story.UpVotes, // TODO: call point calculation function here
 			UserID:                story.UserID,
 			UserName:              story.UserName,
@@ -458,17 +456,18 @@ func mapStoriesToStoryViewModel(stories *[]data.Story, signedInUserID int) *[]mo
 			IsUpvotedSignedInUser: false,
 			IsSavedBySignedInUser: false,
 			SubmittedOnText:       generateSubmittedOnText(story.SubmittedOn),
+			SignedInUser:          signedInUser,
 		}
 
-		if signedInUserID > -1 {
-			isUpvoted, err := data.CheckIfStoryUpVotedByUser(signedInUserID, story.ID)
+		if signedInUser != nil {
+			isUpvoted, err := data.CheckIfStoryUpVotedByUser(signedInUser.UserID, story.ID)
 
 			if err != nil {
 				// TODO: log error here
 				isUpvoted = false
 			}
 
-			isSaved, err := data.CheckIfUserSavedStory(signedInUserID, story.ID)
+			isSaved, err := data.CheckIfUserSavedStory(signedInUser.UserID, story.ID)
 
 			if err != nil {
 				// TODO: log error here
