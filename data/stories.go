@@ -122,6 +122,12 @@ func UpVoteStory(userID int, storyID int) error {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Error occurred while increasing story upvotes. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
+	sql = "UPDATE users SET karma = karma + 1 WHERE id = (SELECT userid FROM stories WHERE id = $1)"
+	_, err = tran.Exec(sql, storyID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Error occurred while increasing user's karma. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
 	err = tran.Commit()
 	if err != nil {
 		return &DBError{fmt.Sprintf("Cannot commit transaction. UserID: %d, StoryID: %d", userID, storyID), err}
@@ -151,6 +157,12 @@ func UnVoteStory(userID int, storyID int) error {
 	if err != nil {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Cannot update story's vote. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	sql = "UPDATE users SET karma = karma - 1 WHERE id = (SELECT userid FROM stories WHERE id = $1)"
+	_, err = tran.Exec(sql, storyID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Error occurred while decreasing user's karma. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
 	err = tran.Commit()
 	if err != nil {

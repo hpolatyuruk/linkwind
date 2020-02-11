@@ -12,7 +12,7 @@ type SignedInUserViewModel struct {
 type StoryPageViewModel struct {
 	Title           string
 	IsAuthenticated bool
-	SignedInUser    SignedInUserViewModel
+	SignedInUser    *SignedInUserViewModel
 	Stories         []StoryViewModel
 }
 
@@ -20,6 +20,7 @@ type StoryViewModel struct {
 	ID                    int
 	Title                 string
 	URL                   string
+	Host                  string
 	UserID                int
 	UserName              string
 	Points                int
@@ -27,6 +28,7 @@ type StoryViewModel struct {
 	SubmittedOnText       string
 	IsSavedBySignedInUser bool
 	IsUpvotedSignedInUser bool
+	SignedInUser          *SignedInUserViewModel
 }
 
 type ViewModel struct {
