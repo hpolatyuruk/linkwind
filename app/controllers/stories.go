@@ -150,6 +150,17 @@ func SavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*SubmitStoryHandler handles to submit a new story*/
 func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
+
+	isAuthenticated, _, err := shared.IsAuthenticated(r)
+	if err != nil {
+		return nil
+	}
+
+	if isAuthenticated == false {
+		http.Redirect(w, r, "/signin", http.StatusSeeOther)
+		return nil
+	}
+
 	switch r.Method {
 	case "GET":
 		return handlesSubmitGET(w, r)
@@ -239,8 +250,6 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured while upvoting story. Error : %v", err), http.StatusInternalServerError)
 	}
-	// TODO(Sedat) : Please fix it :)
-	//err = data.IncreaseKarma(model.UserID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured while increasing karma. Error : %v", err), http.StatusInternalServerError)
 	}
