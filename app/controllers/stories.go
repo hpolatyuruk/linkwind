@@ -105,46 +105,38 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-/*SavedStoriesHandler handles showing the saved stories of a user*/
-func SavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	title := "Saved Stories | Turk Dev"
-	user := models.User{"Anil Yuzener"}
+/*UserSavedStoriesHandler handles showing the saved stories of a user*/
+func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
+	var model = &models.StoryPageViewModel{Title: "Stories"}
 
-	var userID int = 0
-	strUserID := r.URL.Query().Get("userID")
-	if len(strUserID) == 0 {
-		// TODO (Anil): Show user not found message.
-		return nil
-	}
-	userID, err := strconv.Atoi(strUserID)
+	var userID int = -1
+
+	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
-		// TODO(Anil): Cannot parse to int. Show user not found message.
-		return nil
+		return err
 	}
-	var page int = 0
-	strPage := r.URL.Query().Get("page")
-	if len(strPage) > 0 {
-		page, _ = strconv.Atoi(strPage)
+
+	if isAuthenticated {
+		userID = user.ID
+		model.IsAuthenticated = isAuthenticated
+		model.SignedInUser = models.SignedInUserViewModel{
+			UserID:     user.ID,
+			UserName:   user.UserName,
+			CustomerID: user.CustomerID,
+			Email:      user.Email,
+		}
 	}
+
+	var page int = getPage(r)
 	stories, err := data.GetUserSavedStories(userID, page, DefaultStoryCountPerPage)
 	if err != nil {
-		// TODO(Anil): Show error page here
+		return err
 	}
 
-	data := map[string]interface{}{
-		"Content": "Saved Stories",
-		"Stories": stories,
+	if stories == nil || len(*stories) > 0 {
+		model.Stories = *mapStoriesToStoryViewModel(stories, userID)
 	}
-
-	templates.RenderWithBase(
-		w,
-		"stories/index.html",
-		models.ViewModel{
-			title,
-			user,
-			data,
-		},
-	)
+	templates.RenderWithBase(w, "stories/index.html", model)
 	return nil
 }
 
