@@ -108,15 +108,12 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	var model = &models.StoryPageViewModel{Title: "Stories"}
 
-	var userID int = -1
-
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
 		return err
 	}
 
 	if isAuthenticated {
-		userID = user.ID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
 			UserID:     user.ID,
@@ -127,7 +124,7 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var page int = getPage(r)
-	stories, err := data.GetUserSavedStories(userID, page, DefaultStoryCountPerPage)
+	stories, err := data.GetUserSavedStories(user.ID, page, DefaultStoryCountPerPage)
 	if err != nil {
 		return err
 	}
@@ -166,8 +163,6 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	var model = &models.StoryPageViewModel{Title: "Stories"}
 
-	var userID int = 1
-
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 
 	if err != nil {
@@ -175,7 +170,6 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if isAuthenticated {
-		userID = 13
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
 			UserID:     user.ID,
@@ -186,7 +180,7 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var page int = getPage(r)
-	stories, err := data.GetStories(userID, page, DefaultStoryCountPerPage)
+	stories, err := data.GetStories(user.ID, page, DefaultStoryCountPerPage)
 	if err != nil {
 		return err
 	}
