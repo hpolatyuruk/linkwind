@@ -4,10 +4,58 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 	"turkdev/app/models"
 	"turkdev/app/src/templates"
 	"turkdev/data"
+	"turkdev/shared"
 )
+
+/*AddCommentHandler adds comment to the story. */
+func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		http.Error(w, "Only POST method is supported.", http.StatusMethodNotAllowed)
+		return nil
+	}
+	isAuthenticated, signedInUser, err := shared.IsAuthenticated(r)
+	if err != nil {
+		return err
+	}
+	if isAuthenticated == false {
+		http.Redirect(w, r, "/signin", http.StatusSeeOther)
+		return nil
+	}
+	commentText := r.FormValue("comment")
+	strStoryID := r.FormValue("storyID")
+	storyURL := fmt.Sprintf("/stories/detail?id=%s", strStoryID)
+	if strings.TrimSpace(commentText) == "" ||
+		strings.TrimSpace(strStoryID) == "" {
+		http.Redirect(w, r, storyURL, http.StatusSeeOther)
+		return nil
+	}
+	storyID, err := strconv.Atoi(strStoryID)
+	if err != nil {
+		return err
+	}
+	comment := &data.Comment{
+		StoryID:     storyID,
+		UserID:      signedInUser.ID,
+		UserName:    signedInUser.UserName,
+		ParentID:    data.CommentRootID,
+		UpVotes:     0,
+		DownVotes:   0,
+		ReplyCount:  0,
+		Comment:     commentText,
+		CommentedOn: time.Now(),
+	}
+	err = data.WriteComment(comment)
+	if err != nil {
+		return err
+	}
+	http.Redirect(w, r, storyURL, http.StatusSeeOther)
+	return nil
+}
 
 /*RepliesHandler handles showing user's replies*/
 func RepliesHandler(w http.ResponseWriter, r *http.Request) error {

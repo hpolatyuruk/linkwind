@@ -9,25 +9,31 @@
 >
   <div
     data-target="story.voterWrapper"
-    class="flex-row w-full {{if .IsUpvotedSignedInUser}} upvoted {{end}}"
+    class="flex-row w-full {{if .IsUpvotedBySignedInUser}} upvoted {{end}}"
   >
     <div class="voters">
       <a
         data-target="story.voter"
-        data-action="{{if .IsUpvotedSignedInUser}} click->story#unvote {{else}} click->story#upvote {{end}}"
+        data-action="{{if .IsUpvotedBySignedInUser}} click->story#unvote {{else}} click->story#upvote {{end}}"
         class="upvoter"
         title="Add upvote"
       ></a>
     </div>
     <div>
-      <a href="{{.URL}}" target="_blank" class="text-indigo-600 font-semibold"
+      <a
+        href="{{if .URL}}{{.URL}}{{else}}/stories/detail?id={{.ID}}{{end}}"
+        target="{{if .URL}}_blank{{else}}_self{{end}}"
+        class="text-indigo-600 font-semibold"
         >{{.Title}}</a
-      ><a
+      >
+      {{if .URL}}
+      <a
         href="http://{{.Host}}"
         target="_blank"
         class="text-gray-500 font-semibold text-xs ml-1"
         >({{.Host}})</a
       >
+      {{end}}
     </div>
   </div>
   <div class="flex-row w-full text-xs font-medium text-gray-600 ml-10">

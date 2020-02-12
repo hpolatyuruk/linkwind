@@ -58,15 +58,14 @@ func nullCommentParentID(i int) sql.NullInt32 {
 	}
 }
 
-/*WriteComment insert a comment to database*/
+/*WriteComment insert a comment to database.*/
 func WriteComment(comment *Comment) error {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
 		return &CommentError{"DB connection error", comment, err}
 	}
-	sql := "INSERT INTO comments (storyid, userid, parentid, upvotes,downvotes, replycount, comment, commentedon) VALUES ($1, $2, $3, $4, $5, $6, $7)"
-
+	sql := "INSERT INTO comments (storyid, userid, parentid, upvotes, downvotes, replycount, comment, commentedon) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
 	_, err = db.Exec(
 		sql,
 		comment.StoryID,
@@ -78,7 +77,7 @@ func WriteComment(comment *Comment) error {
 		comment.Comment,
 		comment.CommentedOn)
 	if err != nil {
-		return &CommentError{"Cannot inser comment to the db.", comment, err}
+		return &CommentError{"Cannot insert comment to the db.", comment, err}
 	}
 	return nil
 }

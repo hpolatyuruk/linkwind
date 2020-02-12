@@ -1,6 +1,6 @@
 package models
 
-import "turkdev/data"
+import "html/template"
 
 type SignedInUserViewModel struct {
 	UserID     int
@@ -17,18 +17,19 @@ type StoryPageViewModel struct {
 }
 
 type StoryViewModel struct {
-	ID                    int
-	Title                 string
-	URL                   string
-	Host                  string
-	UserID                int
-	UserName              string
-	Points                int
-	CommentCount          int
-	SubmittedOnText       string
-	IsSavedBySignedInUser bool
-	IsUpvotedSignedInUser bool
-	SignedInUser          *SignedInUserViewModel
+	ID                      int
+	Title                   string
+	URL                     string
+	Text                    template.HTML
+	Host                    string
+	UserID                  int
+	UserName                string
+	Points                  int
+	CommentCount            int
+	SubmittedOnText         string
+	IsSavedBySignedInUser   bool
+	IsUpvotedBySignedInUser bool
+	SignedInUser            *SignedInUserViewModel
 }
 
 type ViewModel struct {
@@ -37,10 +38,22 @@ type ViewModel struct {
 	Data  map[string]interface{}
 }
 
+type CommentViewModel struct {
+	ID                      int
+	UserID                  int
+	UserName                string
+	Points                  int
+	Comment                 string
+	CommentedOnText         string
+	IsUpvotedBySignedInUser bool
+	IsRoot                  bool
+	ParentID                int
+}
+
 type StoryDetailPageViewModel struct {
 	Title           string
-	Story           *data.Story
-	Comments        *[]data.Comment
-	SignedInUser    SignedInUserViewModel
+	Story           *StoryViewModel
+	Comments        *[]CommentViewModel
+	SignedInUser    *SignedInUserViewModel
 	IsAuthenticated bool
 }

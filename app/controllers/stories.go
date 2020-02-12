@@ -3,10 +3,12 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"math"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 	"turkdev/app/models"
 	"turkdev/app/src/templates"
@@ -106,15 +108,12 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	var model = &models.StoryPageViewModel{Title: "Stories"}
 
-	var userID int = -1
-
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
 		return err
 	}
 
 	if isAuthenticated {
-		userID = user.ID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
 			UserID:     user.ID,
@@ -125,7 +124,7 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var page int = getPage(r)
-	stories, err := data.GetUserSavedStories(userID, page, DefaultStoryCountPerPage)
+	stories, err := data.GetUserSavedStories(user.ID, page, DefaultStoryCountPerPage)
 	if err != nil {
 		return err
 	}
@@ -164,8 +163,6 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	var model = &models.StoryPageViewModel{Title: "Stories"}
 
-	var userID int = -1
-
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 
 	if err != nil {
@@ -173,7 +170,6 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if isAuthenticated {
-		userID = user.ID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
 			UserID:     user.ID,
@@ -184,7 +180,7 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var page int = getPage(r)
-	stories, err := data.GetStories(userID, page, DefaultStoryCountPerPage)
+	stories, err := data.GetStories(user.ID, page, DefaultStoryCountPerPage)
 	if err != nil {
 		return err
 	}
@@ -254,10 +250,6 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	comments, err := data.GetComments(storyID)
 	if err != nil {
 		return fmt.Errorf("Cannot get comments from db (StoryID : %d). Original err : %v", storyID, err)
-	}
-	if comments == nil || len(*comments) == 0 {
-		templates.Render(w, "errors/404.html", nil)
-		return nil
 	}
 	isAuth, signedInUserClaims, err := shared.IsAuthenticated(r)
 	if err != nil {
@@ -507,66 +499,85 @@ func mapStoriesToStoryViewModel(stories *[]data.Story, signedInUser *models.Sign
 	var viewModels []models.StoryViewModel
 
 	for _, story := range *stories {
-		uri, _ := url.Parse(story.URL)
-		var viewModel = models.StoryViewModel{
-			ID:                    story.ID,
-			Title:                 story.Title,
-			URL:                   story.URL,
-			Host:                  uri.Hostname(),
-			Points:                story.UpVotes, // TODO: call point calculation function here
-			UserID:                story.UserID,
-			UserName:              story.UserName,
-			CommentCount:          story.CommentCount,
-			IsUpvotedSignedInUser: false,
-			IsSavedBySignedInUser: false,
-			SubmittedOnText:       generateSubmittedOnText(story.SubmittedOn),
-			SignedInUser:          signedInUser,
-		}
-
-		if signedInUser != nil {
-			isUpvoted, err := data.CheckIfStoryUpVotedByUser(signedInUser.UserID, story.ID)
-
-			if err != nil {
-				// TODO: log error here
-				isUpvoted = false
-			}
-
-			isSaved, err := data.CheckIfUserSavedStory(signedInUser.UserID, story.ID)
-
-			if err != nil {
-				// TODO: log error here
-				isSaved = false
-			}
-			viewModel.IsUpvotedSignedInUser = isUpvoted
-			viewModel.IsSavedBySignedInUser = isSaved
-		}
-		viewModels = append(viewModels, viewModel)
+		viewModel := mapStoryToStoryViewModel(&story, signedInUser)
+		viewModels = append(viewModels, *viewModel)
 	}
 	return &viewModels
+}
+
+func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUserViewModel) *models.StoryViewModel {
+	uri, _ := url.Parse(story.URL)
+	var viewModel = models.StoryViewModel{
+		ID:                      story.ID,
+		Title:                   story.Title,
+		URL:                     story.URL,
+		Text:                    template.HTML(strings.ReplaceAll(story.Text, "\n", "<br />")),
+		Host:                    uri.Hostname(),
+		Points:                  story.UpVotes, // TODO: call point calculation function here
+		UserID:                  story.UserID,
+		UserName:                story.UserName,
+		CommentCount:            story.CommentCount,
+		IsUpvotedBySignedInUser: false,
+		IsSavedBySignedInUser:   false,
+		SubmittedOnText:         generateSubmittedOnText(story.SubmittedOn),
+		SignedInUser:            signedInUser,
+	}
+
+	if signedInUser != nil {
+		isUpvoted, err := data.CheckIfStoryUpVotedByUser(signedInUser.UserID, story.ID)
+
+		if err != nil {
+			// TODO: log error here
+			isUpvoted = false
+		}
+
+		isSaved, err := data.CheckIfUserSavedStory(signedInUser.UserID, story.ID)
+
+		if err != nil {
+			// TODO: log error here
+			isSaved = false
+		}
+		viewModel.IsUpvotedBySignedInUser = isUpvoted
+		viewModel.IsSavedBySignedInUser = isSaved
+	}
+	return &viewModel
 }
 
 func mapCommentsTostoryDetailPageViewModel(story *data.Story, signedInUserClaims *shared.SignedInUserClaims,
 	comments *[]data.Comment,
 	isAuth bool) *models.StoryDetailPageViewModel {
-	var userViewModel models.SignedInUserViewModel
+	var detailPageViewModel models.StoryDetailPageViewModel
 
 	if signedInUserClaims != nil {
-		userViewModel.CustomerID = signedInUserClaims.CustomerID
-		userViewModel.Email = signedInUserClaims.Email
-		userViewModel.UserID = signedInUserClaims.ID
-		userViewModel.UserName = signedInUserClaims.UserName
+		detailPageViewModel.SignedInUser = &models.SignedInUserViewModel{
+			CustomerID: signedInUserClaims.CustomerID,
+			Email:      signedInUserClaims.Email,
+			UserID:     signedInUserClaims.ID,
+			UserName:   signedInUserClaims.UserName,
+		}
 	}
 
-	var detailPageViewModel models.StoryDetailPageViewModel
-	detailPageViewModel.Comments = comments
+	commentViewModels := []models.CommentViewModel{}
+
+	for _, comment := range *comments {
+		commentViewModels = append(commentViewModels, *mapCommentToCommentViewModel(&comment))
+	}
+
+	detailPageViewModel.Comments = &commentViewModels
 	detailPageViewModel.IsAuthenticated = isAuth
-	detailPageViewModel.SignedInUser = userViewModel
-	detailPageViewModel.Story = story
 	detailPageViewModel.Title = story.Title
-
+	detailPageViewModel.Story = mapStoryToStoryViewModel(story, detailPageViewModel.SignedInUser)
 	return &detailPageViewModel
-
 }
+
+func mapCommentToCommentViewModel(comment *data.Comment) *models.CommentViewModel {
+	model := &models.CommentViewModel{
+		ID:      comment.ID,
+		Comment: comment.Comment,
+	}
+	return model
+}
+
 func generateSubmittedOnText(submittedOn time.Time) string {
 	var text string = ""
 	diff := time.Now().Sub(submittedOn)
