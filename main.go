@@ -26,10 +26,11 @@ func main() {
 	http.HandleFunc("/stories/upvote", controllers.UpvoteStoryHandler)
 	http.HandleFunc("/stories/unvote", controllers.UnvoteStoryHandler)
 	http.HandleFunc("/submit", errorHandler(controllers.SubmitStoryHandler))
-	http.HandleFunc("/saved", errorHandler(controllers.SavedStoriesHandler))
 	http.HandleFunc("/invite", errorHandler(controllers.InviteUserHandler))
 	http.HandleFunc("/replies", errorHandler(controllers.RepliesHandler))
 	http.HandleFunc("/addcomment", errorHandler(controllers.AddCommentHandler))
+	http.HandleFunc("/users/stories/saved", errorHandler(controllers.UserSavedStoriesHandler))
+	http.HandleFunc("/users/stories/submitted", errorHandler(controllers.UserSubmittedStoriesHandler))
 
 	staticFileServer := http.FileServer(http.Dir("app/dist/"))
 
