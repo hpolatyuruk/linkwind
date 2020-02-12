@@ -1,3 +1,36 @@
 {{ define "title" }}{{.Title}}{{ end }} {{define "content"}}
-<div></div>
+<div class="flex flex-wrap w-full mt-2">
+  {{template "story" .Story}}
+</div>
+{{if not .Story.URL}}
+<div class="flex flex-wrap w-full ml-10 mt-2">
+<p class="text-gray-600 text-sm">
+  {{.Story.Text}}
+</p>
+</div>
+{{end}}
+<div class="flex flex-wrap w-full ml-10 mt-2">
+<form class="w-full" action="/addcomment" method="POST">
+  <input type="hidden" id="storyID" name="storyID" value="{{.Story.ID}}" />
+  <textarea
+  class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-1/2 py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+  id="comment"
+  name="comment"
+  rows="5"
+></textarea>
+</div>
+<div class="flex flex-wrap w-full ml-10 mt-2">
+<button
+  class="shadow bg-gray-200 hover:bg-gray-400 focus:shadow-outline focus:outline-none text-gray-600 text-sm font-semibold py-1 px-5 rounded"
+  type="submit"
+>
+  Add comment
+</button>
+</form>
+<div>
+  {{range .Comments}}
+    {{template "comment" .}}
+  {{end}}
+</div>
+</div>
 {{end}}

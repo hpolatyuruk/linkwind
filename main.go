@@ -29,7 +29,7 @@ func main() {
 	http.HandleFunc("/saved", errorHandler(controllers.SavedStoriesHandler))
 	http.HandleFunc("/invite", errorHandler(controllers.InviteUserHandler))
 	http.HandleFunc("/replies", errorHandler(controllers.RepliesHandler))
-	http.HandleFunc("/login", errorHandler(controllers.SignInHandler))
+	http.HandleFunc("/addcomment", errorHandler(controllers.AddCommentHandler))
 
 	staticFileServer := http.FileServer(http.Dir("app/dist/"))
 

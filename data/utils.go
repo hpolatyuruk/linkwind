@@ -151,7 +151,7 @@ func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
 			&comment.Comment,
 			&comment.UpVotes,
 			&comment.StoryID,
-			&comment.ParentID,
+			&parentID,
 			&comment.ReplyCount,
 			&comment.UserID,
 			&comment.CommentedOn,
