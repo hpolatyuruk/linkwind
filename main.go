@@ -31,7 +31,7 @@ func main() {
 	http.HandleFunc("/login", errorHandler(controllers.SignInHandler))
 	http.HandleFunc("/users/stories/saved", errorHandler(controllers.UserSavedStoriesHandler))
 	http.HandleFunc("/users/stories/submitted", errorHandler(controllers.UserSubmittedStoriesHandler))
-
+	http.HandleFunc("/users/stories/upvoted", errorHandler(controllers.UserUpvotedStoriesHandler))
 	staticFileServer := http.FileServer(http.Dir("app/dist/"))
 
 	http.Handle("/dist/", http.StripPrefix("/dist/", staticFileServer))
