@@ -191,6 +191,42 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+/*UserUpvotedStoriesHandler handles showing the upvoted stories by user*/
+func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
+	var model = &models.StoryPageViewModel{Title: "Stories"}
+
+	var userID int = -1
+
+	isAuthenticated, user, err := shared.IsAuthenticated(r)
+
+	if err != nil {
+		return err
+	}
+
+	if isAuthenticated {
+		userID = user.ID
+		model.IsAuthenticated = isAuthenticated
+		model.SignedInUser = &models.SignedInUserViewModel{
+			UserID:     user.ID,
+			UserName:   user.UserName,
+			CustomerID: user.CustomerID,
+			Email:      user.Email,
+		}
+	}
+
+	var page int = getPage(r)
+	stories, err := data.GetUserUpvotedStories(userID, page, DefaultStoryCountPerPage)
+	if err != nil {
+		return err
+	}
+
+	if stories == nil || len(*stories) > 0 {
+		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
+	}
+	templates.RenderWithBase(w, "stories/index.html", model)
+	return nil
+}
+
 /*StoryDetailHandler handles showing comments by giving story id*/
 func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	strStoryID := r.URL.Query().Get("id")

@@ -140,6 +140,30 @@ func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
 
 }
 
+/*MapSQLRowsToStoriesNotIncludeUserName creates a storyID array by sql rows*/
+func MapSQLRowsToStoriesNotIncludeUserName(rows *sql.Rows) (stories *[]Story, err error) {
+	_stories := []Story{}
+	for rows.Next() {
+		var story Story
+		err = rows.Scan(
+			&story.ID,
+			&story.URL,
+			&story.Title,
+			&story.Text,
+			&story.UpVotes,
+			&story.CommentCount,
+			&story.UserID,
+			&story.SubmittedOn,
+			pq.Array(&story.Tags),
+			&story.DownVotes)
+		if err != nil {
+			return nil, &DBError{fmt.Sprintf("Cannot read rows"), err}
+		}
+		_stories = append(_stories, story)
+	}
+	return &_stories, nil
+}
+
 /*MapSQLRowsToComments creates a comment struct array by sql rows*/
 func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
 	_comments := []Comment{}

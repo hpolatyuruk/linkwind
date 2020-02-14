@@ -279,6 +279,25 @@ func GetUserSavedStories(userID int, pageNumber int, pageRowCount int) (*[]Story
 	return stories, nil
 }
 
+/*GetUserUpvotedStories returns the paging user's upvoted stories*/
+func GetUserUpvotedStories(userID int, pageNumber int, pageRowCount int) (*[]Story, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d PageNo: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+	}
+	sql := "SELECT stories.* FROM stories INNER JOIN storyvotes ON stories.id = storyvotes.storyid WHERE storyvotes.userid = $1 ORDER BY stories.submittedon DESC LIMIT $2 OFFSET $3"
+	rows, err := db.Query(sql, userID, pageRowCount, pageNumber*pageRowCount)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot query user's saved stories. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+	}
+	stories, err := MapSQLRowsToStoriesNotIncludeUserName(rows)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot map sql rows to story struct array. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
+	}
+	return stories, nil
+}
+
 /*GetUserSubmittedStories get user's stories from db according to userID*/
 func GetUserSubmittedStories(userID int, pageNumber int, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
