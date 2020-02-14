@@ -23,6 +23,8 @@ func main() {
 	http.HandleFunc("/invite", errorHandler(controllers.InviteUserHandler))
 	http.HandleFunc("/replies", errorHandler(controllers.RepliesHandler))
 	http.HandleFunc("/comments/add", errorHandler(controllers.AddCommentHandler))
+	http.HandleFunc("/comments/upvote", controllers.UpvoteCommentHandler)
+	http.HandleFunc("/comments/unvote", controllers.UnvoteCommentHandler)
 	http.HandleFunc("/comments/reply", controllers.ReplyToCommentHandler)
 	http.HandleFunc("/users/stories/saved", errorHandler(controllers.UserSavedStoriesHandler))
 	http.HandleFunc("/users/stories/submitted", errorHandler(controllers.UserSubmittedStoriesHandler))

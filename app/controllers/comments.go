@@ -13,6 +13,12 @@ import (
 	"turkdev/shared"
 )
 
+/*CommentVoteModel represents the data in http request body to upvote comment.*/
+type CommentVoteModel struct {
+	CommentID int
+	UserID    int
+}
+
 /*ReplyModel represents the data to reply to comment.*/
 type ReplyModel struct {
 	ParentCommentID int
@@ -158,76 +164,96 @@ func RepliesHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-/*UpvoteCommentHandler upvotes a comment if not upvoted by same user*/
-func UpvoteCommentHandler(w http.ResponseWriter, r *http.Request) error {
+/*UpvoteCommentHandler runs when click to upvote comment button. If not upvoted before by user, upvotes that comment*/
+func UpvoteCommentHandler(w http.ResponseWriter, r *http.Request) {
+	isAuthenticated, _, err := shared.IsAuthenticated(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if isAuthenticated == false {
+		http.Redirect(w, r, "/signin", http.StatusSeeOther)
+		return
+	}
 	if r.Method == "GET" {
-		return fmt.Errorf("Reqeuest should be POSTm request")
+		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
+		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		return fmt.Errorf("Error occured when parse from. Error : %v", err)
-	}
-
-	userIDStr := r.FormValue("userID")
-	commentIDStr := r.FormValue("commentID")
-	userID, err := strconv.Atoi(userIDStr)
+	var model CommentVoteModel
+	err = json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
-		return fmt.Errorf("Error occured when convert string userID to int userID. Error : %v", err)
-	}
-	commentID, err := strconv.Atoi(commentIDStr)
-	if err != nil {
-		return fmt.Errorf("Error occured when convert string commentID to int commentID. Error : %v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	isUpvoted, err := data.CheckIfCommentUpVotedByUser(userID, commentID)
+	isUpvoted, err := data.CheckIfCommentUpVotedByUser(model.UserID, model.CommentID)
 	if err != nil {
-		return fmt.Errorf("Error occured when check user upvote comment. Error : %v", err)
+		http.Error(w, fmt.Sprintf("Error occured while checking if user already upvoted. Error : %v", err), http.StatusInternalServerError)
+		return
 	}
-
 	if isUpvoted {
-		return nil
+		res, _ := json.Marshal(&JSONResponse{
+			Result: "AlreadyUpvoted",
+		})
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(res)
+		return
 	}
 
-	err = data.UpVoteComment(userID, commentID)
+	err = data.UpVoteComment(model.UserID, model.CommentID)
 	if err != nil {
-		return fmt.Errorf("Error occured when upvote comment. Error : %v", err)
+		fmt.Println(err)
+		http.Error(w, fmt.Sprintf("Error occured while upvoting story. Error : %v", err), http.StatusInternalServerError)
+		return
 	}
-	return nil
+	res, _ := json.Marshal(&JSONResponse{
+		Result: "Upvoted",
+	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
 }
 
-/*UnvoteCommentHandler unvotes a comment if upvoted by same user*/
-func UnvoteCommentHandler(w http.ResponseWriter, r *http.Request) error {
+/*UnvoteCommentHandler handles unvote button. If a comment voted by user before, this handler undo that operation*/
+func UnvoteCommentHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		return fmt.Errorf("Reqeuest should be POSTm request")
+		http.Error(w, "Unsupported request method. Only POST method is supported", http.StatusMethodNotAllowed)
+		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		return fmt.Errorf("Error occured when parse from. Error : %v", err)
-	}
-
-	userIDStr := r.FormValue("userID")
-	commentIDStr := r.FormValue("commentID")
-	userID, err := strconv.Atoi(userIDStr)
+	var model CommentVoteModel
+	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
-		return fmt.Errorf("Error occured when convert string userID to int userID. Error : %v", err)
-	}
-	commentID, err := strconv.Atoi(commentIDStr)
-	if err != nil {
-		return fmt.Errorf("Error occured when convert string commentID to int commentID. Error : %v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	isUpvoted, err := data.CheckIfCommentUpVotedByUser(userID, commentID)
+	isUpvoted, err := data.CheckIfCommentUpVotedByUser(model.UserID, model.CommentID)
 	if err != nil {
-		return fmt.Errorf("Error occured when check user upvote comment. Error : %v", err)
+		http.Error(w, fmt.Sprintf("Error occured while checking user story vote. Error : %v", err), http.StatusInternalServerError)
+		return
 	}
-
 	if isUpvoted == false {
-		return nil
+		res, _ := json.Marshal(&JSONResponse{
+			Result: "AlreadyUnvoted",
+		})
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(res)
+		return
 	}
 
-	err = data.UnVoteComment(userID, commentID)
+	err = data.UnVoteComment(model.UserID, model.CommentID)
 	if err != nil {
-		return fmt.Errorf("Error occured when unvote comment. Error : %v", err)
+		http.Error(w, fmt.Sprintf("Error occured while unvoting story. Error : %v", err), http.StatusInternalServerError)
+		return
 	}
-	return nil
+	res, _ := json.Marshal(&JSONResponse{
+		Result: "Unvoted",
+	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
 }
