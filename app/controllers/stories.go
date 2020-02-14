@@ -223,7 +223,10 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if stories == nil || len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
-	templates.RenderWithBase(w, "stories/index.html", model)
+	err = templates.RenderInLayout(w, "stories.html", model)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -273,7 +276,7 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 	model.Story = mapStoryToStoryViewModel(story, model.SignedInUser)
-	model.Comments = loadChildComments(comments, model.SignedInUser, storyID)
+	model.Comments = mapCommentsToViewModelsWithChildren(comments, model.SignedInUser, storyID)
 	templates.RenderInLayout(w, "detail.html", model)
 	return nil
 }
