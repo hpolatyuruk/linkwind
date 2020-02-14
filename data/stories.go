@@ -90,7 +90,7 @@ func GetStoryByID(storyID int) (*Story, error) {
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT * FROM public.stories WHERE id = $1"
+	sql := "SELECT stories.*, users.UserName FROM stories INNER JOIN users ON users.id = stories.userid WHERE stories.id = $1"
 	row := db.QueryRow(sql, storyID)
 	story, err := MapSQLRowToStory(row)
 	if err != nil {

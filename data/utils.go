@@ -94,6 +94,7 @@ func MapSQLRowToCustomer(row *sql.Row) (customer *Customer, err error) {
 /*MapSQLRowToStory creates a story struct by sql rows*/
 func MapSQLRowToStory(rows *sql.Row) (story *Story, err error) {
 	var _story Story
+	var username string
 	err = rows.Scan(
 		&_story.ID,
 		&_story.URL,
@@ -104,10 +105,12 @@ func MapSQLRowToStory(rows *sql.Row) (story *Story, err error) {
 		&_story.UserID,
 		&_story.SubmittedOn,
 		pq.Array(&_story.Tags),
-		&_story.DownVotes)
+		&_story.DownVotes,
+		&username)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot read rows"), err}
 	}
+	_story.UserName = username
 	story = &_story
 	return story, nil
 }
