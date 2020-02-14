@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os"
 	"regexp"
@@ -80,4 +81,46 @@ func traverse(n *html.Node) (string, bool) {
 	}
 
 	return "", false
+}
+
+/*DateToString converts date to user friendly string. eg: 15 days ago*/
+func DateToString(submittedOn time.Time) string {
+	var text string = ""
+	diff := time.Now().Sub(submittedOn)
+
+	if diff.Hours() < 1 {
+		mins := int(math.Round(diff.Minutes()))
+		text = fmt.Sprintf("%d minutes ago", mins)
+		if mins == 1 {
+			text = fmt.Sprintf("%d minute ago", mins)
+		}
+	} else if diff.Hours() < 24 {
+		hours := int(math.Round(diff.Hours()))
+		text = fmt.Sprintf("%d hours ago", hours)
+		if hours == 1 {
+			text = fmt.Sprintf("%d hour ago", hours)
+		}
+	} else {
+		days := math.Round(diff.Hours() / 24)
+
+		if days == 1 {
+			text = fmt.Sprintf("%d day ago", int(days))
+		} else if days > 1 && days < 30 {
+			text = fmt.Sprintf("%d days ago", int(days))
+		} else if days > 30 && days < 365 {
+			months := int(math.Round(days / 30))
+			text = fmt.Sprintf("%d months ago", months)
+			if months == 1 {
+				text = fmt.Sprintf("%d month ago", months)
+			}
+
+		} else {
+			years := int(math.Round(days / 365))
+			text = fmt.Sprintf("%d years ago", years)
+			if years == 1 {
+				text = fmt.Sprintf("%d year ago", years)
+			}
+		}
+	}
+	return text
 }

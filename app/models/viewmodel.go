@@ -42,12 +42,15 @@ type CommentViewModel struct {
 	ID                      int
 	UserID                  int
 	UserName                string
+	StoryID                 int
 	Points                  int
 	Comment                 string
 	CommentedOnText         string
 	IsUpvotedBySignedInUser bool
 	IsRoot                  bool
 	ParentID                int
+	ChildComments           []CommentViewModel
+	SignedInUser            *SignedInUserViewModel
 }
 
 type StoryDetailPageViewModel struct {

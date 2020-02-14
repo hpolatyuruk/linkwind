@@ -73,9 +73,9 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handleSignUpGET(w http.ResponseWriter, r *http.Request) error {
-	templates.RenderWithBase(
+	templates.RenderInLayout(
 		w,
-		"users/signup.html",
+		"signup.html",
 		models.ViewModel{
 			Title: "Sign Up",
 		},
@@ -108,11 +108,14 @@ func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handleSignInGET(w http.ResponseWriter, r *http.Request) error {
-	templates.Render(
+	err := templates.RenderFile(
 		w,
-		"users/signin.html",
+		"layouts/users/signin.html",
 		SignInViewModel{},
 	)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -123,7 +126,10 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if model.Validate() == false {
-		templates.Render(w, "users/signin.html", model)
+		err := templates.RenderFile(w, "users/signin.html", model)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -140,12 +146,15 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
 	}
 	if user == nil {
 		model.Errors["General"] = "User does not exist!"
-		templates.Render(w, "users/signin.html", model)
+		err = templates.RenderFile(w, "users/signin.html", model)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 	// Declare the expiration time of the token
 	// here, we have kept it as 5 minutes
-	expirationTime := time.Now().Add(5 * time.Minute)
+	expirationTime := time.Now().Add(1440 * time.Minute)
 
 	token, err := shared.GenerateAuthToken(*user, expirationTime)
 	if err != nil {

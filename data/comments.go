@@ -59,14 +59,19 @@ func nullCommentParentID(i int) sql.NullInt32 {
 }
 
 /*WriteComment insert a comment to database.*/
-func WriteComment(comment *Comment) error {
+func WriteComment(comment *Comment) (*int, error) {
+	var commentID int
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
-		return &CommentError{"DB connection error", comment, err}
+		return &commentID, &CommentError{"DB connection error", comment, err}
 	}
-	sql := "INSERT INTO comments (storyid, userid, parentid, upvotes, downvotes, replycount, comment, commentedon) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
-	_, err = db.Exec(
+	tran, err := db.Begin()
+	if err != nil {
+		return &commentID, &CommentError{"Can not start the transaction.", comment, err}
+	}
+	sql := "INSERT INTO comments (storyid, userid, parentid, upvotes, downvotes, replycount, comment, commentedon) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id"
+	err = tran.QueryRow(
 		sql,
 		comment.StoryID,
 		comment.UserID,
@@ -75,11 +80,30 @@ func WriteComment(comment *Comment) error {
 		comment.DownVotes,
 		comment.ReplyCount,
 		comment.Comment,
-		comment.CommentedOn)
+		comment.CommentedOn).Scan(&commentID)
 	if err != nil {
-		return &CommentError{"Cannot insert comment to the db.", comment, err}
+		tran.Rollback()
+		return &commentID, &CommentError{"Cannot insert comment to the db.", comment, err}
 	}
-	return nil
+	sql = "UPDATE stories SET commentcount = commentcount + 1 WHERE id = $1"
+	_, err = tran.Exec(sql, comment.StoryID)
+	if err != nil {
+		tran.Rollback()
+		return &commentID, &CommentError{"Cannot increase story's comment count.", comment, err}
+	}
+	if comment.ParentID != CommentRootID {
+		sql = "UPDATE comments SET replycount = replycount + 1 WHERE id = $1"
+		_, err = tran.Exec(sql, comment.ParentID)
+		if err != nil {
+			tran.Rollback()
+			return &commentID, &CommentError{"Cannot increase comment's reply count.", comment, err}
+		}
+	}
+	err = tran.Commit()
+	if err != nil {
+		return &commentID, &CommentError{"Cannot commit transaction.", comment, err}
+	}
+	return &commentID, nil
 }
 
 /*GetComments retunrs comment list by provided story id*/
@@ -98,6 +122,44 @@ func GetComments(storyID int) (comments *[]Comment, err error) {
 	comments, err = MapSQLRowsToComments(rows)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot read comment row. StoryID: %d.", storyID), err}
+	}
+	return comments, nil
+}
+
+/*GetRootCommentsByStoryID retunrs only root comments by provided story id*/
+func GetRootCommentsByStoryID(storyID int) (comments *[]Comment, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("DB connection error. StoryID: %d.", storyID), err}
+	}
+	sql := "SELECT comments.*, users.username FROM comments INNER JOIN users ON users.id = comments.userid WHERE storyid = $1 AND parentid is null ORDER BY commentedon ASC"
+	rows, err := db.Query(sql, storyID)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot query comments. StoryID: %d.", storyID), err}
+	}
+	comments, err = MapSQLRowsToComments(rows)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read comment row. StoryID: %d.", storyID), err}
+	}
+	return comments, nil
+}
+
+/*GetCommentsByParentIDAndStoryID retunrs only root comments by provided story id*/
+func GetCommentsByParentIDAndStoryID(parentID int, storyID int) (comments *[]Comment, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("DB connection error. ParentID: %d, StoryID: %d.", parentID, storyID), err}
+	}
+	sql := "SELECT comments.*, users.username FROM comments INNER JOIN users ON users.id = comments.userid WHERE storyid = $1 AND parentid = $2 ORDER BY commentedon ASC"
+	rows, err := db.Query(sql, storyID, parentID)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot query comments by parent id and story id. ParentID: %d and StoryID: %d.", parentID, storyID), err}
+	}
+	comments, err = MapSQLRowsToComments(rows)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read comment row. ParentID: %d, StoryID: %d.", parentID, storyID), err}
 	}
 	return comments, nil
 }

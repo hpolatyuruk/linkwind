@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,6 +12,13 @@ import (
 	"turkdev/data"
 	"turkdev/shared"
 )
+
+/*ReplyModel represents the data to reply to comment.*/
+type ReplyModel struct {
+	ParentCommentID int
+	StoryID         int
+	ReplyText       string
+}
 
 /*AddCommentHandler adds comment to the story. */
 func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
@@ -49,7 +57,7 @@ func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
 		Comment:     commentText,
 		CommentedOn: time.Now(),
 	}
-	err = data.WriteComment(comment)
+	_, err = data.WriteComment(comment)
 	if err != nil {
 		return err
 	}
@@ -57,9 +65,65 @@ func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+/*ReplyToCommentHandler write a reply to comment.*/
+func ReplyToCommentHandler(w http.ResponseWriter, r *http.Request) {
+	isAuth, user, err := shared.IsAuthenticated(r)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("An error occurred. Error:%v", err), http.StatusInternalServerError)
+		return
+	}
+	if isAuth == false {
+		http.Redirect(w, r, "/signin", http.StatusSeeOther)
+		return
+	}
+	if r.Method == "GET" {
+		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
+		return
+	}
+	var model ReplyModel
+	err = json.NewDecoder(r.Body).Decode(&model)
+	if err != nil {
+		http.Error(w, "Cannot parse json.", http.StatusBadRequest)
+		return
+	}
+	comment := &data.Comment{
+		UserID:      user.ID,
+		UserName:    user.UserName,
+		StoryID:     model.StoryID,
+		ParentID:    model.ParentCommentID,
+		Comment:     model.ReplyText,
+		CommentedOn: time.Now(),
+		UpVotes:     0,
+		DownVotes:   0,
+		ReplyCount:  0,
+	}
+	commentID, err := data.WriteComment(comment)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong :(", http.StatusInternalServerError)
+		return
+	}
+	comment.ID = *commentID
+	signedUserModel := &models.SignedInUserViewModel{
+		UserID:     user.ID,
+		UserName:   user.UserName,
+		CustomerID: user.CustomerID,
+		Email:      user.Email,
+	}
+	output, err := templates.RenderAsString("partials/comment.html", "comment",
+		mapCommentToCommentViewModel(comment, signedUserModel))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cannot render comment template. Error: %v", err), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(output))
+}
+
 /*RepliesHandler handles showing user's replies*/
 func RepliesHandler(w http.ResponseWriter, r *http.Request) error {
-	title := "Replies | Turk Dev"
+	title := "Repli,es | Turk Dev"
 	user := models.User{"Anil Yuzener"}
 
 	strUserID := r.URL.Query().Get("userid")
@@ -82,9 +146,9 @@ func RepliesHandler(w http.ResponseWriter, r *http.Request) error {
 		"Replies": replies,
 	}
 
-	templates.RenderWithBase(
+	templates.RenderInLayout(
 		w,
-		"comments/index.html",
+		"index.html",
 		models.ViewModel{
 			title,
 			user,

@@ -146,7 +146,6 @@ func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
 	for rows.Next() {
 		comment := Comment{}
 		var parentID sql.NullInt32
-		var userName string
 		err = rows.Scan(
 			&comment.Comment,
 			&comment.UpVotes,
@@ -166,7 +165,6 @@ func MapSQLRowsToComments(rows *sql.Rows) (comments *[]Comment, err error) {
 		} else {
 			comment.ParentID = CommentRootID
 		}
-		comment.UserName = userName
 		_comments = append(_comments, comment)
 	}
 	return &_comments, nil

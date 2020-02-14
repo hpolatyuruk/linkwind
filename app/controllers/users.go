@@ -32,9 +32,9 @@ func UserProfileHandler(w http.ResponseWriter, r *http.Request) error {
 		"User":    user,
 	}
 
-	templates.RenderWithBase(
+	templates.RenderInLayout(
 		w,
-		"user/settings.html",
+		"settings.html",
 		models.ViewModel{
 			title,
 			userViewModel,
@@ -52,9 +52,9 @@ func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
 		"Content": "Invite a new user",
 	}
 
-	templates.RenderWithBase(
+	templates.RenderInLayout(
 		w,
-		"user/sign-up.html",
+		"signup.html",
 		models.ViewModel{
 			title,
 			user,

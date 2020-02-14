@@ -5,16 +5,10 @@ import (
 	"log"
 	"net/http"
 	"turkdev/app/controllers"
-	"turkdev/app/src/templates"
 	"turkdev/shared"
 )
 
 func main() {
-	err := templates.Initialize()
-	if err != nil {
-		fmt.Printf("An error occurred while initializing templates. Error: %v", err)
-		panic(err)
-	}
 
 	http.HandleFunc("/users/profile", errorHandler(controllers.UserProfileHandler))
 	http.HandleFunc("/signup", errorHandler(controllers.SignUpHandler))
@@ -28,7 +22,8 @@ func main() {
 	http.HandleFunc("/submit", errorHandler(controllers.SubmitStoryHandler))
 	http.HandleFunc("/invite", errorHandler(controllers.InviteUserHandler))
 	http.HandleFunc("/replies", errorHandler(controllers.RepliesHandler))
-	http.HandleFunc("/addcomment", errorHandler(controllers.AddCommentHandler))
+	http.HandleFunc("/comments/add", errorHandler(controllers.AddCommentHandler))
+	http.HandleFunc("/comments/reply", controllers.ReplyToCommentHandler)
 	http.HandleFunc("/users/stories/saved", errorHandler(controllers.UserSavedStoriesHandler))
 	http.HandleFunc("/users/stories/submitted", errorHandler(controllers.UserSubmittedStoriesHandler))
 

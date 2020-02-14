@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -61,10 +60,10 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	if stories == nil || len(*stories) > 0 {
+	if stories != nil && len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
-	templates.RenderWithBase(w, "stories/index.html", model)
+	templates.RenderInLayout(w, "stories.html", model)
 	return nil
 }
 
@@ -100,7 +99,7 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if stories == nil || len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
-	templates.RenderWithBase(w, "stories/index.html", model)
+	templates.RenderInLayout(w, "stories.html", model)
 	return nil
 }
 
@@ -132,7 +131,7 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if stories == nil || len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
-	templates.RenderWithBase(w, "stories/index.html", model)
+	templates.RenderInLayout(w, "stories.html", model)
 	return nil
 }
 
@@ -188,7 +187,7 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if stories == nil || len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
-	templates.RenderWithBase(w, "stories/index.html", model)
+	templates.RenderInLayout(w, "stories.html", model)
 	return nil
 }
 
@@ -196,7 +195,10 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	strStoryID := r.URL.Query().Get("id")
 	if len(strStoryID) == 0 {
-		templates.Render(w, "errors/404.html", nil)
+		err := templates.RenderFile(w, "errors/404.html", nil)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 	storyID, err := strconv.Atoi(strStoryID)
@@ -208,10 +210,13 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("Cannot get story from db (StoryID : %d). Original err : %v", storyID, err)
 	}
 	if story == nil {
-		templates.Render(w, "errors/404.html", nil)
+		err = templates.RenderFile(w, "errors/404.html", nil)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
-	comments, err := data.GetComments(storyID)
+	comments, err := data.GetRootCommentsByStoryID(storyID)
 	if err != nil {
 		return fmt.Errorf("Cannot get comments from db (StoryID : %d). Original err : %v", storyID, err)
 	}
@@ -219,8 +224,21 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("An error occured when run IsAuthenticated func in StoryDetailHandler")
 	}
-	model := *mapCommentsTostoryDetailPageViewModel(story, signedInUserClaims, comments, isAuth)
-	templates.RenderWithBase(w, "stories/detail.html", model)
+	model := &models.StoryDetailPageViewModel{
+		Title: story.Title,
+	}
+	if isAuth {
+		model.IsAuthenticated = true
+		model.SignedInUser = &models.SignedInUserViewModel{
+			UserID:     signedInUserClaims.ID,
+			CustomerID: signedInUserClaims.CustomerID,
+			Email:      signedInUserClaims.Email,
+			UserName:   signedInUserClaims.UserName,
+		}
+	}
+	model.Story = mapStoryToStoryViewModel(story, model.SignedInUser)
+	model.Comments = loadChildComments(comments, model.SignedInUser, storyID)
+	templates.RenderInLayout(w, "detail.html", model)
 	return nil
 }
 
@@ -402,9 +420,9 @@ func handlesSubmitGET(w http.ResponseWriter, r *http.Request) error {
 		"Content": "Submit Story",
 	}
 
-	templates.RenderWithBase(
+	templates.RenderInLayout(
 		w,
-		"stories/submit.html",
+		"submit.html",
 		models.ViewModel{
 			title,
 			user,
@@ -483,7 +501,7 @@ func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUs
 		CommentCount:            story.CommentCount,
 		IsUpvotedBySignedInUser: false,
 		IsSavedBySignedInUser:   false,
-		SubmittedOnText:         generateSubmittedOnText(story.SubmittedOn),
+		SubmittedOnText:         shared.DateToString(story.SubmittedOn),
 		SignedInUser:            signedInUser,
 	}
 
@@ -507,78 +525,42 @@ func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUs
 	return &viewModel
 }
 
-func mapCommentsTostoryDetailPageViewModel(story *data.Story, signedInUserClaims *shared.SignedInUserClaims,
-	comments *[]data.Comment,
-	isAuth bool) *models.StoryDetailPageViewModel {
-	var detailPageViewModel models.StoryDetailPageViewModel
-
-	if signedInUserClaims != nil {
-		detailPageViewModel.SignedInUser = &models.SignedInUserViewModel{
-			CustomerID: signedInUserClaims.CustomerID,
-			Email:      signedInUserClaims.Email,
-			UserID:     signedInUserClaims.ID,
-			UserName:   signedInUserClaims.UserName,
-		}
-	}
-
-	commentViewModels := []models.CommentViewModel{}
-
-	for _, comment := range *comments {
-		commentViewModels = append(commentViewModels, *mapCommentToCommentViewModel(&comment))
-	}
-
-	detailPageViewModel.Comments = &commentViewModels
-	detailPageViewModel.IsAuthenticated = isAuth
-	detailPageViewModel.Title = story.Title
-	detailPageViewModel.Story = mapStoryToStoryViewModel(story, detailPageViewModel.SignedInUser)
-	return &detailPageViewModel
-}
-
-func mapCommentToCommentViewModel(comment *data.Comment) *models.CommentViewModel {
+func mapCommentToCommentViewModel(comment *data.Comment, signedInUser *models.SignedInUserViewModel) *models.CommentViewModel {
 	model := &models.CommentViewModel{
-		ID:      comment.ID,
-		Comment: comment.Comment,
+		ID:              comment.ID,
+		ParentID:        comment.ParentID,
+		StoryID:         comment.StoryID,
+		Comment:         comment.Comment,
+		Points:          comment.UpVotes,
+		UserID:          comment.UserID,
+		UserName:        comment.UserName,
+		CommentedOnText: shared.DateToString(comment.CommentedOn),
+		SignedInUser:    signedInUser,
+	}
+	if comment.ParentID == data.CommentRootID {
+		model.IsRoot = true
+	}
+	if signedInUser != nil {
+		isUpvoted, err := data.CheckIfCommentUpVotedByUser(signedInUser.UserID, comment.ID)
+		if err != nil {
+			isUpvoted = false
+		}
+		model.IsUpvotedBySignedInUser = isUpvoted
 	}
 	return model
 }
 
-func generateSubmittedOnText(submittedOn time.Time) string {
-	var text string = ""
-	diff := time.Now().Sub(submittedOn)
-
-	if diff.Hours() < 1 {
-		mins := int(math.Round(diff.Minutes()))
-		text = fmt.Sprintf("%d minutes ago", mins)
-		if mins == 1 {
-			text = fmt.Sprintf("%d minute ago", mins)
+func mapCommentsToViewModelsWithChildren(comments *[]data.Comment, signedInUser *models.SignedInUserViewModel, storyID int) *[]models.CommentViewModel {
+	var viewModels []models.CommentViewModel
+	for _, comment := range *comments {
+		viewModel := *mapCommentToCommentViewModel(&comment, signedInUser)
+		childComments, err := data.GetCommentsByParentIDAndStoryID(comment.ID, storyID)
+		if err != nil {
+			// TODO: Log error here
+			continue
 		}
-	} else if diff.Hours() < 24 {
-		hours := int(math.Round(diff.Hours()))
-		text = fmt.Sprintf("%d hours ago", hours)
-		if hours == 1 {
-			text = fmt.Sprintf("%d hour ago", hours)
-		}
-	} else {
-		days := math.Round(diff.Hours() / 24)
-
-		if days == 1 {
-			text = fmt.Sprintf("%d day ago", int(days))
-		} else if days > 1 && days < 30 {
-			text = fmt.Sprintf("%d days ago", int(days))
-		} else if days > 30 && days < 365 {
-			months := int(math.Round(days / 30))
-			text = fmt.Sprintf("%d months ago", months)
-			if months == 1 {
-				text = fmt.Sprintf("%d month ago", months)
-			}
-
-		} else {
-			years := int(math.Round(days / 365))
-			text = fmt.Sprintf("%d years ago", years)
-			if years == 1 {
-				text = fmt.Sprintf("%d year ago", years)
-			}
-		}
+		viewModel.ChildComments = *mapCommentsToViewModelsWithChildren(childComments, signedInUser, storyID)
+		viewModels = append(viewModels, viewModel)
 	}
-	return text
+	return &viewModels
 }
