@@ -26,9 +26,35 @@ type StoryVoteModel struct {
 	UserID  int
 }
 
+/*StorySubmitModel represents the data to submit a story.*/
+type StorySubmitModel struct {
+	URL    string
+	Title  string
+	Text   string
+	Errors map[string]string
+}
+
 /*JSONResponse respresents the json response.*/
 type JSONResponse struct {
 	Result string
+}
+
+/*Validate validates the StorySubmitModel*/
+func (model *StorySubmitModel) Validate() bool {
+	model.Errors = make(map[string]string)
+	if strings.TrimSpace(model.URL) == "" &&
+		strings.TrimSpace(model.Text) == "" &&
+		strings.TrimSpace(model.Text) == "" {
+		model.Errors["General"] = "Please enter a url or title/text."
+		return false
+	}
+	if strings.TrimSpace(model.URL) == "" &&
+		strings.TrimSpace(model.Text) != "" &&
+		strings.TrimSpace(model.Title) == "" {
+		model.Errors["Title"] = "Please enter a title."
+		return false
+	}
+	return true
 }
 
 /*StoriesHandler handles showing the popular published stories*/
@@ -451,23 +477,7 @@ func UnSaveStoryHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handlesSubmitGET(w http.ResponseWriter, r *http.Request) error {
-
-	title := "Submit Story | Turk Dev"
-	user := models.User{"Anil Yuzener"}
-
-	data := map[string]interface{}{
-		"Content": "Submit Story",
-	}
-
-	templates.RenderInLayout(
-		w,
-		"submit.html",
-		models.ViewModel{
-			title,
-			user,
-			data,
-		},
-	)
+	templates.RenderInLayout(w, "submit.html", nil)
 	return nil
 }
 
@@ -475,23 +485,29 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
-
-	title := r.FormValue("title")
-	url := r.FormValue("url")
-	text := r.FormValue("text")
-
-	if len(url) > 0 {
-		fetchedTitle, err := shared.FetchURL(url)
-		if err != nil {
-			return err
-		}
-		title = fetchedTitle
+	model := &StorySubmitModel{
+		URL:   r.FormValue("url"),
+		Title: r.FormValue("title"),
+		Text:  r.FormValue("text"),
 	}
-
+	if model.Validate() == false {
+		templates.RenderInLayout(w, "submit.html", model)
+		return nil
+	}
+	if strings.TrimSpace(model.URL) != "" &&
+		strings.TrimSpace(model.Title) == "" {
+		fetchedTitle, err := shared.FetchURL(model.URL)
+		if err != nil {
+			model.Errors["URL"] = "Something went wrong while fetching URL. Please make sure that you entered a valid URL."
+			templates.RenderInLayout(w, "submit.html", model)
+			return nil
+		}
+		model.Title = fetchedTitle
+	}
 	var story data.Story
-	story.Title = title
-	story.URL = url
-	story.Text = text
+	story.Title = model.Title
+	story.URL = model.URL
+	story.Text = model.Text
 	story.CommentCount = 0
 	story.UpVotes = 0
 	story.SubmittedOn = time.Now()
