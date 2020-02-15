@@ -56,15 +56,15 @@ func SendInvitemail(mailAddress, memo, inviteCode, userName string) {
 
 /*SendResetPasswordMail send to mail for reset password with resetPassword token*/
 //TODO: In lobsters they add coming ip for reset pass request. Should we do that? Do not forget to change "pass" and "to" variables.
-func SendResetPasswordMail(email, userName string) error {
-	pass := "Sedat.1242"
-	from := "sedata38@gmail.com"
+func SendResetPasswordMail(email, userName, domain string) error {
+	pass := "..."
+	from := "..."
 	to := email
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	subject := "Subject: " + "[TurkDev] Reset Your Password\n"
+	subject := "Subject: " + "[" + domain + "] Reset Your Password\n"
 
 	token := generateResetPasswordToken()
-	body := setResetPasswordMailBody(token, userName)
+	body := setResetPasswordMailBody(token, userName, domain)
 	msg := []byte(subject + mime + "\n" + body)
 
 	err := smtp.SendMail("smtp.gmail.com:587",
@@ -77,7 +77,7 @@ func SendResetPasswordMail(email, userName string) error {
 	return nil
 }
 
-func setResetPasswordMailBody(token, userName string) string {
+func setResetPasswordMailBody(token, userName, domain string) string {
 	content := ""
 	fontColour := "blue"
 	content += "<p>Hello </><font color=" + fontColour + ">" + userName + "</font>"
@@ -85,7 +85,7 @@ func setResetPasswordMailBody(token, userName string) string {
 	content += "<p>You can reset your password by clicking the link below.</p>"
 	content += "<p>If you did not make such a request, do not care about this message.</p>"
 
-	url := "https://turkdev.com/login/set_new_password?token=" + token
+	url := "https://" + domain + "/login/set_new_password?token=" + token
 
 	content += "<a href=" + url + ">" + url + "</a>"
 

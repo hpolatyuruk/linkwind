@@ -258,8 +258,12 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 		}
 		return nil
 	}
+	domain, err := data.GetCustomerDomainByUserName(userName)
+	if err != nil {
+		return err
+	}
 
-	err = services.SendResetPasswordMail(email, userName)
+	err = services.SendResetPasswordMail(email, userName, domain)
 	if err != nil {
 		return err
 	}

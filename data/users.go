@@ -330,3 +330,24 @@ func GetUserNameByEmail(email string) (string, error) {
 	}
 	return email, nil
 }
+
+/*GetCustomerDomainByUserName returns customer's domain by user name*/
+func GetCustomerDomainByUserName(userName string) (string, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return "", err
+	}
+	sql := "SELECT domain FROM customers INNER JOIN users ON users.customerid = customers.id WHERE users.username = $1 ;"
+	row := db.QueryRow(sql, userName)
+	var domain string
+	err = row.Scan(
+		&domain)
+	if err != nil {
+		return "", &DBError{fmt.Sprintf("Cannot read rows"), err}
+	}
+	if err != nil {
+		return "", &DBError{fmt.Sprintf("Cannot read domain by username from db. Domain: %s", domain), err}
+	}
+	return domain, nil
+}
