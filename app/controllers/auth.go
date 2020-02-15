@@ -231,10 +231,20 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 
 	var exists bool
 	var err error
+	var email string
+	var userName string
+	var user *data.User
 	if shared.IsEmailAdrressValid(model.EmailOrUserName) {
 		exists, err = data.ExistsUserByEmail(model.EmailOrUserName)
+		email = model.EmailOrUserName
+		userName, err = data.GetUserNameByEmail(model.EmailOrUserName)
 	} else {
 		exists, err = data.ExistsUserByUserName(model.EmailOrUserName)
+		if exists {
+			user, err = data.GetUserByUserName(model.EmailOrUserName)
+			userName = user.UserName
+			email = user.Email
+		}
 	}
 	if err != nil {
 		return err
@@ -249,7 +259,7 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	err = services.SendForgotPasswordMail(model.EmailOrUserName)
+	err = services.SendResetPasswordMail(email, userName)
 	if err != nil {
 		return err
 	}

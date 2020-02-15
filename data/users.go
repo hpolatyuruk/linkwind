@@ -309,3 +309,24 @@ func FindUserByUserNameAndPassword(userName string, password string) (user *User
 	}
 	return user, nil
 }
+
+/*GetUserNameByEmail returns username by email*/
+func GetUserNameByEmail(email string) (string, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return "", err
+	}
+	sql := "SELECT username FROM users where email =$1;"
+	row := db.QueryRow(sql, email)
+	var username string
+	err = row.Scan(
+		&username)
+	if err != nil {
+		return "", &DBError{fmt.Sprintf("Cannot read rows"), err}
+	}
+	if err != nil {
+		return "", &DBError{fmt.Sprintf("Cannot read email by username from db. Email: %s", email), err}
+	}
+	return email, nil
+}

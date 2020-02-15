@@ -54,17 +54,17 @@ func SendInvitemail(mailAddress, memo, inviteCode, userName string) {
 	}
 }
 
-/*SendForgotPasswordMail send to mail for reset password with resetPassword token*/
+/*SendResetPasswordMail send to mail for reset password with resetPassword token*/
 //TODO: In lobsters they add coming ip for reset pass request. Should we do that? Do not forget to change "pass" and "to" variables.
-func SendForgotPasswordMail(mailAddress string) error {
-	pass := "..."
-	from := "our smtp mail adrress"
-	to := mailAddress
+func SendResetPasswordMail(email, userName string) error {
+	pass := "Sedat.1242"
+	from := "sedata38@gmail.com"
+	to := email
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	subject := "Subject: " + "Şifre Sıfırlama\n"
+	subject := "Subject: " + "[TurkDev] Reset Your Password\n"
 
 	token := generateResetPasswordToken()
-	body := setResetPasswordMailBody(token)
+	body := setResetPasswordMailBody(token, userName)
 	msg := []byte(subject + mime + "\n" + body)
 
 	err := smtp.SendMail("smtp.gmail.com:587",
@@ -72,17 +72,22 @@ func SendForgotPasswordMail(mailAddress string) error {
 		from, []string{to}, msg)
 
 	if err != nil {
-		return fmt.Errorf("an error occured when send forgot password mail : %s", err)
+		return fmt.Errorf("An error occured when send forgot password mail : %s", err)
 	}
 	return nil
 }
 
-func setResetPasswordMailBody(token string) string {
+func setResetPasswordMailBody(token, userName string) string {
 	content := ""
-	content += "<p>Şifre yenileme isteğinde bulunduz.</p>"
-	content += "<p>Aşağıdaki linke tıklayarak şifrenizi sıfırlayabilirsiniz.</p>"
-	content += "<p>Böyle bir istekte bulunmadıysanız, bu mesajı önemsemeyin.</p>"
-	content += "<p>https://turkdev.com/login/set_new_password?token=" + token + "</p>"
+	fontColour := "blue"
+	content += "<p>Hello </><font color=" + fontColour + ">" + userName + "</font>"
+	content += "<p>You have requested a password renewal.</p>"
+	content += "<p>You can reset your password by clicking the link below.</p>"
+	content += "<p>If you did not make such a request, do not care about this message.</p>"
+
+	url := "https://turkdev.com/login/set_new_password?token=" + token
+
+	content += "<a href=" + url + ">" + url + "</a>"
 
 	return content
 }
