@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"net/smtp"
@@ -55,8 +56,7 @@ func SendInvitemail(mailAddress, memo, inviteCode, userName string) {
 
 /*SendForgotPasswordMail send to mail for reset password with resetPassword token*/
 //TODO: In lobsters they add coming ip for reset pass request. Should we do that? Do not forget to change "pass" and "to" variables.
-func SendForgotPasswordMail(mailAddress string) {
-
+func SendForgotPasswordMail(mailAddress string) error {
 	pass := "..."
 	from := "our smtp mail adrress"
 	to := mailAddress
@@ -72,9 +72,9 @@ func SendForgotPasswordMail(mailAddress string) {
 		from, []string{to}, msg)
 
 	if err != nil {
-		log.Printf("smtp error: %s", err)
-		return
+		return fmt.Errorf("an error occured when send forgot password mail : %s", err)
 	}
+	return nil
 }
 
 func setResetPasswordMailBody(token string) string {

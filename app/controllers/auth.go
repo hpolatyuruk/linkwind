@@ -8,6 +8,7 @@ import (
 	"turkdev/app/models"
 	"turkdev/app/src/templates"
 	"turkdev/data"
+	"turkdev/services"
 	"turkdev/shared"
 )
 
@@ -16,6 +17,13 @@ type SignInViewModel struct {
 	EmailOrUserName string
 	Password        string
 	Errors          map[string]string
+}
+
+/*ResetPasswordViewModel represents the data which is needed on reset password UI*/
+type ResetPasswordViewModel struct {
+	EmailOrUserName string
+	Errors          map[string]string
+	SuccessMessage  string
 }
 
 /*Validate validates the SignInViewModel*/
@@ -27,6 +35,17 @@ func (model *SignInViewModel) Validate() bool {
 	}
 	if strings.TrimSpace(model.Password) == "" {
 		model.Errors["Password"] = "Password is required!"
+	}
+
+	return len(model.Errors) == 0
+}
+
+/*Validate validates the ResetPasswordViewModel*/
+func (model *ResetPasswordViewModel) Validate() bool {
+	model.Errors = make(map[string]string)
+
+	if strings.TrimSpace(model.EmailOrUserName) == "" {
+		model.Errors["EmailOrUserName"] = "Email or user name is required!"
 	}
 
 	return len(model.Errors) == 0
@@ -70,6 +89,26 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) error {
 	shared.SetAuthCookie(w, "", time.Now())
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 	return nil
+}
+
+/*ResetPasswordHandler handles */
+func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) error {
+	switch r.Method {
+	case "GET":
+		isAuthenticated, _, err := shared.IsAuthenticated(r)
+		if err != nil {
+			return err
+		}
+		if !isAuthenticated {
+			http.Redirect(w, r, "/signin", http.StatusSeeOther)
+			return nil
+		}
+		return handleResetPasswordGET(w, r)
+	case "POST":
+		return handleResetPasswordPOST(w, r)
+	default:
+		return handleResetPasswordGET(w, r)
+	}
 }
 
 func handleSignUpGET(w http.ResponseWriter, r *http.Request) error {
@@ -126,7 +165,7 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if model.Validate() == false {
-		err := templates.RenderFile(w, "users/signin.html", model)
+		err := templates.RenderFile(w, "/layouts/users/signin.html", model)
 		if err != nil {
 			return err
 		}
@@ -146,7 +185,7 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
 	}
 	if user == nil {
 		model.Errors["General"] = "User does not exist!"
-		err = templates.RenderFile(w, "users/signin.html", model)
+		err = templates.RenderFile(w, "/layouts/users/signin.html", model)
 		if err != nil {
 			return err
 		}
@@ -162,6 +201,64 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
 	}
 	shared.SetAuthCookie(w, token, expirationTime)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+	return nil
+}
+
+func handleResetPasswordGET(w http.ResponseWriter, r *http.Request) error {
+	err := templates.RenderFile(
+		w,
+		"layouts/users/reset-password.html",
+		ResetPasswordViewModel{},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
+	model := &ResetPasswordViewModel{
+		EmailOrUserName: r.FormValue("emailOrUserName"),
+	}
+
+	if model.Validate() == false {
+		err := templates.RenderFile(w, "layouts/users/reset-password.html", model)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	var exists bool
+	var err error
+	if shared.IsEmailAdrressValid(model.EmailOrUserName) {
+		exists, err = data.ExistsUserByEmail(model.EmailOrUserName)
+	} else {
+		exists, err = data.ExistsUserByUserName(model.EmailOrUserName)
+	}
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		model.Errors["General"] = "User does not exist!"
+		err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	err = services.SendForgotPasswordMail(model.EmailOrUserName)
+	if err != nil {
+		return err
+	}
+
+	model.SuccessMessage = "Password recovery message sent. If you don't see it, you might want to check your spam folder."
+	err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
