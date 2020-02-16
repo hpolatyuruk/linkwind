@@ -31,6 +31,7 @@ func main() {
 	http.HandleFunc("/users/stories/upvoted", errorHandler(controllers.UserUpvotedStoriesHandler))
 	http.HandleFunc("/reset-password", errorHandler(controllers.ResetPasswordHandler))
 	http.HandleFunc("/set-new-password", errorHandler(controllers.SetNewPasswordHandler))
+	http.HandleFunc("/change-password", errorHandler(controllers.ChangePasswordHandler))
 	staticFileServer := http.FileServer(http.Dir("app/dist/"))
 
 	http.Handle("/dist/", http.StripPrefix("/dist/", staticFileServer))

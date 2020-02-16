@@ -41,6 +41,15 @@ type SetNewPasswordViewModel struct {
 	SuccessMessage  string
 }
 
+/*ChangePasswordViewModel represents the data which is needed on change password UI*/
+type ChangePasswordViewModel struct {
+	CurrentPassword string
+	NewPassword     string
+	ConfirmPassword string
+	Errors          map[string]string
+	SuccessMessage  string
+}
+
 /*Validate validates the SignInViewModel*/
 func (model *SignInViewModel) Validate() bool {
 	model.Errors = make(map[string]string)
@@ -90,6 +99,25 @@ func (model *ResetPasswordViewModel) Validate() bool {
 func (model *SetNewPasswordViewModel) Validate() bool {
 	model.Errors = make(map[string]string)
 
+	if strings.TrimSpace(model.NewPassword) == "" {
+		model.Errors["NewPassword"] = "New password is required!"
+	}
+	if strings.TrimSpace(model.ConfirmPassword) == "" {
+		model.Errors["ConfirmPassword"] = "Confirm password is required!"
+	}
+	if model.ConfirmPassword != model.NewPassword {
+		model.Errors["NotEqual"] = "New password and confirm password is not equal!"
+	}
+	return len(model.Errors) == 0
+}
+
+/*Validate validates the ChangePasswordViewModel*/
+func (model *ChangePasswordViewModel) Validate() bool {
+	model.Errors = make(map[string]string)
+
+	if strings.TrimSpace(model.CurrentPassword) == "" {
+		model.Errors["CurrentPassword"] = "Current password is required!"
+	}
 	if strings.TrimSpace(model.NewPassword) == "" {
 		model.Errors["NewPassword"] = "New password is required!"
 	}
@@ -179,6 +207,26 @@ func SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) error {
 		return handleSetNewPasswordPOST(w, r)
 	default:
 		return handleSetNewPasswordGET(w, r)
+	}
+}
+
+/*ChangePasswordHandler handles change password operations*/
+func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) error {
+	isAuthenticated, claims, err := shared.IsAuthenticated(r)
+	if err != nil {
+		return err
+	}
+	switch r.Method {
+	case "GET":
+		if !isAuthenticated {
+			http.Redirect(w, r, "/signin", http.StatusSeeOther)
+			return nil
+		}
+		return handleChangePasswordGET(w, r)
+	case "POST":
+		return handleChangePasswordPOST(w, r, claims.ID)
+	default:
+		return handleChangePasswordGET(w, r)
 	}
 }
 
@@ -397,6 +445,55 @@ func handleSetNewPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 
 	model.SuccessMessage = "Password successfuly changed"
 	err = templates.RenderFile(w, "layouts/users/set-new-password.html", model)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func handleChangePasswordGET(w http.ResponseWriter, r *http.Request) error {
+	err := templates.RenderFile(
+		w,
+		"layouts/users/change-password.html",
+		ChangePasswordViewModel{},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func handleChangePasswordPOST(w http.ResponseWriter, r *http.Request, userID int) error {
+	model := &ChangePasswordViewModel{
+		CurrentPassword: r.FormValue("currentPassword"),
+		NewPassword:     r.FormValue("newPassword"),
+		ConfirmPassword: r.FormValue("confirmPassword"),
+	}
+
+	if model.Validate() == false {
+		err := templates.RenderFile(w, "layouts/users/change-password.html", model)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	matched, err := data.ConfirmPasswordMatch(userID, model.CurrentPassword)
+	if !matched {
+		model.Errors["General"] = "User does not exist!"
+		err = templates.RenderFile(w, "layouts/users/change-password.html", model)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	err = data.ChangePassword(userID, model.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	model.SuccessMessage = "Password successfuly changed"
+	err = templates.RenderFile(w, "layouts/users/change-password.html", model)
 	if err != nil {
 		return err
 	}
