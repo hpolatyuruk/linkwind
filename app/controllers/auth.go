@@ -1,11 +1,9 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
-	"turkdev/app/models"
 	"turkdev/app/src/templates"
 	"turkdev/data"
 	"turkdev/services"
@@ -17,6 +15,14 @@ type SignInViewModel struct {
 	EmailOrUserName string
 	Password        string
 	Errors          map[string]string
+}
+
+/*SignUpViewModel represents the data which is needed on sigup UI.*/
+type SignUpViewModel struct {
+	UserName string
+	Email    string
+	Password string
+	Errors   map[string]string
 }
 
 /*ResetPasswordViewModel represents the data which is needed on reset password UI*/
@@ -46,6 +52,26 @@ func (model *SignInViewModel) Validate() bool {
 		model.Errors["Password"] = "Password is required!"
 	}
 
+	return len(model.Errors) == 0
+}
+
+/*Validate validates the SignUpViewModel*/
+func (model *SignUpViewModel) Validate() bool {
+	model.Errors = make(map[string]string)
+
+	if strings.TrimSpace(model.UserName) == "" {
+		model.Errors["UserName"] = "User name is required!"
+	}
+	if strings.TrimSpace(model.Email) == "" {
+		model.Errors["Email"] = "Email is required!"
+	} else {
+		if shared.IsEmailAdrressValid(model.Email) == false {
+			model.Errors["Email"] = "Please enter a valid email address!"
+		}
+	}
+	if strings.TrimSpace(model.Password) == "" {
+		model.Errors["Password"] = "Password is required!"
+	}
 	return len(model.Errors) == 0
 }
 
@@ -157,29 +183,31 @@ func SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handleSignUpGET(w http.ResponseWriter, r *http.Request) error {
-	templates.RenderInLayout(
+	templates.RenderFile(
 		w,
-		"signup.html",
-		models.ViewModel{
-			Title: "Sign Up",
-		},
+		"layouts/users/signup.html",
+		SignUpViewModel{},
 	)
 	return nil
 }
 
 func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
-		fmt.Fprintf(w, "Handling sign up post error: %v", err)
+		return err
 	}
-
-	userName := r.FormValue("userName")
-	email := r.FormValue("email")
-	password := r.FormValue("password")
-
+	model := &SignUpViewModel{
+		UserName: r.FormValue("userName"),
+		Email:    r.FormValue("email"),
+		Password: r.FormValue("password"),
+	}
+	if model.Validate() == false {
+		templates.RenderFile(w, "layouts/users/signup.html", model)
+		return nil
+	}
 	var user data.User
-	user.UserName = userName
-	user.Email = email
-	user.Password = password
+	user.UserName = model.UserName
+	user.Email = model.Email
+	user.Password = model.Password
 	user.Karma = 0
 	user.RegisteredOn = time.Now()
 	user.CustomerID = 1 // TODO: get it real customer id
