@@ -32,6 +32,7 @@ func main() {
 	http.HandleFunc("/reset-password", errorHandler(controllers.ResetPasswordHandler))
 	http.HandleFunc("/set-new-password", errorHandler(controllers.SetNewPasswordHandler))
 	http.HandleFunc("/change-password", errorHandler(controllers.ChangePasswordHandler))
+	http.HandleFunc("/invitecodes/generate", errorHandler(controllers.GenerateInviteCodeHandler))
 	staticFileServer := http.FileServer(http.Dir("app/dist/"))
 
 	http.Handle("/dist/", http.StripPrefix("/dist/", staticFileServer))

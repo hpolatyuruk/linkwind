@@ -2,9 +2,6 @@
 
 -- DROP TABLE public.users;
 
-/* id oluşturmada sorun çıkan yerlerde --> "CREATE SEQUENCE table_name_id_seq;"
-kodunu kodun tepesine ekledim.*/
-
 CREATE TABLE public.users
 (
     fullname character varying(50) COLLATE pg_catalog."default",
@@ -12,11 +9,10 @@ CREATE TABLE public.users
     password character varying(500) COLLATE pg_catalog."default" NOT NULL,
     website character varying(50) COLLATE pg_catalog."default",
     about character varying(100) COLLATE pg_catalog."default",
-    invitedby character varying(15) COLLATE pg_catalog."default",
-    invitecode character varying(15) COLLATE pg_catalog."default",
+    invitecode character varying(20) COLLATE pg_catalog."default",
     karma double precision NOT NULL DEFAULT 0,
     username character varying(15) COLLATE pg_catalog."default" NOT NULL,
-    id serial,
+    id integer NOT NULL DEFAULT nextval('users_id_seq'::regclass),
     registeredon timestamp with time zone NOT NULL,
     customerid integer,
     CONSTRAINT users_pkey PRIMARY KEY (id),
