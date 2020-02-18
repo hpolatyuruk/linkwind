@@ -32,12 +32,6 @@ type StoryViewModel struct {
 	SignedInUser            *SignedInUserViewModel
 }
 
-type ViewModel struct {
-	Title string
-	User  User
-	Data  map[string]interface{}
-}
-
 type CommentViewModel struct {
 	ID                      int
 	UserID                  int
