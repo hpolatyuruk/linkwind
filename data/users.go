@@ -219,6 +219,22 @@ func GetUserByUserName(userName string) (user *User, err error) {
 	return user, nil
 }
 
+/*GetUserByID get user associated with user id from database*/
+func GetUserByID(userID int) (user *User, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma, customerid FROM users WHERE id = $1"
+	row := db.QueryRow(sql, userID)
+	user, err = MapSQLRowToUser(row)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read user by user name from db. UserID: %s", userID), err}
+	}
+	return user, nil
+}
+
 /*GetUsersByCustomerID retunrs users list by provided customerID parameter*/
 func GetUsersByCustomerID(customerID int) (*[]User, error) {
 	db, err := connectToDB()

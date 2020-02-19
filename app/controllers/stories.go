@@ -481,7 +481,7 @@ func handlesSubmitGET(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func handleSubmitPOST(w http.ResponseWriter, r *http.Request) error {
+func 	handleSubmitPOST(w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
