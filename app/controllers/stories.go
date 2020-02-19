@@ -164,7 +164,7 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 /*SubmitStoryHandler handles to submit a new story*/
 func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 
-	isAuthenticated, _, err := shared.IsAuthenticated(r)
+	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
 		return nil
 	}
@@ -176,12 +176,59 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 
 	switch r.Method {
 	case "GET":
-		return handlesSubmitGET(w, r)
+		return handlesSubmitGET(w, r, user)
 	case "POST":
-		return handleSubmitPOST(w, r)
+		return handleSubmitPOST(w, r, user)
 	default:
-		return handlesSubmitGET(w, r)
+		return handlesSubmitGET(w, r, user)
 	}
+}
+
+func handlesSubmitGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+	templates.RenderInLayout(w, "submit.html", nil)
+	return nil
+}
+
+func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+	if err := r.ParseForm(); err != nil {
+		return err
+	}
+	model := &StorySubmitModel{
+		URL:   r.FormValue("url"),
+		Title: r.FormValue("title"),
+		Text:  r.FormValue("text"),
+	}
+	if model.Validate() == false {
+		templates.RenderInLayout(w, "submit.html", model)
+		return nil
+	}
+	if strings.TrimSpace(model.URL) != "" &&
+		strings.TrimSpace(model.Title) == "" {
+		fetchedTitle, err := shared.FetchURL(model.URL)
+		if err != nil {
+			model.Errors["URL"] = "Something went wrong while fetching URL. Please make sure that you entered a valid URL."
+			templates.RenderInLayout(w, "submit.html", model)
+			return nil
+		}
+		model.Title = fetchedTitle
+	}
+	var story data.Story
+	story.Title = model.Title
+	story.URL = model.URL
+	story.Text = model.Text
+	story.CommentCount = 0
+	story.UpVotes = 0
+	story.SubmittedOn = time.Now()
+	story.UserID = user.ID
+
+	err := data.CreateStory(&story)
+	if err != nil {
+		// TODO: log error here
+		fmt.Fprintf(w, "Error creating story: %v", err)
+		return err
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	return nil
 }
 
 /*UserSubmittedStoriesHandler handles user's submitted stories*/
@@ -473,53 +520,6 @@ func UnSaveStoryHandler(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("Error occured when unsave story. Error : %v", err)
 	}
-	return nil
-}
-
-func handlesSubmitGET(w http.ResponseWriter, r *http.Request) error {
-	templates.RenderInLayout(w, "submit.html", nil)
-	return nil
-}
-
-func handleSubmitPOST(w http.ResponseWriter, r *http.Request) error {
-	if err := r.ParseForm(); err != nil {
-		return err
-	}
-	model := &StorySubmitModel{
-		URL:   r.FormValue("url"),
-		Title: r.FormValue("title"),
-		Text:  r.FormValue("text"),
-	}
-	if model.Validate() == false {
-		templates.RenderInLayout(w, "submit.html", model)
-		return nil
-	}
-	if strings.TrimSpace(model.URL) != "" &&
-		strings.TrimSpace(model.Title) == "" {
-		fetchedTitle, err := shared.FetchURL(model.URL)
-		if err != nil {
-			model.Errors["URL"] = "Something went wrong while fetching URL. Please make sure that you entered a valid URL."
-			templates.RenderInLayout(w, "submit.html", model)
-			return nil
-		}
-		model.Title = fetchedTitle
-	}
-	var story data.Story
-	story.Title = model.Title
-	story.URL = model.URL
-	story.Text = model.Text
-	story.CommentCount = 0
-	story.UpVotes = 0
-	story.SubmittedOn = time.Now()
-	story.UserID = 2 // TODO: use actual user id here
-
-	err := data.CreateStory(&story)
-	if err != nil {
-		// TODO: log error here
-		fmt.Fprintf(w, "Error creating story: %v", err)
-		return err
-	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
 	return nil
 }
 
