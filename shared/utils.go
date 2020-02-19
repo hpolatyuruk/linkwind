@@ -8,14 +8,56 @@ import (
 	"os"
 	"regexp"
 	"time"
+	"unicode"
 
 	"golang.org/x/net/html"
 )
 
-/*IsEmailAdrressValid take mail address, if address is valid return true.*/
+/*IsEmailAdrressValid takes mail address, if address is valid return true.*/
 func IsEmailAdrressValid(email string) bool {
 	Re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 	return Re.MatchString(email)
+}
+
+/*IsPasswordValid takes password, if password is valid return true.*/
+func IsPasswordValid(password string) bool {
+
+	/*
+		Note: Since golang uses different regex validation library, regex for password validation causes exception for this pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#$^+=!*()@%&]).{8,}$"
+		Since we don't have time for that, we use the below method to verify password
+		 *
+		 * Password rules:
+		 * at least 8 letters
+		 * at least 1 number
+		 * at least 1 upper case
+		 * at least 1 lower case
+		 * at least one of #$+=!*@&_ special characters
+	*/
+	var number, upperCase, lowerCase, special, eigthOrMore bool
+	for _, c := range password {
+		switch {
+		case unicode.IsNumber(c):
+			number = true
+		case unicode.IsUpper(c):
+			upperCase = true
+		case unicode.IsLower(c):
+			lowerCase = true
+		case c == '#' ||
+			c == '$' ||
+			c == '&' ||
+			c == '+' ||
+			c == '=' ||
+			c == '!' ||
+			c == '@' ||
+			c == '*' ||
+			c == '_':
+			special = true
+		default:
+			//return false, false, false, false
+		}
+	}
+	eigthOrMore = len(password) >= 8
+	return number && upperCase && lowerCase && special && eigthOrMore
 }
 
 /*FetchURL send request to url that given as parameter and fetch title from HTML code.*/

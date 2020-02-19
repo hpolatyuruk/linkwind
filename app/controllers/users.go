@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"turkdev/app/models"
 	"turkdev/app/src/templates"
 	"turkdev/data"
 	"turkdev/shared"
@@ -45,20 +44,11 @@ func UserProfileHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*InviteUserHandler handles sending invitations to user*/
 func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
-	title := "Invite a new user | Turk Dev"
-	user := models.User{"Anil Yuzener"}
-	data := map[string]interface{}{
-		"Content": "Invite a new user",
-	}
 
 	templates.RenderInLayout(
 		w,
 		"signup.html",
-		models.ViewModel{
-			title,
-			user,
-			data,
-		},
+		nil,
 	)
 	return nil
 }

@@ -63,7 +63,6 @@ func MapSQLRowToUser(row *sql.Row) (user *User, err error) {
 		&_user.Password,
 		&_user.Website,
 		&_user.About,
-		&_user.InvitedBy,
 		&_user.InviteCode,
 		&_user.Karma,
 		&_user.CustomerID)
@@ -211,7 +210,6 @@ func MapSQLRowsToUsers(rows *sql.Rows) (users *[]User, err error) {
 			&user.Password,
 			&user.Website,
 			&user.About,
-			&user.InvitedBy,
 			&user.InviteCode,
 			&user.Karma)
 		if err != nil {

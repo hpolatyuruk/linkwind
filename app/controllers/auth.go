@@ -3,20 +3,32 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
-	"turkdev/app/models"
 	"turkdev/app/src/templates"
 	"turkdev/data"
 	"turkdev/services"
 	"turkdev/shared"
 )
 
+const authExpirationMinutes = 1440
+const userNameMaxCharCount = 15
+
 /*SignInViewModel represents the data which is needed on sigin UI.*/
 type SignInViewModel struct {
 	EmailOrUserName string
 	Password        string
 	Errors          map[string]string
+}
+
+/*SignUpViewModel represents the data which is needed on sigup UI.*/
+type SignUpViewModel struct {
+	UserName   string
+	Email      string
+	Password   string
+	InviteCode string
+	Errors     map[string]string
 }
 
 /*ResetPasswordViewModel represents the data which is needed on reset password UI*/
@@ -58,6 +70,34 @@ func (model *SignInViewModel) Validate() bool {
 	return len(model.Errors) == 0
 }
 
+/*Validate validates the SignUpViewModel*/
+func (model *SignUpViewModel) Validate() bool {
+	model.Errors = make(map[string]string)
+
+	if strings.TrimSpace(model.UserName) == "" {
+		model.Errors["UserName"] = "User name is required!"
+	} else {
+		if len(model.UserName) > userNameMaxCharCount {
+			model.Errors["UserName"] = fmt.Sprintf("User name can not be longet than %d!", userNameMaxCharCount)
+		}
+	}
+	if strings.TrimSpace(model.Email) == "" {
+		model.Errors["Email"] = "Email is required!"
+	} else {
+		if shared.IsEmailAdrressValid(model.Email) == false {
+			model.Errors["Email"] = "Please enter a valid email address!"
+		}
+	}
+	if strings.TrimSpace(model.Password) == "" {
+		model.Errors["Password"] = "Password is required!"
+	} else {
+		if shared.IsPasswordValid(model.Password) == false {
+			model.Errors["Password"] = "The password is not valid. A password should contan at least 1 uppercase, 1 lowercase, 1 digit, one of #$+=!*@& special characters and have a length of at least of 8."
+		}
+	}
+	return len(model.Errors) == 0
+}
+
 /*Validate validates the ResetPasswordViewModel*/
 func (model *ResetPasswordViewModel) Validate() bool {
 	model.Errors = make(map[string]string)
@@ -65,7 +105,6 @@ func (model *ResetPasswordViewModel) Validate() bool {
 	if strings.TrimSpace(model.EmailOrUserName) == "" {
 		model.Errors["EmailOrUserName"] = "Email or user name is required!"
 	}
-
 	return len(model.Errors) == 0
 }
 
@@ -204,38 +243,131 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 }
 
+/*GenerateInviteCodeHandler generate the invite code to invite an user to join the system*/
+func GenerateInviteCodeHandler(w http.ResponseWriter, r *http.Request) error {
+	inviterUserID, _ := strconv.Atoi(r.URL.Query().Get("userid"))
+	invitedEmail := r.URL.Query().Get("invitedemail")
+	inviteCode, err := data.CreateInviteCode(inviterUserID, invitedEmail)
+	if err != nil {
+		return err
+	}
+	w.WriteHeader(200)
+	w.Header().Add("Content-Type", "text/plain")
+	w.Write([]byte(inviteCode))
+	return nil
+}
+
 func handleSignUpGET(w http.ResponseWriter, r *http.Request) error {
-	templates.RenderInLayout(
+	// Only invited users can create an account
+	inviteCode := r.URL.Query().Get("invitecode")
+	if strings.TrimSpace(inviteCode) == "" {
+		http.Error(w, "Missing invite code!", http.StatusBadRequest)
+		return nil
+	}
+	exists, err := data.ExistsInviteCode(inviteCode)
+	if err != nil {
+		return err
+	}
+	if exists == false {
+		http.Error(w, "Invite code could not be found!", http.StatusBadRequest)
+		return nil
+	}
+	used, err := data.IsInviteCodeUsed(inviteCode)
+	if err != nil {
+		return err
+	}
+	if used {
+		http.Error(w, "The invite code is already used!", http.StatusBadRequest)
+		return nil
+	}
+	templates.RenderFile(
 		w,
-		"signup.html",
-		models.ViewModel{
-			Title: "Sign Up",
-		},
+		"layouts/users/signup.html",
+		SignUpViewModel{InviteCode: inviteCode},
 	)
 	return nil
 }
 
 func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
-		fmt.Fprintf(w, "Handling sign up post error: %v", err)
+		return err
 	}
-
-	userName := r.FormValue("userName")
-	email := r.FormValue("email")
-	password := r.FormValue("password")
-
-	var user data.User
-	user.UserName = userName
-	user.Email = email
-	user.Password = password
-	user.Karma = 0
-	user.RegisteredOn = time.Now()
-	user.CustomerID = 1 // TODO: get it real customer id
-	err := data.CreateUser(&user)
-
+	signUpHTMLPath := "layouts/users/signup.html"
+	model := &SignUpViewModel{
+		UserName:   r.FormValue("userName"),
+		Email:      r.FormValue("email"),
+		Password:   r.FormValue("password"),
+		InviteCode: r.FormValue("inviteCode"),
+	}
+	if model.Validate() == false {
+		templates.RenderFile(w, signUpHTMLPath, model)
+		return nil
+	}
+	if strings.TrimSpace(model.InviteCode) == "" {
+		model.Errors["General"] = "Missing invite code!"
+		templates.RenderFile(w, signUpHTMLPath, model)
+		return nil
+	}
+	exists, err := data.ExistsInviteCode(model.InviteCode)
 	if err != nil {
 		return err
 	}
+	if exists == false {
+		model.Errors["General"] = "Invite code could not be found. Please make sure that you have a valid invite code."
+		return nil
+	}
+	used, err := data.IsInviteCodeUsed(model.InviteCode)
+	if err != nil {
+		return err
+	}
+	if used {
+		model.Errors["General"] = "The invite code is already used!"
+		return nil
+	}
+	exists, err = data.ExistsUserByUserName(model.UserName)
+	if err != nil {
+		return err
+	}
+	if exists {
+		model.Errors["UserName"] = "User name is already taken!"
+		templates.RenderFile(w, signUpHTMLPath, model)
+		return nil
+	}
+	exists, err = data.ExistsUserByEmail(model.Email)
+	if err != nil {
+		return err
+	}
+	if exists {
+		model.Errors["Email"] = "The user associated with this email already exists!"
+		templates.RenderFile(w, signUpHTMLPath, model)
+		return nil
+	}
+	var user data.User
+	user.UserName = model.UserName
+	user.Email = model.Email
+	user.Password = model.Password
+	user.Karma = 0
+	user.RegisteredOn = time.Now()
+	user.CustomerID = 1 // TODO: get it real customer id
+	user.InviteCode = model.InviteCode
+	err = data.CreateUser(&user)
+	if err != nil {
+		return err
+	}
+	err = data.MarkInviteCodeAsUsed(model.InviteCode)
+	if err != nil {
+		return err
+	}
+	// Declare the expiration time of the token
+	// here, we have kept it as 5 minutes
+	expirationTime := time.Now().Add(authExpirationMinutes * time.Minute)
+
+	token, err := shared.GenerateAuthToken(user, expirationTime)
+	if err != nil {
+		return err
+	}
+	shared.SetAuthCookie(w, token, expirationTime)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 	return nil
 }
 
@@ -286,7 +418,7 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
 	}
 	// Declare the expiration time of the token
 	// here, we have kept it as 5 minutes
-	expirationTime := time.Now().Add(1440 * time.Minute)
+	expirationTime := time.Now().Add(authExpirationMinutes * time.Minute)
 
 	token, err := shared.GenerateAuthToken(*user, expirationTime)
 	if err != nil {

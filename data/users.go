@@ -20,7 +20,6 @@ type User struct {
 	Password     string
 	Website      string
 	About        string
-	InvitedBy    string
 	InviteCode   string
 	Karma        int
 	CustomerID   int
@@ -48,8 +47,8 @@ func CreateUser(user *User) (err error) {
 	if err != nil {
 		return &UserError{"Cannot connect to db", user, err}
 	}
-	sql := "INSERT INTO users (username, fullname, email, registeredon," + "password, website, about, invitedby, invitecode, karma, customerid) " +
-		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+	sql := "INSERT INTO users (username, fullname, email, registeredon," + "password, website, about, invitecode, karma, customerid) " +
+		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
 
 	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -64,7 +63,6 @@ func CreateUser(user *User) (err error) {
 		string(encryptedPassword),
 		user.Website,
 		user.About,
-		user.InvitedBy,
 		user.InviteCode,
 		user.Karma,
 		user.CustomerID)
@@ -72,27 +70,6 @@ func CreateUser(user *User) (err error) {
 		return &UserError{"Cannot insert user to the database!", user, err}
 	}
 	return nil
-}
-
-/*ExistsInviteCode checks whether invite code exists in user db or not*/
-func ExistsInviteCode(inviteCode string) (exists bool, err error) {
-	exists = false
-	db, err := connectToDB()
-	defer db.Close()
-	if err != nil {
-		return exists, err
-	}
-	sql := "SELECT COUNT(*) AS count FROM users WHERE invitecode = $1"
-	row := db.QueryRow(sql, inviteCode)
-	recordCount := 0
-	err = row.Scan(&recordCount)
-	if err != nil {
-		return exists, &DBError{fmt.Sprintf("Cannot get record count for inviteCode: %s", inviteCode), err}
-	}
-	if recordCount > 0 {
-		exists = true
-	}
-	return exists, err
 }
 
 /*ChangePassword changes user password associated with provided user id*/
@@ -338,9 +315,6 @@ func GetUserNameByEmail(email string) (string, error) {
 	var username string
 	err = row.Scan(
 		&username)
-	if err != nil {
-		return "", &DBError{fmt.Sprintf("Cannot read rows"), err}
-	}
 	if err != nil {
 		return "", &DBError{fmt.Sprintf("Cannot read email by username from db. Email: %s", email), err}
 	}

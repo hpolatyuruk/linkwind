@@ -1,60 +1,66 @@
-{{template "layout" .}}
-{{define "title" }}{{.Title}}{{ end }}
-{{define "content"}}
-<form action="/signup" method="POST">
-  <div class="md:w-3/4">
-    <div class="md:w-1/3 md:text-right pb-5">
-      <h3 class="text-lg">Sign Up</h3>
-    </div>
-    <div class="md:flex md:items-center mb-6">
-      <div class="md:w-1/3">
-        <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for="userName">
-          User Name
-        </label>
-      </div>
-      <div class="md:w-2/3">
-        <input
-          class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
-          id="userName" name="userName" type="text" placeholder="user name..." />
-      </div>
-    </div>
+<!DOCTYPE html>
+<html>
 
-    <div class="md:flex md:items-center mb-6">
-      <div class="md:w-1/3">
-        <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for="email">
-          Email
-        </label>
-      </div>
-      <div class="md:w-2/3">
-        <input
-          class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
-          id="email" name="email" type="text" placeholder="email..." />
-      </div>
-    </div>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <link rel="stylesheet" href="/dist/app.css" />
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+    <title>Sign Up</title>
+</head>
 
-    <div class="md:flex md:items-center mb-6">
-      <div class="md:w-1/3">
-        <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for="password">
-          Password
-        </label>
-      </div>
-      <div class="md:w-2/3">
-        <input
-          class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
-          id="password" name="password" type="password" />
-      </div>
+<body>
+    <div class="container mx-auto">
+        <div class="w-full max-w-xs mx-auto pt-20">
+            <form method="POST" action="/signup" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                <input id="inviteCode" name="inviteCode" type="hidden" value="{{.InviteCode}}" />
+                <div class="mb-4">
+                    {{with .Errors.General}}
+                    <p class="text-red-500 text-sm italic mb-5">{{.}}</p>
+                    {{end}}
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="username">
+                        Username
+                    </label>
+                    <input
+                        class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+                        id="userName" name="userName" type="text" value="{{.UserName}}" placeholder="Username" />
+                    {{with .Errors.UserName}}
+                    <p class="text-red-500 text-sm italic">{{.}}</p>
+                    {{end}}
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                        Email
+                    </label>
+                    <input
+                        class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+                        id="email" name="email" type="text" value="{{.Email}}" placeholder="Email" />
+                    {{with .Errors.Email}}
+                    <p class="text-red-500 text-sm italic">{{.}}</p>
+                    {{end}}
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+                        Password
+                    </label>
+                    <input
+                        class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+                        id="password" name="password" type="password" value="{{.Password}}" placeholder="Password" />
+                    {{with .Errors.Password}}
+                    <p class="text-red-500 text-sm italic">{{.}}</p>
+                    {{end}}
+                </div>
+                <div class="flex items-center justify-between">
+                    <button
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        type="submit">
+                        Sign Up
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
+    <script src="/dist/app.js"></script>
+</body>
 
-    <div class="md:flex md:items-center">
-      <div class="md:w-1/3"></div>
-      <div class="md:w-2/3">
-        <button
-          class="shadow bg-gray-200 hover:bg-gray-400 focus:shadow-outline focus:outline-none text-gray-600 font-bold py-2 px-4 rounded"
-          type="submit">
-          Submit
-        </button>
-      </div>
-    </div>
-  </div>
-</form>
-{{end}}
+</html>

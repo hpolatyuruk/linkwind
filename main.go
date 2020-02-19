@@ -21,7 +21,6 @@ func main() {
 	http.HandleFunc("/stories/unvote", controllers.UnvoteStoryHandler)
 	http.HandleFunc("/submit", errorHandler(controllers.SubmitStoryHandler))
 	http.HandleFunc("/invite", errorHandler(controllers.InviteUserHandler))
-	http.HandleFunc("/replies", errorHandler(controllers.RepliesHandler))
 	http.HandleFunc("/comments/add", errorHandler(controllers.AddCommentHandler))
 	http.HandleFunc("/comments/upvote", controllers.UpvoteCommentHandler)
 	http.HandleFunc("/comments/unvote", controllers.UnvoteCommentHandler)
@@ -33,6 +32,7 @@ func main() {
 	http.HandleFunc("/set-new-password", errorHandler(controllers.SetNewPasswordHandler))
 	http.HandleFunc("/change-password", errorHandler(controllers.ChangePasswordHandler))
 	http.HandleFunc("/profile-edit", errorHandler(controllers.UserProfileHandler))
+	http.HandleFunc("/invitecodes/generate", errorHandler(controllers.GenerateInviteCodeHandler))
 	staticFileServer := http.FileServer(http.Dir("app/dist/"))
 
 	http.Handle("/dist/", http.StripPrefix("/dist/", staticFileServer))
