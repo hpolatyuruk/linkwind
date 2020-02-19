@@ -57,8 +57,8 @@ func SendInvitemail(mailAddress, memo, inviteCode, userName string) {
 /*SendResetPasswordMail send to mail for reset password with resetPassword token*/
 //TODO: In lobsters they add coming ip for reset pass request. Should we do that? Do not forget to change "pass" and "to" variables.
 func SendResetPasswordMail(email, userName, domain string) error {
-	pass := "..."
-	from := "..."
+	pass := "Sedat.1242"
+	from := "sedata38@gmail.com"
 	to := email
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	subject := "Subject: " + "[" + domain + "] Reset Your Password\n"
@@ -85,7 +85,7 @@ func setResetPasswordMailBody(token, userName, domain string) string {
 	content += "<p>You can reset your password by clicking the link below.</p>"
 	content += "<p>If you did not make such a request, do not care about this message.</p>"
 
-	url := "https://" + domain + "/login/set_new_password?token=" + token
+	url := "http://" + domain + "/set-new-password?token=" + token
 
 	content += "<a href=" + url + ">" + url + "</a>"
 

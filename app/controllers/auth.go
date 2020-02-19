@@ -187,14 +187,15 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) error {
 func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
-		isAuthenticated, _, err := shared.IsAuthenticated(r)
-		if err != nil {
-			return err
-		}
-		if !isAuthenticated {
-			http.Redirect(w, r, "/signin", http.StatusSeeOther)
-			return nil
-		}
+		/*
+			isAuthenticated, _, err := shared.IsAuthenticated(r)
+			if err != nil {
+				return err
+			}
+			if !isAuthenticated {
+				http.Redirect(w, r, "/signin", http.StatusSeeOther)
+				return nil
+			}*/
 		return handleResetPasswordGET(w, r)
 	case "POST":
 		return handleResetPasswordPOST(w, r)
@@ -207,14 +208,6 @@ func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) error {
 func SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
-		isAuthenticated, _, err := shared.IsAuthenticated(r)
-		if err != nil {
-			return err
-		}
-		if !isAuthenticated {
-			http.Redirect(w, r, "/signin", http.StatusSeeOther)
-			return nil
-		}
 		return handleSetNewPasswordGET(w, r)
 	case "POST":
 		return handleSetNewPasswordPOST(w, r)

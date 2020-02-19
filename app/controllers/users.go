@@ -14,7 +14,7 @@ type UserProfileViewModel struct {
 	Email          string
 	FullName       string
 	Karma          int
-	RegisteredOn   time.Time
+	RegisteredOn   int
 	UserName       string
 	Errors         map[string]string
 	SuccessMessage string
@@ -32,13 +32,23 @@ func (model *UserProfileViewModel) Validate() bool {
 
 /*UserProfileHandler handles showing user profile detail*/
 func UserProfileHandler(w http.ResponseWriter, r *http.Request) error {
+	isAuthenticated, user, err := shared.IsAuthenticated(r)
+	if err != nil {
+		return nil
+	}
+
+	if !isAuthenticated {
+		http.Redirect(w, r, "/signin", http.StatusSeeOther)
+		return nil
+	}
+
 	switch r.Method {
 	case "GET":
-		return handleUserProfileGET(w, r)
+		return handleUserProfileGET(w, r, user)
 	case "POST":
-		return handleUserProfilePOST(w, r)
+		return handleUserProfilePOST(w, r, user)
 	default:
-		return handleUserProfileGET(w, r)
+		return handleUserProfileGET(w, r, user)
 	}
 }
 
@@ -53,7 +63,7 @@ func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func handleUserProfileGET(w http.ResponseWriter, r *http.Request) error {
+func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) error {
 	userName := r.URL.Query().Get("user")
 	if len(userName) == 0 {
 		err := templates.RenderFile(w, "errors/404.html", nil)
@@ -63,18 +73,24 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	if userName == "" {
-		isAuthenticated, claims, err := shared.IsAuthenticated(r)
+	if userName != userClaims.UserName {
+		user, err := data.GetUserByUserName(userName)
 		if err != nil {
 			return err
 		}
-
-		if !isAuthenticated {
-			http.Redirect(w, r, "/signin", http.StatusSeeOther)
-			return nil
+		var model UserProfileViewModel
+		model.UserName = user.UserName
+		model.RegisteredOn = diffTime(user.RegisteredOn)
+		model.Karma = user.Karma
+		model.About = user.About
+		err = templates.RenderInLayout(w, "readonly-profile.html", model)
+		if err != nil {
+			return err
 		}
-
-		user, err := data.GetUserByID(claims.ID)
+		return nil
+	}
+	if userName == "" {
+		user, err := data.GetUserByID(userClaims.ID)
 		if err != nil {
 			return err
 		}
@@ -84,7 +100,7 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request) error {
 			Email:        user.Email,
 			FullName:     user.FullName,
 			Karma:        user.Karma,
-			RegisteredOn: user.RegisteredOn,
+			RegisteredOn: diffTime(user.RegisteredOn),
 			UserName:     user.UserName,
 		}
 
@@ -111,7 +127,7 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request) error {
 		Email:        user.Email,
 		FullName:     user.FullName,
 		Karma:        user.Karma,
-		RegisteredOn: user.RegisteredOn,
+		RegisteredOn: diffTime(user.RegisteredOn),
 		UserName:     user.UserName,
 	}
 
@@ -122,7 +138,7 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func handleUserProfilePOST(w http.ResponseWriter, r *http.Request) error {
+func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) error {
 	model := &UserProfileViewModel{
 		Email: r.FormValue("email"),
 		About: r.FormValue("about"),
@@ -145,17 +161,20 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	user, err := data.GetUserByUserName(r.FormValue("userName"))
+	user, err := data.GetUserByUserName(userClaims.UserName)
 	if err != nil {
 		return err
 	}
 
-	if user.Email != model.Email {
+	if user.Email == model.Email {
 		exists, err := data.ExistsUserByEmail(user.Email)
 		if err != nil {
 			return err
 		}
 		if exists {
+			model.Email = user.Email
+			user.About = model.About
+			setUserToModel(user, model)
 			model.Errors["Email"] = "Entered e-mail address exists in db!"
 			err := templates.RenderInLayout(w, "profile-edit.html", model)
 			if err != nil {
@@ -172,10 +191,24 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	setUserToModel(user, model)
 	model.SuccessMessage = "User infos updated successfuly!"
 	err = templates.RenderInLayout(w, "profile-edit.html", model)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func setUserToModel(user *data.User, model *UserProfileViewModel) {
+	model.UserName = user.UserName
+	model.FullName = user.FullName
+	model.Karma = user.Karma
+	model.RegisteredOn = diffTime(user.RegisteredOn)
+	model.About = user.About
+}
+
+func diffTime(registeredOn time.Time) int {
+	diff := time.Now().Sub(registeredOn)
+	return int(diff.Hours() / 24)
 }
