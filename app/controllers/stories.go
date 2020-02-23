@@ -28,10 +28,11 @@ type StoryVoteModel struct {
 
 /*StorySubmitModel represents the data to submit a story.*/
 type StorySubmitModel struct {
-	URL    string
-	Title  string
-	Text   string
-	Errors map[string]string
+	URL          string
+	Title        string
+	Text         string
+	Errors       map[string]string
+	SignedInUser *models.SignedInUserViewModel
 }
 
 /*JSONResponse respresents the json response.*/
@@ -73,10 +74,15 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		customerID = user.CustomerID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
 		}
 	}
 
@@ -109,10 +115,15 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		customerID = user.CustomerID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
 		}
 	}
 
@@ -141,10 +152,15 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if isAuthenticated {
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
 		}
 	}
 
@@ -163,7 +179,6 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*SubmitStoryHandler handles to submit a new story*/
 func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
-
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
 		return nil
@@ -185,7 +200,14 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handlesSubmitGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
-	templates.RenderInLayout(w, "submit.html", nil)
+	model := &StorySubmitModel{
+		SignedInUser: &models.SignedInUserViewModel{
+			IsSigned: true,
+			UserName: user.UserName,
+		},
+	}
+
+	templates.RenderInLayout(w, "submit.html", model)
 	return nil
 }
 
@@ -193,10 +215,15 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.Signe
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
+
 	model := &StorySubmitModel{
 		URL:   r.FormValue("url"),
 		Title: r.FormValue("title"),
 		Text:  r.FormValue("text"),
+		SignedInUser: &models.SignedInUserViewModel{
+			IsSigned: true,
+			UserName: user.UserName,
+		},
 	}
 	if model.Validate() == false {
 		templates.RenderInLayout(w, "submit.html", model)
@@ -244,10 +271,15 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if isAuthenticated {
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
 		}
 	}
 
@@ -280,10 +312,15 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		userID = user.ID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
 		}
 	}
 
@@ -342,10 +379,15 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	if isAuth {
 		model.IsAuthenticated = true
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     signedInUserClaims.ID,
 			CustomerID: signedInUserClaims.CustomerID,
 			Email:      signedInUserClaims.Email,
 			UserName:   signedInUserClaims.UserName,
+		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
 		}
 	}
 	model.Story = mapStoryToStoryViewModel(story, model.SignedInUser)

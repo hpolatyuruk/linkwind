@@ -3,7 +3,7 @@ package controllers
 import (
 	"net/http"
 	"strings"
-	"time"
+	"turkdev/app/models"
 	"turkdev/app/src/templates"
 	"turkdev/data"
 	"turkdev/shared"
@@ -14,10 +14,11 @@ type UserProfileViewModel struct {
 	Email          string
 	FullName       string
 	Karma          int
-	RegisteredOn   int
+	RegisteredOn   string
 	UserName       string
 	Errors         map[string]string
 	SuccessMessage string
+	SignedInUser   *models.SignedInUserViewModel
 }
 
 /*Validate validates the UserProfileViewModel*/
@@ -64,6 +65,14 @@ func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) error {
+	//TODO : Burada model oluşturulup aşağıda set edilmeler değiştirlmeli. Çok fazla logic tekrarı yapılmış
+	model := &UserProfileViewModel{
+		SignedInUser: &models.SignedInUserViewModel{
+			IsSigned: true,
+			UserName: userClaims.UserName,
+		},
+	}
+
 	userName := r.URL.Query().Get("user")
 	if len(userName) == 0 {
 		err := templates.RenderFile(w, "errors/404.html", nil)
@@ -78,11 +87,8 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *sh
 		if err != nil {
 			return err
 		}
-		var model UserProfileViewModel
-		model.UserName = user.UserName
-		model.RegisteredOn = diffTime(user.RegisteredOn)
-		model.Karma = user.Karma
-		model.About = user.About
+		setUserToModel(user, model)
+
 		err = templates.RenderInLayout(w, "readonly-profile.html", model)
 		if err != nil {
 			return err
@@ -95,14 +101,7 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *sh
 			return err
 		}
 
-		model := &UserProfileViewModel{
-			About:        user.About,
-			Email:        user.Email,
-			FullName:     user.FullName,
-			Karma:        user.Karma,
-			RegisteredOn: diffTime(user.RegisteredOn),
-			UserName:     user.UserName,
-		}
+		setUserToModel(user, model)
 
 		err = templates.RenderInLayout(w, "layouts/users/profile-edit.html", model)
 		if err != nil {
@@ -122,14 +121,7 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *sh
 		return nil
 	}
 
-	model := &UserProfileViewModel{
-		About:        user.About,
-		Email:        user.Email,
-		FullName:     user.FullName,
-		Karma:        user.Karma,
-		RegisteredOn: diffTime(user.RegisteredOn),
-		UserName:     user.UserName,
-	}
+	setUserToModel(user, model)
 
 	err = templates.RenderInLayout(w, "profile-edit.html", model)
 	if err != nil {
@@ -142,6 +134,10 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 	model := &UserProfileViewModel{
 		Email: r.FormValue("email"),
 		About: r.FormValue("about"),
+		SignedInUser: &models.SignedInUserViewModel{
+			IsSigned: true,
+			UserName: userClaims.UserName,
+		},
 	}
 
 	if model.Validate() == false {
@@ -204,11 +200,7 @@ func setUserToModel(user *data.User, model *UserProfileViewModel) {
 	model.UserName = user.UserName
 	model.FullName = user.FullName
 	model.Karma = user.Karma
-	model.RegisteredOn = diffTime(user.RegisteredOn)
+	model.RegisteredOn = shared.DateToString(user.RegisteredOn)
 	model.About = user.About
-}
-
-func diffTime(registeredOn time.Time) int {
-	diff := time.Now().Sub(registeredOn)
-	return int(diff.Hours() / 24)
+	model.Email = user.Email
 }
