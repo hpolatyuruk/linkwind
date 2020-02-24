@@ -8,4 +8,25 @@
   <p>No posts submitted yet.</p>
 </div>
 {{end}}
+<div class="container mx-auto">
+  <div class="flex flex-wrap pt-3">
+    <div id="header" class="w-full">
+      <div class="float-left">
+        <ul class="flex">
+          <li class="mr-8 ml-10 mt-2">
+            {{if .Page.IsFinalPage}} 
+            <a class="text-gray-800 hover:text-gray-600" href="/?page={{.Page.PreviousPage}}"><< Page {{.Page.PreviousPage}}</a>
+            {{else if .Page.JustFirstPage}} 
+            <a class="text-gray-800 hover:text-gray-600" href="/?page={{.Page.NextPage}}"></a> 
+            {{else if (eq .Page.CurrentPage 1)}} 
+            <a class="text-gray-800 hover:text-gray-600" href="/?page={{.Page.NextPage}}">Page {{.Page.NextPage}} >></a>{{else}}  
+            <a class="text-gray-800 hover:text-gray-600" href="/?page={{.Page.PreviousPage}}"><< Page {{.Page.PreviousPage}}</a> |
+            <a class="text-gray-800 hover:text-gray-600" href="/?page={{.Page.NextPage}}">Page {{.Page.NextPage}} >></a>
+            {{end}}
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 {{end}}

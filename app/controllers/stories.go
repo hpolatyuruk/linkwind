@@ -17,7 +17,7 @@ import (
 
 const (
 	/*DefaultStoryCountPerPage represents story count to be listed per page*/
-	DefaultStoryCountPerPage = 20
+	DefaultStoryCountPerPage = 7
 )
 
 /*StoryVoteModel represents the data in http request body to upvote story.*/
@@ -87,9 +87,23 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var page int = getPage(r)
-	stories, err := data.GetStories(customerID, page, DefaultStoryCountPerPage)
+	stories, err := data.GetStories(customerID, page-1, DefaultStoryCountPerPage)
 	if err != nil {
 		return err
+	}
+
+	storiesCount, err := data.GetStoriesCount(customerID)
+	if err != nil {
+		return err
+	}
+	totalPageCount := calcualteTotalPageCount(storiesCount)
+	isFinalPage, justFirstPage := setPagingVariables(totalPageCount, page, len(*stories))
+	model.Page = &models.Paging{
+		CurrentPage:   page,
+		NextPage:      page + 1,
+		PreviousPage:  page - 1,
+		IsFinalPage:   isFinalPage,
+		JustFirstPage: justFirstPage,
 	}
 
 	if stories != nil && len(*stories) > 0 {
@@ -566,7 +580,7 @@ func UnSaveStoryHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func getPage(r *http.Request) int {
-	var page int = 0
+	var page int = 1
 	strPage := r.URL.Query().Get("page")
 	if len(strPage) > 0 {
 		page, _ = strconv.Atoi(strPage)
@@ -660,4 +674,29 @@ func mapCommentsToViewModelsWithChildren(comments *[]data.Comment, signedInUser 
 		viewModels = append(viewModels, viewModel)
 	}
 	return &viewModels
+}
+
+func setPagingVariables(totalPageCount, page, storiesLength int) (bool, bool) {
+	isFinalPage := false
+	justFirstPage := false
+	if page == totalPageCount {
+		isFinalPage = true
+	}
+	if storiesLength < DefaultStoryCountPerPage && page == 1 {
+		justFirstPage = true
+	}
+	return isFinalPage, justFirstPage
+}
+
+func calcualteTotalPageCount(storiesCount int) int {
+	quotient := storiesCount / DefaultStoryCountPerPage
+	remainder := storiesCount % DefaultStoryCountPerPage
+	var totalPageCount int
+	if remainder == 0 {
+		totalPageCount = quotient
+	}
+	if remainder != 0 && remainder <= 5 {
+		totalPageCount = quotient + 1
+	}
+	return totalPageCount
 }

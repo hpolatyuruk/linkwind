@@ -10,11 +10,20 @@ type SignedInUserViewModel struct {
 	Email      string
 }
 
+type Paging struct {
+	CurrentPage   int
+	PreviousPage  int
+	NextPage      int
+	IsFinalPage   bool
+	JustFirstPage bool
+}
+
 type StoryPageViewModel struct {
 	Title           string
 	IsAuthenticated bool
 	SignedInUser    *SignedInUserViewModel
 	Stories         []StoryViewModel
+	Page            *Paging
 }
 
 type StoryViewModel struct {

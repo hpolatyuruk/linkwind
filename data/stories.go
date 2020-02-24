@@ -63,7 +63,7 @@ func CreateStory(story *Story) error {
 	return nil
 }
 
-/*GetStories retunrs story list according to customer id by provided paging parameters*/
+/*GetStories returns story list according to customer id by provided paging parameters*/
 func GetStories(customerID, pageNumber, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
 	defer db.Close()
@@ -81,6 +81,24 @@ func GetStories(customerID, pageNumber, pageRowCount int) (*[]Story, error) {
 		return nil, &DBError{fmt.Sprintf("Cannot read rows. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
 	}
 	return stories, nil
+}
+
+/*GetStoriesCount returns stories count number*/
+func GetStoriesCount(customerID int) (int, error) {
+	var count int
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return count, err
+	}
+
+	sql := "SELECT COUNT(*) FROM stories INNER JOIN users ON users.id = stories.userid WHERE users.customerid = $1"
+	row := db.QueryRow(sql, customerID)
+	err = row.Scan(&count)
+	if err != nil {
+		return count, &DBError{fmt.Sprintf("Cannot read row."), err}
+	}
+	return count, nil
 }
 
 /*GetStoryByID gets story by id from db*/
