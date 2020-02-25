@@ -17,7 +17,7 @@ import (
 
 const (
 	/*DefaultStoryCountPerPage represents story count to be listed per page*/
-	DefaultStoryCountPerPage = 20
+	DefaultStoryCountPerPage = 7
 )
 
 /*StoryVoteModel represents the data in http request body to upvote story.*/
@@ -28,10 +28,11 @@ type StoryVoteModel struct {
 
 /*StorySubmitModel represents the data to submit a story.*/
 type StorySubmitModel struct {
-	URL    string
-	Title  string
-	Text   string
-	Errors map[string]string
+	URL          string
+	Title        string
+	Text         string
+	Errors       map[string]string
+	SignedInUser *models.SignedInUserViewModel
 }
 
 /*JSONResponse respresents the json response.*/
@@ -73,17 +74,36 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		customerID = user.CustomerID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
 		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
+		}
 	}
 
 	var page int = getPage(r)
-	stories, err := data.GetStories(customerID, page, DefaultStoryCountPerPage)
+	stories, err := data.GetStories(customerID, page-1, DefaultStoryCountPerPage)
 	if err != nil {
 		return err
+	}
+
+	storiesCount, err := data.GetStoriesCount(customerID)
+	if err != nil {
+		return err
+	}
+	totalPageCount := calcualteTotalPageCount(storiesCount)
+	isFinalPage, justFirstPage := setPagingVariables(totalPageCount, page, len(*stories))
+	model.Page = &models.Paging{
+		CurrentPage:   page,
+		NextPage:      page + 1,
+		PreviousPage:  page - 1,
+		IsFinalPage:   isFinalPage,
+		JustFirstPage: justFirstPage,
 	}
 
 	if stories != nil && len(*stories) > 0 {
@@ -109,10 +129,15 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		customerID = user.CustomerID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
 		}
 	}
 
@@ -141,10 +166,15 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if isAuthenticated {
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
 		}
 	}
 
@@ -163,7 +193,6 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*SubmitStoryHandler handles to submit a new story*/
 func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
-
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
 		return nil
@@ -185,7 +214,14 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handlesSubmitGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
-	templates.RenderInLayout(w, "submit.html", nil)
+	model := &StorySubmitModel{
+		SignedInUser: &models.SignedInUserViewModel{
+			IsSigned: true,
+			UserName: user.UserName,
+		},
+	}
+
+	templates.RenderInLayout(w, "submit.html", model)
 	return nil
 }
 
@@ -193,10 +229,15 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.Signe
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
+
 	model := &StorySubmitModel{
 		URL:   r.FormValue("url"),
 		Title: r.FormValue("title"),
 		Text:  r.FormValue("text"),
+		SignedInUser: &models.SignedInUserViewModel{
+			IsSigned: true,
+			UserName: user.UserName,
+		},
 	}
 	if model.Validate() == false {
 		templates.RenderInLayout(w, "submit.html", model)
@@ -244,10 +285,15 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if isAuthenticated {
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
 		}
 	}
 
@@ -280,10 +326,15 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 		userID = user.ID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
 		}
 	}
 
@@ -342,10 +393,15 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	if isAuth {
 		model.IsAuthenticated = true
 		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned:   true,
 			UserID:     signedInUserClaims.ID,
 			CustomerID: signedInUserClaims.CustomerID,
 			Email:      signedInUserClaims.Email,
 			UserName:   signedInUserClaims.UserName,
+		}
+	} else {
+		model.SignedInUser = &models.SignedInUserViewModel{
+			IsSigned: false,
 		}
 	}
 	model.Story = mapStoryToStoryViewModel(story, model.SignedInUser)
@@ -524,7 +580,7 @@ func UnSaveStoryHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func getPage(r *http.Request) int {
-	var page int = 0
+	var page int = 1
 	strPage := r.URL.Query().Get("page")
 	if len(strPage) > 0 {
 		page, _ = strconv.Atoi(strPage)
@@ -618,4 +674,29 @@ func mapCommentsToViewModelsWithChildren(comments *[]data.Comment, signedInUser 
 		viewModels = append(viewModels, viewModel)
 	}
 	return &viewModels
+}
+
+func setPagingVariables(totalPageCount, page, storiesLength int) (bool, bool) {
+	isFinalPage := false
+	justFirstPage := false
+	if page == totalPageCount {
+		isFinalPage = true
+	}
+	if storiesLength < DefaultStoryCountPerPage && page == 1 {
+		justFirstPage = true
+	}
+	return isFinalPage, justFirstPage
+}
+
+func calcualteTotalPageCount(storiesCount int) int {
+	quotient := storiesCount / DefaultStoryCountPerPage
+	remainder := storiesCount % DefaultStoryCountPerPage
+	var totalPageCount int
+	if remainder == 0 {
+		totalPageCount = quotient
+	}
+	if remainder != 0 && remainder <= 5 {
+		totalPageCount = quotient + 1
+	}
+	return totalPageCount
 }

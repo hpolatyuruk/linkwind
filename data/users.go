@@ -196,18 +196,18 @@ func GetUserByUserName(userName string) (user *User, err error) {
 	return user, nil
 }
 
-/*GetUserByID get user associated with id from database*/
-func GetUserByID(id int) (user *User, err error) {
+/*GetUserByID gets user associated with user id from database*/
+func GetUserByID(userID int) (user *User, err error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
 	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma, customerid FROM users WHERE id = $1"
-	row := db.QueryRow(sql, id)
+	row := db.QueryRow(sql, userID)
 	user, err = MapSQLRowToUser(row)
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("Cannot read user by id from db. ID: %d", id), err}
+		return nil, &DBError{fmt.Sprintf("Cannot read user by user name from db. UserID: %s", userID), err}
 	}
 	return user, nil
 }
@@ -254,7 +254,7 @@ func GetUserByResetPasswordToken(token string) (user *User, err error) {
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma FROM users INNER JOIN resetpasswordtokens on users.Id = resetpasswordtokens.userid WHERE resetpasswordtokens.token = $1"
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about,  invitecode, karma FROM users INNER JOIN resetpasswordtokens on users.Id = resetpasswordtokens.userid WHERE resetpasswordtokens.token = $1"
 	row := db.QueryRow(sql, token)
 	user, err = MapSQLRowToUser(row)
 	if err != nil {
@@ -318,7 +318,7 @@ func GetUserNameByEmail(email string) (string, error) {
 	if err != nil {
 		return "", &DBError{fmt.Sprintf("Cannot read email by username from db. Email: %s", email), err}
 	}
-	return email, nil
+	return username, nil
 }
 
 /*GetCustomerDomainByUserName returns customer's domain by user name*/

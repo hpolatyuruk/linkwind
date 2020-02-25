@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-
+	// TODO: UserProfileHandler hem /users/porfile'ı hem de /profile-edit 'i karşılıyor.
 	http.HandleFunc("/users/profile", errorHandler(controllers.UserProfileHandler))
 	http.HandleFunc("/signup", errorHandler(controllers.SignUpHandler))
 	http.HandleFunc("/signin", errorHandler(controllers.SignInHandler))
@@ -31,6 +31,7 @@ func main() {
 	http.HandleFunc("/reset-password", errorHandler(controllers.ResetPasswordHandler))
 	http.HandleFunc("/set-new-password", errorHandler(controllers.SetNewPasswordHandler))
 	http.HandleFunc("/change-password", errorHandler(controllers.ChangePasswordHandler))
+	http.HandleFunc("/profile-edit", errorHandler(controllers.UserProfileHandler))
 	http.HandleFunc("/invitecodes/generate", errorHandler(controllers.GenerateInviteCodeHandler))
 	staticFileServer := http.FileServer(http.Dir("app/dist/"))
 

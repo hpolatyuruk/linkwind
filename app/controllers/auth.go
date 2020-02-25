@@ -114,7 +114,12 @@ func (model *SetNewPasswordViewModel) Validate() bool {
 
 	if strings.TrimSpace(model.NewPassword) == "" {
 		model.Errors["NewPassword"] = "New password is required!"
+	} else {
+		if shared.IsPasswordValid(model.NewPassword) == false {
+			model.Errors["NewPassword"] = "The password is not valid. A password should contan at least 1 uppercase, 1 lowercase, 1 digit, one of #$+=!*@& special characters and have a length of at least of 8."
+		}
 	}
+
 	if strings.TrimSpace(model.ConfirmPassword) == "" {
 		model.Errors["ConfirmPassword"] = "Confirm password is required!"
 	}
@@ -133,6 +138,10 @@ func (model *ChangePasswordViewModel) Validate() bool {
 	}
 	if strings.TrimSpace(model.NewPassword) == "" {
 		model.Errors["NewPassword"] = "New password is required!"
+	} else {
+		if shared.IsPasswordValid(model.NewPassword) == false {
+			model.Errors["NewPassword"] = "The password is not valid. A password should contan at least 1 uppercase, 1 lowercase, 1 digit, one of #$+=!*@& special characters and have a length of at least of 8."
+		}
 	}
 	if strings.TrimSpace(model.ConfirmPassword) == "" {
 		model.Errors["ConfirmPassword"] = "Confirm password is required!"
@@ -187,14 +196,15 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) error {
 func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
-		isAuthenticated, _, err := shared.IsAuthenticated(r)
-		if err != nil {
-			return err
-		}
-		if !isAuthenticated {
-			http.Redirect(w, r, "/signin", http.StatusSeeOther)
-			return nil
-		}
+		/*
+			isAuthenticated, _, err := shared.IsAuthenticated(r)
+			if err != nil {
+				return err
+			}
+			if !isAuthenticated {
+				http.Redirect(w, r, "/signin", http.StatusSeeOther)
+				return nil
+			}*/
 		return handleResetPasswordGET(w, r)
 	case "POST":
 		return handleResetPasswordPOST(w, r)
@@ -207,14 +217,6 @@ func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) error {
 func SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
-		isAuthenticated, _, err := shared.IsAuthenticated(r)
-		if err != nil {
-			return err
-		}
-		if !isAuthenticated {
-			http.Redirect(w, r, "/signin", http.StatusSeeOther)
-			return nil
-		}
 		return handleSetNewPasswordGET(w, r)
 	case "POST":
 		return handleSetNewPasswordPOST(w, r)
@@ -467,28 +469,35 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 	var user *data.User
 	if shared.IsEmailAdrressValid(model.EmailOrUserName) {
 		exists, err = data.ExistsUserByEmail(model.EmailOrUserName)
+		if !exists {
+			model.Errors["General"] = "User does not exist!"
+			err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
 		email = model.EmailOrUserName
 		userName, err = data.GetUserNameByEmail(model.EmailOrUserName)
 	} else {
 		exists, err = data.ExistsUserByUserName(model.EmailOrUserName)
-		if exists {
-			user, err = data.GetUserByUserName(model.EmailOrUserName)
-			userName = user.UserName
-			email = user.Email
+		if !exists {
+			model.Errors["General"] = "User does not exist!"
+			err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
+			if err != nil {
+				return err
+			}
+			return nil
 		}
+		user, err = data.GetUserByUserName(model.EmailOrUserName)
+		userName = user.UserName
+		email = user.Email
+
 	}
 	if err != nil {
 		return err
 	}
 
-	if !exists {
-		model.Errors["General"] = "User does not exist!"
-		err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
 	domain, err := data.GetCustomerDomainByUserName(userName)
 	if err != nil {
 		return err

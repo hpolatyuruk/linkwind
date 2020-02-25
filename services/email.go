@@ -85,7 +85,7 @@ func setResetPasswordMailBody(token, userName, domain string) string {
 	content += "<p>You can reset your password by clicking the link below.</p>"
 	content += "<p>If you did not make such a request, do not care about this message.</p>"
 
-	url := "https://" + domain + "/login/set_new_password?token=" + token
+	url := "http://" + domain + "/set-new-password?token=" + token
 
 	content += "<a href=" + url + ">" + url + "</a>"
 

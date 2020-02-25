@@ -3,10 +3,19 @@ package models
 import "html/template"
 
 type SignedInUserViewModel struct {
+	IsSigned   bool
 	UserID     int
 	CustomerID int
 	UserName   string
 	Email      string
+}
+
+type Paging struct {
+	CurrentPage   int
+	PreviousPage  int
+	NextPage      int
+	IsFinalPage   bool
+	JustFirstPage bool
 }
 
 type StoryPageViewModel struct {
@@ -14,6 +23,7 @@ type StoryPageViewModel struct {
 	IsAuthenticated bool
 	SignedInUser    *SignedInUserViewModel
 	Stories         []StoryViewModel
+	Page            *Paging
 }
 
 type StoryViewModel struct {
