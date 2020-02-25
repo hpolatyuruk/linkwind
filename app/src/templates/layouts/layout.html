@@ -38,13 +38,13 @@
           <ul class="flex">
             <li class="mr-2">
               <span>{{if .SignedInUser.IsSigned}}
-                <a class="text-gray-800 hover:text-gray-600" href="/profile-edit?user={{.SignedInUser.UserName}}">{{.SignedInUser.UserName}}</a>{{end}}
+                <a class="text-gray-800 hover:text-gray-600"
+                  href="/profile-edit?user={{.SignedInUser.UserName}}">{{.SignedInUser.UserName}}</a>{{end}}
               </span>
             </li>
-            <li class="mr-2">|</li>
             <li class="mr-2">
-              <span>{{if .SignedInUser.IsSigned}} 
-                <a href="/signout" class="text-gray-800 hover:text-gray-600">Logout</a> {{else}} 
+              <span>{{if .SignedInUser.IsSigned}}
+                <a href="/signout" class="text-gray-800 hover:text-gray-600"> | Logout</a> {{else}}
                 <a href="/signin" class="text-gray-800 hover:text-gray-600">Login</a> {{end}}
               </span>
             </li>
