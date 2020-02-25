@@ -308,23 +308,20 @@ func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 		templates.RenderFile(w, signUpHTMLPath, model)
 		return nil
 	}
-	exists, err := data.ExistsInviteCode(model.InviteCode)
+	invitedCodeInfo, err := data.GetInviteCodeInfoByCode(model.InviteCode)
 	if err != nil {
 		return err
 	}
-	if exists == false {
+	if invitedCodeInfo == nil {
 		model.Errors["General"] = "Invite code could not be found. Please make sure that you have a valid invite code."
+		templates.RenderFile(w, signUpHTMLPath, model)
 		return nil
 	}
-	used, err := data.IsInviteCodeUsed(model.InviteCode)
-	if err != nil {
-		return err
-	}
-	if used {
+	if invitedCodeInfo.Used {
 		model.Errors["General"] = "The invite code is already used!"
 		return nil
 	}
-	exists, err = data.ExistsUserByUserName(model.UserName)
+	exists, err := data.ExistsUserByUserName(model.UserName)
 	if err != nil {
 		return err
 	}
@@ -342,13 +339,22 @@ func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 		templates.RenderFile(w, signUpHTMLPath, model)
 		return nil
 	}
+	inviterUser, err := data.GetUserByID(invitedCodeInfo.InviterUserID)
+	if err != nil {
+		return err
+	}
+	if inviterUser == nil {
+		model.Errors["General"] = "The inviter user could not be found!"
+		templates.RenderFile(w, signUpHTMLPath, model)
+		return nil
+	}
 	var user data.User
 	user.UserName = model.UserName
 	user.Email = model.Email
 	user.Password = model.Password
 	user.Karma = 0
 	user.RegisteredOn = time.Now()
-	user.CustomerID = 1 // TODO: get it real customer id
+	user.CustomerID = inviterUser.CustomerID
 	user.InviteCode = model.InviteCode
 	err = data.CreateUser(&user)
 	if err != nil {

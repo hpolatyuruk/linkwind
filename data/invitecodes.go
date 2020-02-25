@@ -7,6 +7,15 @@ import (
 	"github.com/rs/xid"
 )
 
+/*InviteCodeInfo represents the invited code info.*/
+type InviteCodeInfo struct {
+	Code                string
+	InviterUserID       int
+	InvitedEmailAddress string
+	Used                bool
+	CreatedOn           time.Time
+}
+
 /*CreateInviteCode creates an invite code.*/
 func CreateInviteCode(inviterUserID int, invitedEmail string) (string, error) {
 	db, err := connectToDB()
@@ -98,4 +107,20 @@ func IsInviteCodeUsed(inviteCode string) (used bool, err error) {
 		return used, &DBError{fmt.Sprintf("Cannot get record count for inviteCode: %s", inviteCode), err}
 	}
 	return used, err
+}
+
+/*GetInviteCodeInfoByCode gets invite code info form database.*/
+func GetInviteCodeInfoByCode(inviteCode string) (*InviteCodeInfo, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+	sql := "SELECT code, inviteruserid, invitedemail, used, createdon FROM invitecodes WHERE code = $1"
+	row := db.QueryRow(sql, inviteCode)
+	inviteCodeInfo, err := MapSQLRowToInviteCodeInfo(row)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read invite code info by code from db. InviteCode: %s", inviteCode), err}
+	}
+	return inviteCodeInfo, nil
 }

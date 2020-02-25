@@ -187,11 +187,27 @@ func GetUserByUserName(userName string) (user *User, err error) {
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma, customerid FROM users WHERE username = $1"
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma, customerid FROM users WHERE username = $1"
 	row := db.QueryRow(sql, userName)
 	user, err = MapSQLRowToUser(row)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot read user by user name from db. UserName: %s", userName), err}
+	}
+	return user, nil
+}
+
+/*GetUserByID get user associated with id from database*/
+func GetUserByID(id int) (user *User, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma, customerid FROM users WHERE id = $1"
+	row := db.QueryRow(sql, id)
+	user, err = MapSQLRowToUser(row)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read user by id from db. ID: %d", id), err}
 	}
 	return user, nil
 }
@@ -204,7 +220,7 @@ func GetUsersByCustomerID(customerID int) (*[]User, error) {
 		return nil, err
 	}
 
-	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma, customerid FROM users WHERE customerID = $1"
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma, customerid FROM users WHERE customerID = $1"
 	rows, err := db.Query(sql, customerID)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot get users. CustomerID: %d", customerID), err}
@@ -238,7 +254,7 @@ func GetUserByResetPasswordToken(token string) (user *User, err error) {
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma FROM users INNER JOIN resetpasswordtokens on users.Id = resetpasswordtokens.userid WHERE resetpasswordtokens.token = $1"
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma FROM users INNER JOIN resetpasswordtokens on users.Id = resetpasswordtokens.userid WHERE resetpasswordtokens.token = $1"
 	row := db.QueryRow(sql, token)
 	user, err = MapSQLRowToUser(row)
 	if err != nil {
@@ -254,7 +270,7 @@ func FindUserByEmailAndPassword(email string, password string) (user *User, err 
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma, customerid FROM users WHERE email = $1"
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma, customerid FROM users WHERE email = $1"
 	row := db.QueryRow(sql, email)
 	user, err = MapSQLRowToUser(row)
 	if err != nil {
@@ -274,7 +290,7 @@ func FindUserByUserNameAndPassword(userName string, password string) (user *User
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitedby, invitecode, karma, customerid FROM users WHERE username = $1"
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma, customerid FROM users WHERE username = $1"
 	row := db.QueryRow(sql, userName)
 	user, err = MapSQLRowToUser(row)
 	if err != nil {

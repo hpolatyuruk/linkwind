@@ -90,6 +90,22 @@ func MapSQLRowToCustomer(row *sql.Row) (customer *Customer, err error) {
 	return customer, nil
 }
 
+/*MapSQLRowToInviteCodeInfo creates an invite code info struct object by sql row*/
+func MapSQLRowToInviteCodeInfo(row *sql.Row) (inviteCodeInfo *InviteCodeInfo, err error) {
+	var _inviteCodeInfo InviteCodeInfo
+	err = row.Scan(
+		&_inviteCodeInfo.Code,
+		&_inviteCodeInfo.InviterUserID,
+		&_inviteCodeInfo.InvitedEmailAddress,
+		&_inviteCodeInfo.Used,
+		&_inviteCodeInfo.CreatedOn)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot map sql row to invite code info struct"), err}
+	}
+	inviteCodeInfo = &_inviteCodeInfo
+	return inviteCodeInfo, nil
+}
+
 /*MapSQLRowToStory creates a story struct by sql rows*/
 func MapSQLRowToStory(rows *sql.Row) (story *Story, err error) {
 	var _story Story
