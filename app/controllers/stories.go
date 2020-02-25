@@ -17,7 +17,7 @@ import (
 
 const (
 	/*DefaultStoryCountPerPage represents story count to be listed per page*/
-	DefaultStoryCountPerPage = 7
+	DefaultStoryCountPerPage = 20
 )
 
 /*StoryVoteModel represents the data in http request body to upvote story.*/
