@@ -138,7 +138,7 @@ func UpdateUser(user *User) error {
 	return nil
 }
 
-/*ExistsUserByEmail check if user associated with email exists on database*/
+/*ExistsUserByEmail checks if user associated with email exists on database*/
 func ExistsUserByEmail(email string) (exists bool, err error) {
 	exists = false
 	db, err := connectToDB()
@@ -159,7 +159,7 @@ func ExistsUserByEmail(email string) (exists bool, err error) {
 	return exists, nil
 }
 
-/*ExistsUserByUserName check if user associated with user name exists on database*/
+/*ExistsUserByUserName checks if user associated with user name exists on database*/
 func ExistsUserByUserName(userName string) (exists bool, err error) {
 	exists = false
 	db, err := connectToDB()
@@ -180,7 +180,7 @@ func ExistsUserByUserName(userName string) (exists bool, err error) {
 	return exists, nil
 }
 
-/*GetUserByUserName get user associated with user name from database*/
+/*GetUserByUserName gets user associated with user name from database*/
 func GetUserByUserName(userName string) (user *User, err error) {
 	db, err := connectToDB()
 	defer db.Close()
