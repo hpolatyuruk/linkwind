@@ -80,7 +80,6 @@ func MapSQLRowToCustomer(row *sql.Row) (customer *Customer, err error) {
 		&_customer.ID,
 		&_customer.Name,
 		&_customer.Email,
-		&_customer.Description,
 		&_customer.RegisteredOn,
 		&_customer.Domain)
 	if err != nil {
