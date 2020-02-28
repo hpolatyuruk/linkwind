@@ -40,6 +40,8 @@ type JSONResponse struct {
 	Result string
 }
 
+type getStoriesPaged func(customerID, pageNo, storyCountPerPage int) (*[]data.Story, error)
+
 /*Validate validates the StorySubmitModel*/
 func (model *StorySubmitModel) Validate() bool {
 	model.Errors = make(map[string]string)
@@ -60,16 +62,21 @@ func (model *StorySubmitModel) Validate() bool {
 
 /*StoriesHandler handles showing the popular published stories*/
 func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	var model = &models.StoryPageViewModel{Title: "Stories"}
+	return renderStoriesPage("Stories", data.GetStories, w, r)
+}
 
+/*RecentStoriesHandler handles showing recently published stories*/
+func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
+	return renderStoriesPage("Recent Stories", data.GetRecentStories, w, r)
+}
+
+func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.ResponseWriter, r *http.Request) error {
+	var model = &models.StoryPageViewModel{Title: title}
 	var customerID int = 1 // TODO: get actual customer id from registered customer website
-
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
-
 	if err != nil {
 		return err
 	}
-
 	if isAuthenticated {
 		customerID = user.CustomerID
 		model.IsAuthenticated = isAuthenticated
@@ -85,27 +92,16 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 			IsSigned: false,
 		}
 	}
-
 	var page int = getPage(r)
-	stories, err := data.GetStories(customerID, page-1, DefaultStoryCountPerPage)
+	stories, err := fnGetStories(customerID, page-1, DefaultStoryCountPerPage)
 	if err != nil {
 		return err
 	}
-
-	storiesCount, err := data.GetStoriesCount(customerID)
+	pagingModel, err := setPagingViewModel(customerID, page, len(*stories))
 	if err != nil {
 		return err
 	}
-	totalPageCount := calcualteTotalPageCount(storiesCount)
-	isFinalPage, justFirstPage := setPagingVariables(totalPageCount, page, len(*stories))
-	model.Page = &models.Paging{
-		CurrentPage:   page,
-		NextPage:      page + 1,
-		PreviousPage:  page - 1,
-		IsFinalPage:   isFinalPage,
-		JustFirstPage: justFirstPage,
-	}
-
+	model.Page = pagingModel
 	if stories != nil && len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
@@ -113,45 +109,40 @@ func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-/*RecentStoriesHandler handles showing recently published stories*/
-func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	var model = &models.StoryPageViewModel{Title: "Recent Stories"}
-
-	var customerID int = 1 // TODO: get actual customer id from registered customer website
-
-	isAuthenticated, user, err := shared.IsAuthenticated(r)
-
+func setPagingViewModel(customerID, currentPage, storiesLength int) (*models.Paging, error) {
+	storiesCount, err := data.GetStoriesCount(customerID)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	totalPageCount := calcualteTotalPageCount(storiesCount)
+	isFinalPage, justFirstPage := false, false
+	if currentPage == totalPageCount {
+		isFinalPage = true
+	}
+	if storiesLength < DefaultStoryCountPerPage && currentPage == 1 {
+		justFirstPage = true
+	}
+	model := &models.Paging{
+		CurrentPage:   currentPage,
+		NextPage:      currentPage + 1,
+		PreviousPage:  currentPage - 1,
+		IsFinalPage:   isFinalPage,
+		JustFirstPage: justFirstPage,
+	}
+	return model, nil
+}
 
-	if isAuthenticated {
-		customerID = user.CustomerID
-		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned:   true,
-			UserID:     user.ID,
-			UserName:   user.UserName,
-			CustomerID: user.CustomerID,
-			Email:      user.Email,
-		}
-	} else {
-		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned: false,
-		}
+func calcualteTotalPageCount(storiesCount int) int {
+	quotient := storiesCount / DefaultStoryCountPerPage
+	remainder := storiesCount % DefaultStoryCountPerPage
+	var totalPageCount int
+	if remainder == 0 {
+		totalPageCount = quotient
 	}
-
-	var page int = getPage(r)
-	stories, err := data.GetRecentStories(customerID, page, DefaultStoryCountPerPage)
-	if err != nil {
-		return err
+	if remainder != 0 && remainder <= 5 {
+		totalPageCount = quotient + 1
 	}
-
-	if stories == nil || len(*stories) > 0 {
-		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
-	}
-	templates.RenderInLayout(w, "stories.html", model)
-	return nil
+	return totalPageCount
 }
 
 /*UserSavedStoriesHandler handles showing the saved stories of a user*/
@@ -425,14 +416,12 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
 		return
 	}
-
 	var model StoryVoteModel
 	err = json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	isUpvoted, err := data.CheckIfStoryUpVotedByUser(model.UserID, model.StoryID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured while checking if user already upvoted. Error : %v", err), http.StatusInternalServerError)
@@ -447,7 +436,6 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(res)
 		return
 	}
-
 	err = data.UpVoteStory(model.UserID, model.StoryID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured while upvoting story. Error : %v", err), http.StatusInternalServerError)
@@ -674,29 +662,4 @@ func mapCommentsToViewModelsWithChildren(comments *[]data.Comment, signedInUser 
 		viewModels = append(viewModels, viewModel)
 	}
 	return &viewModels
-}
-
-func setPagingVariables(totalPageCount, page, storiesLength int) (bool, bool) {
-	isFinalPage := false
-	justFirstPage := false
-	if page == totalPageCount {
-		isFinalPage = true
-	}
-	if storiesLength < DefaultStoryCountPerPage && page == 1 {
-		justFirstPage = true
-	}
-	return isFinalPage, justFirstPage
-}
-
-func calcualteTotalPageCount(storiesCount int) int {
-	quotient := storiesCount / DefaultStoryCountPerPage
-	remainder := storiesCount % DefaultStoryCountPerPage
-	var totalPageCount int
-	if remainder == 0 {
-		totalPageCount = quotient
-	}
-	if remainder != 0 && remainder <= 5 {
-		totalPageCount = quotient + 1
-	}
-	return totalPageCount
 }
