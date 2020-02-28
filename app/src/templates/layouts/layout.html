@@ -14,23 +14,20 @@
 <body>
   <div class="container mx-auto">
     <div class="flex flex-wrap pt-3">
-      <div id="header" class="w-full">
+      <div id="header" class="w-full font-semibold text-sm">
         <div class="float-left">
           <ul class="flex">
             <li class="mr-6">
-              <a class="text-gray-800 hover:text-gray-600" href="/">Logo</a>
+              <a class="text-gray-600 hover:text-gray-800" href="/">Logo</a>
             </li>
             <li class="mr-6">
-              <a class="text-gray-800 hover:text-gray-600" href="/">Name</a>
+              <a class="text-gray-600 hover:text-gray-800" href="/">Name</a>
             </li>
             <li class="mr-6">
-              <a class="text-gray-800 hover:text-gray-600" href="/recent">Recent</a>
+              <a class="text-gray-600 hover:text-gray-800" href="/recent">Recent</a>
             </li>
             <li class="mr-6">
-              <a class="text-gray-800 hover:text-gray-600" href="/submit">Submit</a>
-            </li>
-            <li class="mr-6">
-              <a class="text-gray-800 hover:text-gray-600" href="/search">Search</a>
+              <a class="text-gray-600 hover:text-gray-800" href="/submit">Submit</a>
             </li>
           </ul>
         </div>
@@ -38,14 +35,14 @@
           <ul class="flex">
             <li class="mr-2">
               <span>{{if .SignedInUser.IsSigned}}
-                <a class="text-gray-800 hover:text-gray-600"
+                <a class="text-gray-600 hover:text-gray-800"
                   href="/profile-edit?user={{.SignedInUser.UserName}}">{{.SignedInUser.UserName}}</a>{{end}}
               </span>
             </li>
             <li class="mr-2">
               <span>{{if .SignedInUser.IsSigned}}
-                <a href="/signout" class="text-gray-800 hover:text-gray-600"> | Logout</a> {{else}}
-                <a href="/signin" class="text-gray-800 hover:text-gray-600">Login</a> {{end}}
+                <a href="/signout" class="text-gray-600 hover:text-gray-800"> | Logout</a> {{else}}
+                <a href="/signin" class="text-gray-600 hover:text-gray-800">Login</a> {{end}}
               </span>
             </li>
           </ul>
