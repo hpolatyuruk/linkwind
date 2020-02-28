@@ -6,7 +6,7 @@ CREATE TABLE public.customers
 (
     id serial,
     email character varying(50) COLLATE pg_catalog."default" NOT NULL,
-    name character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    name character varying(25) COLLATE pg_catalog."default" NOT NULL,
     domain character varying(50) COLLATE pg_catalog."default" NOT NULL,
     registeredon timestamp with time zone NOT NULL,
     CONSTRAINT id_pkey PRIMARY KEY (id),

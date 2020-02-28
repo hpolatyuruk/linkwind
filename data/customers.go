@@ -117,7 +117,7 @@ func ExistsCustomerByEmail(email string) (exists bool, err error) {
 	return exists, nil
 }
 
-/*GetCustomerByName get customer associated with name from database*/
+/*GetCustomerByName gets customer associated with name from database*/
 func GetCustomerByName(name string) (customer *Customer, err error) {
 	db, err := connectToDB()
 	defer db.Close()
@@ -129,6 +129,22 @@ func GetCustomerByName(name string) (customer *Customer, err error) {
 	customer, err = MapSQLRowToCustomer(row)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot read customer by name from db. Name: %s", name), err}
+	}
+	return customer, nil
+}
+
+/*GetCustomerByID gets customer associated with id from database*/
+func GetCustomerByID(id int) (customer *Customer, err error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+	sql := "SELECT id, name, email, registeredon, domain FROM customers WHERE id = $1"
+	row := db.QueryRow(sql, id)
+	customer, err = MapSQLRowToCustomer(row)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read customer by id from db. ID: %d", id), err}
 	}
 	return customer, nil
 }
