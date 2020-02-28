@@ -173,6 +173,85 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 }
 
+func handleSignInGET(w http.ResponseWriter, r *http.Request) error {
+	err := templates.RenderFile(
+		w,
+		"layouts/users/signin.html",
+		SignInViewModel{},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
+	model := &SignInViewModel{
+		EmailOrUserName: r.FormValue("emailOrUserName"),
+		Password:        r.FormValue("password"),
+	}
+	if model.Validate() == false {
+		err := templates.RenderFile(w, "/layouts/users/signin.html", model)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	var err error
+	var user *data.User
+	var fnExistsUser existsUser = data.ExistsUserByUserName
+	var fnFindUser findUser = data.FindUserByUserNameAndPassword
+
+	if shared.IsEmailAdrressValid(model.EmailOrUserName) {
+		fnExistsUser = data.ExistsUserByEmail
+		fnFindUser = data.FindUserByEmailAndPassword
+	}
+	user, err = checkUser(fnExistsUser,
+		fnFindUser,
+		model.EmailOrUserName,
+		model.Password)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		model.Errors["General"] = "User does not exist!"
+		err = templates.RenderFile(w, "/layouts/users/signin.html", model)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	// Declare the expiration time of the token
+	// here, we have kept it as 5 minutes
+	expirationTime := time.Now().Add(authExpirationMinutes * time.Minute)
+
+	token, err := shared.GenerateAuthToken(*user, expirationTime)
+	if err != nil {
+		return err
+	}
+	shared.SetAuthCookie(w, token, expirationTime)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	return nil
+}
+
+type findUser func(userNameOrEmail, password string) (*data.User, error)
+type existsUser func(userNameOrEmail string) (bool, error)
+
+func checkUser(fnExistsUser existsUser, fnFindUser findUser, userNameOrEmail, password string) (*data.User, error) {
+	exists, err := fnExistsUser(userNameOrEmail)
+	if err != nil {
+		return nil, err
+	}
+	if exists == false {
+		return nil, nil
+	}
+	user, err := fnFindUser(userNameOrEmail, password)
+	if err != nil {
+		return nil, err
+	}
+	return user, err
+}
+
 /*SignUpHandler handles user signup operations*/
 func SignUpHandler(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
@@ -183,80 +262,6 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) error {
 	default:
 		return handleSignUpGET(w, r)
 	}
-}
-
-/*SignOutHandler handles user singout operations.*/
-func SignOutHandler(w http.ResponseWriter, r *http.Request) error {
-	shared.SetAuthCookie(w, "", time.Now())
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-	return nil
-}
-
-/*ResetPasswordHandler handles user  reset password operations*/
-func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) error {
-	switch r.Method {
-	case "GET":
-		/*
-			isAuthenticated, _, err := shared.IsAuthenticated(r)
-			if err != nil {
-				return err
-			}
-			if !isAuthenticated {
-				http.Redirect(w, r, "/signin", http.StatusSeeOther)
-				return nil
-			}*/
-		return handleResetPasswordGET(w, r)
-	case "POST":
-		return handleResetPasswordPOST(w, r)
-	default:
-		return handleResetPasswordGET(w, r)
-	}
-}
-
-/*SetNewPasswordHandler handles set new password operations*/
-func SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) error {
-	switch r.Method {
-	case "GET":
-		return handleSetNewPasswordGET(w, r)
-	case "POST":
-		return handleSetNewPasswordPOST(w, r)
-	default:
-		return handleSetNewPasswordGET(w, r)
-	}
-}
-
-/*ChangePasswordHandler handles change password operations*/
-func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) error {
-	isAuthenticated, claims, err := shared.IsAuthenticated(r)
-	if err != nil {
-		return err
-	}
-	switch r.Method {
-	case "GET":
-		if !isAuthenticated {
-			http.Redirect(w, r, "/signin", http.StatusSeeOther)
-			return nil
-		}
-		return handleChangePasswordGET(w, r)
-	case "POST":
-		return handleChangePasswordPOST(w, r, claims.ID)
-	default:
-		return handleChangePasswordGET(w, r)
-	}
-}
-
-/*GenerateInviteCodeHandler generate the invite code to invite an user to join the system*/
-func GenerateInviteCodeHandler(w http.ResponseWriter, r *http.Request) error {
-	inviterUserID, _ := strconv.Atoi(r.URL.Query().Get("userid"))
-	invitedEmail := r.URL.Query().Get("invitedemail")
-	inviteCode, err := data.CreateInviteCode(inviterUserID, invitedEmail)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(200)
-	w.Header().Add("Content-Type", "text/plain")
-	w.Write([]byte(inviteCode))
-	return nil
 }
 
 func handleSignUpGET(w http.ResponseWriter, r *http.Request) error {
@@ -379,61 +384,77 @@ func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func handleSignInGET(w http.ResponseWriter, r *http.Request) error {
-	err := templates.RenderFile(
-		w,
-		"layouts/users/signin.html",
-		SignInViewModel{},
-	)
-	if err != nil {
-		return err
-	}
+/*SignOutHandler handles user singout operations.*/
+func SignOutHandler(w http.ResponseWriter, r *http.Request) error {
+	shared.SetAuthCookie(w, "", time.Now())
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 	return nil
 }
 
-func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
-	model := &SignInViewModel{
-		EmailOrUserName: r.FormValue("emailOrUserName"),
-		Password:        r.FormValue("password"),
+/*ResetPasswordHandler handles user  reset password operations*/
+func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) error {
+	switch r.Method {
+	case "GET":
+		/*
+			isAuthenticated, _, err := shared.IsAuthenticated(r)
+			if err != nil {
+				return err
+			}
+			if !isAuthenticated {
+				http.Redirect(w, r, "/signin", http.StatusSeeOther)
+				return nil
+			}*/
+		return handleResetPasswordGET(w, r)
+	case "POST":
+		return handleResetPasswordPOST(w, r)
+	default:
+		return handleResetPasswordGET(w, r)
 	}
+}
 
-	if model.Validate() == false {
-		err := templates.RenderFile(w, "/layouts/users/signin.html", model)
-		if err != nil {
-			return err
-		}
-		return nil
+/*SetNewPasswordHandler handles set new password operations*/
+func SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) error {
+	switch r.Method {
+	case "GET":
+		return handleSetNewPasswordGET(w, r)
+	case "POST":
+		return handleSetNewPasswordPOST(w, r)
+	default:
+		return handleSetNewPasswordGET(w, r)
 	}
+}
 
-	var err error
-	var user *data.User
-
-	if shared.IsEmailAdrressValid(model.EmailOrUserName) {
-		user, err = checkUserByEmail(model.EmailOrUserName, model.Password)
-	} else {
-		user, err = checkUserByUserName(model.EmailOrUserName, model.Password)
-	}
+/*ChangePasswordHandler handles change password operations*/
+func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) error {
+	isAuthenticated, claims, err := shared.IsAuthenticated(r)
 	if err != nil {
 		return err
 	}
-	if user == nil {
-		model.Errors["General"] = "User does not exist!"
-		err = templates.RenderFile(w, "/layouts/users/signin.html", model)
-		if err != nil {
-			return err
+	switch r.Method {
+	case "GET":
+		if !isAuthenticated {
+			http.Redirect(w, r, "/signin", http.StatusSeeOther)
+			return nil
 		}
-		return nil
+		return handleChangePasswordGET(w, r)
+	case "POST":
+		return handleChangePasswordPOST(w, r, claims.ID)
+	default:
+		return handleChangePasswordGET(w, r)
 	}
-	// Declare the expiration time of the token
-	// here, we have kept it as 5 minutes
-	expirationTime := time.Now().Add(authExpirationMinutes * time.Minute)
+}
 
-	token, err := shared.GenerateAuthToken(*user, expirationTime)
+/*GenerateInviteCodeHandler generate the invite code to invite an user to join the system*/
+func GenerateInviteCodeHandler(w http.ResponseWriter, r *http.Request) error {
+	inviterUserID, _ := strconv.Atoi(r.URL.Query().Get("userid"))
+	invitedEmail := r.URL.Query().Get("invitedemail")
+	inviteCode, err := data.CreateInviteCode(inviterUserID, invitedEmail)
 	if err != nil {
 		return err
 	}
-	shared.SetAuthCookie(w, token, expirationTime)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	w.WriteHeader(200)
+	w.Header().Add("Content-Type", "text/plain")
+	w.Write([]byte(inviteCode))
 	return nil
 }
 
@@ -617,34 +638,4 @@ func handleChangePasswordPOST(w http.ResponseWriter, r *http.Request, userID int
 		return err
 	}
 	return nil
-}
-
-func checkUserByEmail(email string, password string) (*data.User, error) {
-	exists, err := data.ExistsUserByEmail(email)
-	if err != nil {
-		return nil, err
-	}
-	if exists == false {
-		return nil, nil
-	}
-	user, err := data.FindUserByEmailAndPassword(email, password)
-	if err != nil {
-		return nil, err
-	}
-	return user, err
-}
-
-func checkUserByUserName(userName string, password string) (*data.User, error) {
-	exists, err := data.ExistsUserByUserName(userName)
-	if err != nil {
-		return nil, err
-	}
-	if exists == false {
-		return nil, nil
-	}
-	user, err := data.FindUserByUserNameAndPassword(userName, password)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
 }

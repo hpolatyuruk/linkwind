@@ -53,17 +53,6 @@ func UserProfileHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 }
 
-/*InviteUserHandler handles sending invitations to user*/
-func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
-
-	templates.RenderInLayout(
-		w,
-		"signup.html",
-		nil,
-	)
-	return nil
-}
-
 func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) error {
 	//TODO : Burada model oluşturulup aşağıda set edilmeler değiştirlmeli. Çok fazla logic tekrarı yapılmış
 	model := &UserProfileViewModel{
