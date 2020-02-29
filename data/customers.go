@@ -15,6 +15,7 @@ type Customer struct {
 	Name         string
 	RegisteredOn time.Time
 	Domain       string
+	LogoImage    []byte
 }
 
 /*CustomerError contains the error and customer data which caused to error*/
@@ -39,14 +40,15 @@ func CreateCustomer(customer *Customer) (err error) {
 	if err != nil {
 		return &CustomerError{"Cannot connect to db", customer, err}
 	}
-	sql := "INSERT INTO customers (email, name, domain,registeredon) VALUES ($1, $2, $3, $4)"
+	sql := "INSERT INTO customers (email, name, domain,registeredon,imglogo) VALUES ($1, $2, $3, $4, $5)"
 
 	_, err = db.Exec(
 		sql,
 		customer.Email,
 		customer.Name,
 		customer.Domain,
-		customer.RegisteredOn)
+		customer.RegisteredOn,
+		customer.LogoImage)
 	if err != nil {
 		return &CustomerError{"Cannot insert customer to the database!", customer, err}
 	}
@@ -61,13 +63,14 @@ func UpdateCustomer(customer *Customer) error {
 		return &CustomerError{"Db connection error", customer, err}
 	}
 
-	sql := "UPDATE customers SET name = $1, email = $2, domain = $3, registeredon = $4 WHERE id = $5"
+	sql := "UPDATE customers SET name = $1, email = $2, domain = $3, registeredon = $4, imglogo = $5 WHERE id = $6"
 	_, err = db.Exec(
 		sql,
 		customer.Name,
 		customer.Email,
 		customer.Domain,
 		customer.RegisteredOn,
+		customer.LogoImage,
 		customer.ID)
 	if err != nil {
 		return &CustomerError{"Cannot update customer!", customer, err}
@@ -124,7 +127,7 @@ func GetCustomerByName(name string) (customer *Customer, err error) {
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT id, name, email, registeredon, domain FROM customers WHERE name = $1"
+	sql := "SELECT id, name, email, registeredon, domain, imglogo FROM customers WHERE name = $1"
 	row := db.QueryRow(sql, name)
 	customer, err = MapSQLRowToCustomer(row)
 	if err != nil {

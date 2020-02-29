@@ -341,3 +341,24 @@ func GetCustomerDomainByUserName(userName string) (string, error) {
 	}
 	return domain, nil
 }
+
+/*IsUserAdmin return true, if user is admin*/
+func IsUserAdmin(userID int) (isAdmin bool, err error) {
+	isAdmin = false
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return isAdmin, err
+	}
+	sql := "SELECT COUNT(*) AS count FROM customers INNER JOIN users ON users.customerid = customers.id WHERE users.id = $1"
+	row := db.QueryRow(sql, userID)
+	recordCount := 0
+	err = row.Scan(&recordCount)
+	if err != nil {
+		return isAdmin, &DBError{fmt.Sprintf("Cannot read record count. UserID: %d", userID), err}
+	}
+	if recordCount > 0 {
+		isAdmin = true
+	}
+	return isAdmin, nil
+}
