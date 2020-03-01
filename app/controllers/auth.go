@@ -78,7 +78,7 @@ func (model *SignUpViewModel) Validate() bool {
 		model.Errors["UserName"] = "User name is required!"
 	} else {
 		if len(model.UserName) > userNameMaxCharCount {
-			model.Errors["UserName"] = fmt.Sprintf("User name can not be longet than %d!", userNameMaxCharCount)
+			model.Errors["UserName"] = fmt.Sprintf("User name can not be longer than %d!", userNameMaxCharCount)
 		}
 	}
 	if strings.TrimSpace(model.Email) == "" {

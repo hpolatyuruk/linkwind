@@ -1,11 +1,17 @@
 package data
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
 	/* To install postgresql driver. Check more here: https://www.calhoun.io/why-we-import-sql-drivers-with-the-blank-identifier/ */
 	_ "github.com/lib/pq"
+)
+
+const (
+	/*CustomerDefaultDomain represents the default value for null csutomer domain. Because we cannot make string as nil*/
+	CustomerDefaultDomain string = ""
 )
 
 /*Customer represents the customer in database*/
@@ -40,13 +46,12 @@ func CreateCustomer(customer *Customer) (err error) {
 	if err != nil {
 		return &CustomerError{"Cannot connect to db", customer, err}
 	}
-	sql := "INSERT INTO customers (email, name, domain,registeredon,imglogo) VALUES ($1, $2, $3, $4, $5)"
-
+	query := "INSERT INTO customers (email, name, domain,registeredon,imglogo) VALUES ($1, $2, $3, $4, $5)"
 	_, err = db.Exec(
-		sql,
+		query,
 		customer.Email,
 		customer.Name,
-		customer.Domain,
+		nullCustomerDomain(customer.Domain),
 		customer.RegisteredOn,
 		customer.LogoImage)
 	if err != nil {
@@ -150,4 +155,14 @@ func GetCustomerByID(id int) (customer *Customer, err error) {
 		return nil, &DBError{fmt.Sprintf("Cannot read customer by id from db. ID: %d", id), err}
 	}
 	return customer, nil
+}
+
+func nullCustomerDomain(domain string) sql.NullString {
+	if domain == "" {
+		return sql.NullString{}
+	}
+	return sql.NullString{
+		String: domain,
+		Valid:  true,
+	}
 }

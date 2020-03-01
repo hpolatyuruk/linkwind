@@ -76,15 +76,21 @@ func MapSQLRowToUser(row *sql.Row) (user *User, err error) {
 /*MapSQLRowToCustomer creates an user struct object by sql row*/
 func MapSQLRowToCustomer(row *sql.Row) (customer *Customer, err error) {
 	var _customer Customer
+	var domain sql.NullString
 	err = row.Scan(
 		&_customer.ID,
 		&_customer.Name,
 		&_customer.Email,
 		&_customer.RegisteredOn,
-		&_customer.Domain,
+		&domain,
 		&_customer.LogoImage)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot map sql row to customer struct"), err}
+	}
+	if domain.Valid {
+		_customer.Domain = string(domain.String)
+	} else {
+		_customer.Domain = CustomerDefaultDomain
 	}
 	customer = &_customer
 	return customer, nil

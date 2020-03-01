@@ -9,6 +9,7 @@ import (
 	"turkdev/shared"
 )
 
+/*UserProfileViewModel represents the data which is needed on sigin UI.*/
 type UserProfileViewModel struct {
 	About          string
 	Email          string
@@ -19,6 +20,7 @@ type UserProfileViewModel struct {
 	Errors         map[string]string
 	SuccessMessage string
 	SignedInUser   *models.SignedInUserViewModel
+	IsAdmin        bool
 }
 
 /*Validate validates the UserProfileViewModel*/
@@ -54,48 +56,19 @@ func UserProfileHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) error {
-	//TODO : Burada model oluşturulup aşağıda set edilmeler değiştirlmeli. Çok fazla logic tekrarı yapılmış
 	model := &UserProfileViewModel{
 		SignedInUser: &models.SignedInUserViewModel{
 			IsSigned: true,
 			UserName: userClaims.UserName,
 		},
 	}
-
+	renderFilePath := "readonly-profile.html"
 	userName := r.URL.Query().Get("user")
-	if len(userName) == 0 {
-		err := templates.RenderFile(w, "errors/404.html", nil)
-		if err != nil {
-			return err
-		}
-		return nil
+	if strings.TrimSpace(userName) == "" {
+		userName = userClaims.UserName
 	}
-
-	if userName != userClaims.UserName {
-		user, err := data.GetUserByUserName(userName)
-		if err != nil {
-			return err
-		}
-		setUserToModel(user, model)
-
-		err = templates.RenderInLayout(w, "readonly-profile.html", model)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	if userName == "" {
-		user, err := data.GetUserByID(userClaims.ID)
-		if err != nil {
-			return err
-		}
-
-		setUserToModel(user, model)
-
-		err = templates.RenderInLayout(w, "layouts/users/profile-edit.html", model)
-		if err != nil {
-			return err
-		}
+	if userName == userClaims.UserName {
+		renderFilePath = "profile-edit.html"
 	}
 
 	user, err := data.GetUserByUserName(userName)
@@ -110,9 +83,12 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *sh
 		return nil
 	}
 
-	setUserToModel(user, model)
-
-	err = templates.RenderInLayout(w, "profile-edit.html", model)
+	isAdmin, err := data.IsUserAdmin(user.ID)
+	if err != nil {
+		return err
+	}
+	setUserToModel(user, model, isAdmin)
+	err = templates.RenderInLayout(w, renderFilePath, model)
 	if err != nil {
 		return err
 	}
@@ -150,7 +126,10 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 	if err != nil {
 		return err
 	}
-
+	isAdmin, err := data.IsUserAdmin(user.ID)
+	if err != nil {
+		return err
+	}
 	if user.Email == model.Email {
 		exists, err := data.ExistsUserByEmail(user.Email)
 		if err != nil {
@@ -159,7 +138,7 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 		if exists {
 			model.Email = user.Email
 			user.About = model.About
-			setUserToModel(user, model)
+			setUserToModel(user, model, isAdmin)
 			model.Errors["Email"] = "Entered e-mail address exists in db!"
 			err := templates.RenderInLayout(w, "profile-edit.html", model)
 			if err != nil {
@@ -176,7 +155,7 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 		return err
 	}
 
-	setUserToModel(user, model)
+	setUserToModel(user, model, isAdmin)
 	model.SuccessMessage = "User infos updated successfuly!"
 	err = templates.RenderInLayout(w, "profile-edit.html", model)
 	if err != nil {
@@ -185,11 +164,12 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 	return nil
 }
 
-func setUserToModel(user *data.User, model *UserProfileViewModel) {
+func setUserToModel(user *data.User, model *UserProfileViewModel, isAdmin bool) {
 	model.UserName = user.UserName
 	model.FullName = user.FullName
 	model.Karma = user.Karma
 	model.RegisteredOn = shared.DateToString(user.RegisteredOn)
 	model.About = user.About
 	model.Email = user.Email
+	model.IsAdmin = isAdmin
 }

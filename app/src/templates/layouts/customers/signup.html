@@ -12,7 +12,59 @@
 <body>
     <div class="container mx-auto">
         <div class="w-full max-w-xs mx-auto pt-20">
-
+            <form method="POST" action="/customer-signup" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="platformName">
+                        Platform name
+                    </label>
+                    <input
+                        class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+                        id="name" name="name" type="text" value="{{.Name}}" placeholder="Name" />
+                    {{with .Errors.Name}}
+                    <p class="text-red-500 text-sm italic">{{.}}</p>
+                    {{end}}
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                        Email
+                    </label>
+                    <input
+                        class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+                        id="email" name="email" type="text" value="{{.Email}}" placeholder="Email" />
+                    {{with .Errors.Email}}
+                    <p class="text-red-500 text-sm italic">{{.}}</p>
+                    {{end}}
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="useName">
+                        User name
+                    </label>
+                    <input
+                        class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+                        id="userName" name="userName" type="text" value="{{.UserName}}" placeholder="UserName" />
+                    {{with .Errors.UserName}}
+                    <p class="text-red-500 text-sm italic">{{.}}</p>
+                    {{end}}
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+                        Password
+                    </label>
+                    <input
+                        class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+                        id="password" name="password" type="password" value="{{.Password}}" placeholder="Password" />
+                    {{with .Errors.Password}}
+                    <p class="text-red-500 text-sm italic">{{.}}</p>
+                    {{end}}
+                </div>
+                <div class="flex items-center justify-between">
+                    <button
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        type="submit">
+                        Create Account
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
     <script src="/dist/app.js"></script>
