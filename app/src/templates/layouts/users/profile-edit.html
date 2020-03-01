@@ -14,7 +14,7 @@
       </div>
       <div class="md:w-2/3">
         <p
-          class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" >{{.UserName}}</p>
+          class="text-gray-700" >{{.UserName}}</p>
       </div>
     </div>
 
@@ -26,7 +26,7 @@
       </div>
       <div class="md:w-2/3">
         <p
-          class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" >{{.RegisteredOn}}</p>
+          class="text-gray-700" >{{.RegisteredOn}}</p>
       </div>
     </div>
 
@@ -38,7 +38,7 @@
         </div>
         <div class="md:w-2/3">
           <p
-            class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500">{{.Karma}}</p>
+            class="text-gray-700">{{.Karma}}</p>
         </div>
     </div>
 
@@ -49,8 +49,13 @@
           </label>
         </div>
         <div class="md:w-2/3">
-          <p
-            class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500">{{.FullName}}</p>
+          <input
+            class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+            id="fullName"
+            name="fullName"
+            type="text"
+            value="{{.FullName}}"
+            placeholder="full name" />
         </div>
     </div>
 
@@ -66,7 +71,8 @@
             id="about" 
             name="about" 
             type="text"
-            rows="10">{{.About}}</textarea>
+            rows="10"
+            placeholder="about">{{.About}}</textarea>
         </div>
       </div>
 

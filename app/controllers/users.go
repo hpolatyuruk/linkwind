@@ -97,8 +97,9 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *sh
 
 func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) error {
 	model := &UserProfileViewModel{
-		Email: r.FormValue("email"),
-		About: r.FormValue("about"),
+		FullName: r.FormValue("fullName"),
+		Email:    r.FormValue("email"),
+		About:    r.FormValue("about"),
 		SignedInUser: &models.SignedInUserViewModel{
 			IsSigned: true,
 			UserName: userClaims.UserName,
@@ -130,7 +131,7 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 	if err != nil {
 		return err
 	}
-	if user.Email == model.Email {
+	if user.Email != model.Email {
 		exists, err := data.ExistsUserByEmail(user.Email)
 		if err != nil {
 			return err
@@ -150,6 +151,7 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 
 	user.Email = model.Email
 	user.About = model.About
+	user.FullName = model.FullName
 	err = data.UpdateUser(user)
 	if err != nil {
 		return err
