@@ -26,9 +26,11 @@ type UserProfileViewModel struct {
 /*Validate validates the UserProfileViewModel*/
 func (model *UserProfileViewModel) Validate() bool {
 	model.Errors = make(map[string]string)
-
 	if strings.TrimSpace(model.Email) == "" {
 		model.Errors["Email"] = "Email is required!"
+	}
+	if !shared.IsEmailAdrressValid(model.Email) {
+		model.Errors["General"] = "E-mail address is not valid!"
 	}
 	return len(model.Errors) == 0
 }
@@ -107,15 +109,6 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 	}
 
 	if model.Validate() == false {
-		err := templates.RenderInLayout(w, "profile-edit.html", model)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
-	if !shared.IsEmailAdrressValid(model.Email) {
-		model.Errors["General"] = "E-mail address is not valid!"
 		err := templates.RenderInLayout(w, "profile-edit.html", model)
 		if err != nil {
 			return err

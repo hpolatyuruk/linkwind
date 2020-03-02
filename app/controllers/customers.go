@@ -75,7 +75,7 @@ func handleCustomerSignUpGET(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) error {
-	model, err := setCustomerSingUpViewModel(r)
+	model, err := setCustomerSignUpViewModel(r)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func setUserByModel(model *CustomerSignUpViewModel, addedCustomer *data.Customer
 	return user
 }
 
-func setCustomerSingUpViewModel(r *http.Request) (*CustomerSignUpViewModel, error) {
+func setCustomerSignUpViewModel(r *http.Request) (*CustomerSignUpViewModel, error) {
 	var model CustomerSignUpViewModel
 	if err := r.ParseForm(); err != nil {
 		return &model, err
