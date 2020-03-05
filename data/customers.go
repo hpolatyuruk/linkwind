@@ -125,6 +125,27 @@ func ExistsCustomerByEmail(email string) (exists bool, err error) {
 	return exists, nil
 }
 
+/*ExistsCustomerByDomain check if customer associated with domain exists on database*/
+func ExistsCustomerByDomain(domain string) (exists bool, err error) {
+	exists = false
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return exists, err
+	}
+	sql := "SELECT COUNT(*) AS count FROM customers WHERE domain = $1"
+	row := db.QueryRow(sql, domain)
+	recordCount := 0
+	err = row.Scan(&recordCount)
+	if err != nil {
+		return exists, &DBError{fmt.Sprintf("Cannot read record count. Domain: %s", domain), err}
+	}
+	if recordCount > 0 {
+		exists = true
+	}
+	return exists, nil
+}
+
 /*GetCustomerByName gets customer associated with name from database*/
 func GetCustomerByName(name string) (customer *Customer, err error) {
 	db, err := connectToDB()

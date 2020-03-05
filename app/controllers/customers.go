@@ -1,13 +1,19 @@
 package controllers
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 	"turkdev/app/src/templates"
 	"turkdev/data"
+	"turkdev/services"
 	"turkdev/shared"
+)
+
+const (
+	maxPlatformNameLength = 25
 )
 
 /*CustomerSignUpViewModel represents the data which is needed on sigin UI.*/
@@ -17,6 +23,23 @@ type CustomerSignUpViewModel struct {
 	UserName string
 	Password string
 	Errors   map[string]string
+}
+
+/*InviteUserViewModel represents the data which is needed on sigin UI.*/
+type InviteUserViewModel struct {
+	EmailAddress   string
+	SuccessMessage string
+	Memo           string
+	Errors         map[string]string
+}
+
+/*CustomerAdminViewModel represents the data which is needed on sigin UI.*/
+type CustomerAdminViewModel struct {
+	Name              string
+	Domain            string
+	LogoImageAsBase64 string
+	Errors            map[string]string
+	SuccessMessage    string
 }
 
 /*Validate validates the CustomerSignUpViewModel*/
@@ -50,6 +73,37 @@ func (model *CustomerSignUpViewModel) Validate() bool {
 	return len(model.Errors) == 0
 }
 
+/*Validate validates the InviteUserViewModel*/
+func (model *InviteUserViewModel) Validate() bool {
+	model.Errors = make(map[string]string)
+
+	if strings.TrimSpace(model.EmailAddress) == "" {
+		model.Errors["Email"] = "Email is required!"
+	} else {
+		if shared.IsEmailAdrressValid(model.EmailAddress) == false {
+			model.Errors["Email"] = "Please enter a valid email address!"
+		}
+	}
+	return len(model.Errors) == 0
+}
+
+/*Validate validates the InviteUserViewModel*/
+func (model *CustomerAdminViewModel) Validate() bool {
+	model.Errors = make(map[string]string)
+
+	if strings.TrimSpace(model.Name) == "" {
+		model.Errors["Name"] = "Name is required!"
+	} else {
+		if len(model.Name) > maxPlatformNameLength {
+			model.Errors["Name"] = "Name cannot be longer than 25 characters"
+		}
+		if strings.Contains(model.Name, " ") {
+			model.Errors["Name"] = "Name cannot contain spaces"
+		}
+	}
+	return len(model.Errors) == 0
+}
+
 /*CustomerSignUpHandler handles customer signup operations*/
 func CustomerSignUpHandler(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
@@ -59,6 +113,50 @@ func CustomerSignUpHandler(w http.ResponseWriter, r *http.Request) error {
 		return handleCustomerSignUpPOST(w, r)
 	default:
 		return handleCustomerSignUpGET(w, r)
+	}
+}
+
+/*InviteUserHandler handles user invite operations*/
+func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
+	isAuthenticated, user, err := shared.IsAuthenticated(r)
+	if err != nil {
+		return nil
+	}
+
+	if !isAuthenticated {
+		http.Redirect(w, r, "/signup", http.StatusSeeOther)
+		return nil
+	}
+
+	switch r.Method {
+	case "GET":
+		return handleInviteUserGET(w, r)
+	case "POST":
+		return handleInviteUserPOST(w, r, user)
+	default:
+		return handleInviteUserGET(w, r)
+	}
+}
+
+/*AdminHandler handles admin operations*/
+func AdminHandler(w http.ResponseWriter, r *http.Request) error {
+	isAuthenticated, user, err := shared.IsAuthenticated(r)
+	if err != nil {
+		return nil
+	}
+
+	if !isAuthenticated {
+		http.Redirect(w, r, "/signup", http.StatusSeeOther)
+		return nil
+	}
+
+	switch r.Method {
+	case "GET":
+		return handleAdminGET(w, r, user)
+	case "POST":
+		return handleAdminPOST(w, r, user)
+	default:
+		return handleAdminGET(w, r, user)
 	}
 }
 
@@ -159,6 +257,143 @@ func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func handleInviteUserGET(w http.ResponseWriter, r *http.Request) error {
+	err := templates.RenderFile(
+		w,
+		"layouts/users/invite.html",
+		InviteUserViewModel{},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+	model := &InviteUserViewModel{
+		EmailAddress: r.FormValue("email"),
+		Memo:         r.FormValue("memo"),
+	}
+
+	inviteHTMLPath := "layouts/users/invite.html"
+	if model.Validate() == false {
+		err := templates.RenderFile(w, inviteHTMLPath, model)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	inviteCode, err := data.CreateInviteCode(user.ID, model.EmailAddress)
+	if err != nil {
+		return err
+	}
+
+	services.SendInvitemail(model.EmailAddress, model.Memo, inviteCode, user.UserName)
+	model.SuccessMessage = "Inivitation mail successfully sent to " + model.EmailAddress
+	err = templates.RenderInLayout(w, inviteHTMLPath, model)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+	isAdmin, err := data.IsUserAdmin(user.ID)
+	if err != nil {
+		return err
+	}
+
+	if !isAdmin {
+		err = templates.RenderInLayout(w, "app/src/templates/errors/500.html", nil)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	customer, err := data.GetCustomerByID(user.ID)
+	if err != nil {
+		return err
+	}
+
+	model, err := setCustomerAdminViewModel(customer)
+	if err != nil {
+		return err
+	}
+
+	err = templates.RenderInLayout(w, "layouts/users/admin.html", model)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+	model := &CustomerAdminViewModel{
+		Name:              r.FormValue("name"),
+		Domain:            r.FormValue("domain"),
+		LogoImageAsBase64: r.FormValue("logo"),
+	}
+
+	adminHTMLPath := "layouts/users/admin.html"
+	if model.Validate() == false {
+		err := templates.RenderFile(w, adminHTMLPath, model)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	exists, err := data.ExistsCustomerByName(model.Name)
+	if err != nil {
+		return err
+	}
+	if exists {
+		model.Errors["Name"] = "This name is already taken"
+		err := templates.RenderFile(w, adminHTMLPath, model)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	var domain string
+	if model.Domain != "" {
+		exists, err := data.ExistsCustomerByDomain(model.Domain)
+		if err != nil {
+			return err
+		}
+		if exists {
+			model.Errors["Domain"] = "This domain is already taken"
+			err := templates.RenderFile(w, adminHTMLPath, model)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+		domain = model.Domain
+	}
+
+	customer, err := data.GetCustomerByID(user.ID)
+	if err != nil {
+		return err
+	}
+
+	setUpdatedCustomerByModel(model, customer, domain)
+	err = data.UpdateCustomer(customer)
+	if err != nil {
+		return err
+	}
+
+	model.SuccessMessage = "Account created successfuly"
+	err = templates.RenderFile(w, adminHTMLPath, model)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func setCustomerByModel(model *CustomerSignUpViewModel) data.Customer {
 	var customer data.Customer
 	customer.Email = model.Email
@@ -189,4 +424,21 @@ func setCustomerSignUpViewModel(r *http.Request) (*CustomerSignUpViewModel, erro
 	model.UserName = r.FormValue("userName")
 	model.Password = r.FormValue("password")
 	return &model, nil
+}
+
+func setCustomerAdminViewModel(customer *data.Customer) (*CustomerAdminViewModel, error) {
+	var model CustomerAdminViewModel
+	model.Domain = customer.Domain
+	model.LogoImageAsBase64 = base64.StdEncoding.EncodeToString(customer.LogoImage)
+	model.Name = customer.Name
+	return &model, nil
+}
+
+func setUpdatedCustomerByModel(model *CustomerAdminViewModel, customer *data.Customer, domain string) {
+	customer.Name = model.Name
+	customer.Domain = domain
+	if model.LogoImageAsBase64 == "" {
+		return
+	}
+	customer.LogoImage = []byte(model.LogoImageAsBase64)
 }

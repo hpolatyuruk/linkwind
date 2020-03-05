@@ -350,7 +350,7 @@ func IsUserAdmin(userID int) (isAdmin bool, err error) {
 	if err != nil {
 		return isAdmin, err
 	}
-	sql := "SELECT COUNT(*) AS count FROM customers INNER JOIN users ON users.customerid = customers.id WHERE users.id = $1"
+	sql := "SELECT COUNT(*) AS count FROM customers INNER JOIN users ON users.email = customers.email WHERE users.id = $1"
 	row := db.QueryRow(sql, userID)
 	recordCount := 0
 	err = row.Scan(&recordCount)
