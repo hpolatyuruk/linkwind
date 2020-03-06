@@ -64,13 +64,14 @@ func IsPasswordValid(password string) bool {
 func FetchURL(url string) (string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", fmt.Errorf("Error occured when get url response")
+		fmt.Println(err)
+		return "", fmt.Errorf("Error occured when get url response. Error: %v", err)
 	}
 	defer resp.Body.Close()
 
 	doc, err := html.Parse(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("Fail to parse html")
+		return "", fmt.Errorf("Fail to parse html. Error: %v", err)
 	}
 
 	title, ok := traverse(doc)
@@ -81,6 +82,7 @@ func FetchURL(url string) (string, error) {
 	return title, nil
 }
 
+/*ReadFile reads file content from given path.*/
 func ReadFile(filePath string) ([]byte, error) {
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0660)
 	if err != nil {

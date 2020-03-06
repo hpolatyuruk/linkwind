@@ -129,7 +129,6 @@ func setPagingViewModel(customerID, currentPage, storiesLength int) (*models.Pag
 
 func calcualteTotalPageCount(storiesCount int) int {
 	pageCount := math.Ceil(float64(storiesCount) / float64(DefaultPageSize))
-	fmt.Println(int(pageCount))
 	return int(pageCount)
 }
 
