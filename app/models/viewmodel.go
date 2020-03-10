@@ -11,11 +11,11 @@ type SignedInUserViewModel struct {
 }
 
 type Paging struct {
-	CurrentPage   int
-	PreviousPage  int
-	NextPage      int
-	IsFinalPage   bool
-	JustFirstPage bool
+	CurrentPage    int
+	PreviousPage   int
+	NextPage       int
+	IsFinalPage    bool
+	TotalPageCount int
 }
 
 type StoryPageViewModel struct {

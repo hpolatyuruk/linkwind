@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,8 +17,8 @@ import (
 )
 
 const (
-	/*DefaultStoryCountPerPage represents story count to be listed per page*/
-	DefaultStoryCountPerPage = 20
+	/*DefaultPageSize represents story count to be listed per page*/
+	DefaultPageSize = 15
 )
 
 /*StoryVoteModel represents the data in http request body to upvote story.*/
@@ -93,7 +94,7 @@ func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.Respon
 		}
 	}
 	var page int = getPage(r)
-	stories, err := fnGetStories(customerID, page-1, DefaultStoryCountPerPage)
+	stories, err := fnGetStories(customerID, page-1, DefaultPageSize)
 	if err != nil {
 		return err
 	}
@@ -115,34 +116,20 @@ func setPagingViewModel(customerID, currentPage, storiesLength int) (*models.Pag
 		return nil, err
 	}
 	totalPageCount := calcualteTotalPageCount(storiesCount)
-	isFinalPage, justFirstPage := false, false
-	if currentPage == totalPageCount {
-		isFinalPage = true
-	}
-	if storiesLength < DefaultStoryCountPerPage && currentPage == 1 {
-		justFirstPage = true
-	}
+	isFinalPage := currentPage == totalPageCount
 	model := &models.Paging{
-		CurrentPage:   currentPage,
-		NextPage:      currentPage + 1,
-		PreviousPage:  currentPage - 1,
-		IsFinalPage:   isFinalPage,
-		JustFirstPage: justFirstPage,
+		CurrentPage:    currentPage,
+		NextPage:       currentPage + 1,
+		PreviousPage:   currentPage - 1,
+		IsFinalPage:    isFinalPage,
+		TotalPageCount: totalPageCount,
 	}
 	return model, nil
 }
 
 func calcualteTotalPageCount(storiesCount int) int {
-	quotient := storiesCount / DefaultStoryCountPerPage
-	remainder := storiesCount % DefaultStoryCountPerPage
-	var totalPageCount int
-	if remainder == 0 {
-		totalPageCount = quotient
-	}
-	if remainder != 0 && remainder <= 5 {
-		totalPageCount = quotient + 1
-	}
-	return totalPageCount
+	pageCount := math.Ceil(float64(storiesCount) / float64(DefaultPageSize))
+	return int(pageCount)
 }
 
 /*UserSavedStoriesHandler handles showing the saved stories of a user*/
@@ -170,7 +157,7 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var page int = getPage(r)
-	stories, err := data.GetUserSavedStories(user.ID, page, DefaultStoryCountPerPage)
+	stories, err := data.GetUserSavedStories(user.ID, page, DefaultPageSize)
 	if err != nil {
 		return err
 	}
@@ -289,7 +276,7 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var page int = getPage(r)
-	stories, err := data.GetStories(user.ID, page, DefaultStoryCountPerPage)
+	stories, err := data.GetStories(user.ID, page, DefaultPageSize)
 	if err != nil {
 		return err
 	}
@@ -330,7 +317,7 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var page int = getPage(r)
-	stories, err := data.GetUserUpvotedStories(userID, page, DefaultStoryCountPerPage)
+	stories, err := data.GetUserUpvotedStories(userID, page, DefaultPageSize)
 	if err != nil {
 		return err
 	}
