@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"net/smtp"
 	"strconv"
@@ -34,7 +33,7 @@ func SetInviteMailBody(to, userName, memo, inviteCode string) string {
 
 /*SendInvitemail send mail for invite to join*/
 /*TODO : These configurations are not perminant. These conf for gmail.We should add pass and etc*/
-func SendInvitemail(mailAddress, memo, inviteCode, userName string) {
+func SendInvitemail(mailAddress, memo, inviteCode, userName string) error {
 	pass := "...."
 	from := "our smtp mail adrress"
 	to := mailAddress
@@ -49,9 +48,9 @@ func SendInvitemail(mailAddress, memo, inviteCode, userName string) {
 		from, []string{to}, msg)
 
 	if err != nil {
-		log.Printf("smtp error: %s", err)
-		return
+		return err
 	}
+	return nil
 }
 
 /*SendResetPasswordMail send to mail for reset password with resetPassword token*/

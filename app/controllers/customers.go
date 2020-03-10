@@ -76,7 +76,7 @@ func (model *CustomerSignUpViewModel) Validate() bool {
 }
 
 /*Validate validates the InviteUserViewModel*/
-func (model *InviteUserViewModel) Validate() bool {
+func (model *InviteUserViewModel) Validate(email string) (bool, error) {
 	model.Errors = make(map[string]string)
 
 	if strings.TrimSpace(model.EmailAddress) == "" {
@@ -86,7 +86,15 @@ func (model *InviteUserViewModel) Validate() bool {
 			model.Errors["Email"] = "Please enter a valid email address!"
 		}
 	}
-	return len(model.Errors) == 0
+
+	exists, err := data.ExistsUserByEmail(email)
+	if err != nil {
+		return false, err
+	}
+	if exists {
+		model.Errors["Email"] = "This email address is already in use!"
+	}
+	return len(model.Errors) == 0, nil
 }
 
 /*Validate validates the InviteUserViewModel*/
@@ -287,7 +295,11 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 	}
 
 	inviteHTMLPath := "invite.html"
-	if model.Validate() == false {
+	isValid, err := model.Validate(model.EmailAddress)
+	if err != nil {
+		return err
+	}
+	if !isValid {
 		err := templates.RenderInLayout(w, inviteHTMLPath, model)
 		if err != nil {
 			return err
@@ -300,7 +312,10 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 		return err
 	}
 
-	services.SendInvitemail(model.EmailAddress, model.Memo, inviteCode, user.UserName)
+	err = services.SendInvitemail(model.EmailAddress, model.Memo, inviteCode, user.UserName)
+	if err != nil {
+		return err
+	}
 	model.SuccessMessage = "Inivitation mail successfully sent to " + model.EmailAddress
 	err = templates.RenderInLayout(w, inviteHTMLPath, model)
 	if err != nil {
