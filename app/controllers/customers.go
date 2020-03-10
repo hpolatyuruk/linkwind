@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"turkdev/app/models"
 	"turkdev/app/src/templates"
 	"turkdev/data"
 	"turkdev/services"
@@ -30,6 +31,7 @@ type InviteUserViewModel struct {
 	EmailAddress   string
 	SuccessMessage string
 	Memo           string
+	SignedInUser   *models.SignedInUserViewModel
 	Errors         map[string]string
 }
 
@@ -130,11 +132,11 @@ func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
 
 	switch r.Method {
 	case "GET":
-		return handleInviteUserGET(w, r)
+		return handleInviteUserGET(w, r, user)
 	case "POST":
 		return handleInviteUserPOST(w, r, user)
 	default:
-		return handleInviteUserGET(w, r)
+		return handleInviteUserGET(w, r, user)
 	}
 }
 
@@ -257,11 +259,16 @@ func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func handleInviteUserGET(w http.ResponseWriter, r *http.Request) error {
-	err := templates.RenderFile(
+func handleInviteUserGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+	err := templates.RenderInLayout(
 		w,
-		"layouts/users/invite.html",
-		InviteUserViewModel{},
+		"invite.html",
+		InviteUserViewModel{
+			SignedInUser: &models.SignedInUserViewModel{
+				IsSigned: true,
+				UserName: user.UserName,
+			},
+		},
 	)
 	if err != nil {
 		return err
@@ -273,11 +280,15 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 	model := &InviteUserViewModel{
 		EmailAddress: r.FormValue("email"),
 		Memo:         r.FormValue("memo"),
+		SignedInUser: &models.SignedInUserViewModel{
+			IsSigned: true,
+			UserName: user.UserName,
+		},
 	}
 
-	inviteHTMLPath := "layouts/users/invite.html"
+	inviteHTMLPath := "invite.html"
 	if model.Validate() == false {
-		err := templates.RenderFile(w, inviteHTMLPath, model)
+		err := templates.RenderInLayout(w, inviteHTMLPath, model)
 		if err != nil {
 			return err
 		}
