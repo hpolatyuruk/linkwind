@@ -32,13 +32,9 @@ func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
 		http.Error(w, "Only POST method is supported.", http.StatusMethodNotAllowed)
 		return nil
 	}
-	isAuthenticated, signedInUser, err := shared.IsAuthenticated(r)
+	_, signedInUser, err := shared.IsAuthenticated(r)
 	if err != nil {
 		return err
-	}
-	if isAuthenticated == false {
-		http.Redirect(w, r, "/signin", http.StatusSeeOther)
-		return nil
 	}
 	commentText := r.FormValue("comment")
 	strStoryID := r.FormValue("storyID")
@@ -73,13 +69,9 @@ func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*ReplyToCommentHandler write a reply to comment.*/
 func ReplyToCommentHandler(w http.ResponseWriter, r *http.Request) {
-	isAuth, user, err := shared.IsAuthenticated(r)
+	_, user, err := shared.IsAuthenticated(r)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("An error occurred. Error:%v", err), http.StatusInternalServerError)
-		return
-	}
-	if isAuth == false {
-		http.Redirect(w, r, "/signin", http.StatusSeeOther)
 		return
 	}
 	if r.Method == "GET" {
@@ -129,13 +121,9 @@ func ReplyToCommentHandler(w http.ResponseWriter, r *http.Request) {
 
 /*UpvoteCommentHandler runs when click to upvote comment button. If not upvoted before by user, upvotes that comment*/
 func UpvoteCommentHandler(w http.ResponseWriter, r *http.Request) {
-	isAuthenticated, _, err := shared.IsAuthenticated(r)
+	_, _, err := shared.IsAuthenticated(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if isAuthenticated == false {
-		http.Redirect(w, r, "/signin", http.StatusSeeOther)
 		return
 	}
 	if r.Method == "GET" {

@@ -7,7 +7,7 @@ import (
 )
 
 /*Auth checks if user is authenticated to process the request.*/
-func Auth(next http.Handler) http.Handler {
+func Auth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		isAuthenticated, _, err := shared.IsAuthenticated(r)
 		if err != nil {

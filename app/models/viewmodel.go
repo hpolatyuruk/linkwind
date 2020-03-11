@@ -3,7 +3,6 @@ package models
 import "html/template"
 
 type SignedInUserViewModel struct {
-	IsSigned   bool
 	UserID     int
 	CustomerID int
 	UserName   string

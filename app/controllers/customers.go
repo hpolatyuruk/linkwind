@@ -126,50 +126,6 @@ func CustomerSignUpHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 }
 
-/*InviteUserHandler handles user invite operations*/
-func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
-	isAuthenticated, user, err := shared.IsAuthenticated(r)
-	if err != nil {
-		return nil
-	}
-
-	if !isAuthenticated {
-		http.Redirect(w, r, "/signup", http.StatusSeeOther)
-		return nil
-	}
-
-	switch r.Method {
-	case "GET":
-		return handleInviteUserGET(w, r, user)
-	case "POST":
-		return handleInviteUserPOST(w, r, user)
-	default:
-		return handleInviteUserGET(w, r, user)
-	}
-}
-
-/*AdminHandler handles admin operations*/
-func AdminHandler(w http.ResponseWriter, r *http.Request) error {
-	isAuthenticated, user, err := shared.IsAuthenticated(r)
-	if err != nil {
-		return nil
-	}
-
-	if !isAuthenticated {
-		http.Redirect(w, r, "/signup", http.StatusSeeOther)
-		return nil
-	}
-
-	switch r.Method {
-	case "GET":
-		return handleAdminGET(w, r, user)
-	case "POST":
-		return handleAdminPOST(w, r, user)
-	default:
-		return handleAdminGET(w, r, user)
-	}
-}
-
 func handleCustomerSignUpGET(w http.ResponseWriter, r *http.Request) error {
 	err := templates.RenderFile(
 		w,
@@ -267,14 +223,32 @@ func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+/*InviteUserHandler handles user invite operations*/
+func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
+	_, user, err := shared.IsAuthenticated(r)
+	if err != nil {
+		return err
+	}
+	switch r.Method {
+	case "GET":
+		return handleInviteUserGET(w, r, user)
+	case "POST":
+		return handleInviteUserPOST(w, r, user)
+	default:
+		return handleInviteUserGET(w, r, user)
+	}
+}
+
 func handleInviteUserGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
 	err := templates.RenderInLayout(
 		w,
 		"invite.html",
 		InviteUserViewModel{
 			SignedInUser: &models.SignedInUserViewModel{
-				IsSigned: true,
-				UserName: user.UserName,
+				UserName:   user.UserName,
+				UserID:     user.ID,
+				CustomerID: user.CustomerID,
+				Email:      user.Email,
 			},
 		},
 	)
@@ -289,8 +263,10 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 		EmailAddress: r.FormValue("email"),
 		Memo:         r.FormValue("memo"),
 		SignedInUser: &models.SignedInUserViewModel{
-			IsSigned: true,
-			UserName: user.UserName,
+			UserName:   user.UserName,
+			UserID:     user.ID,
+			CustomerID: user.CustomerID,
+			Email:      user.Email,
 		},
 	}
 
@@ -324,6 +300,22 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 	return nil
 }
 
+/*AdminHandler handles admin operations*/
+func AdminHandler(w http.ResponseWriter, r *http.Request) error {
+	_, user, err := shared.IsAuthenticated(r)
+	if err != nil {
+		return nil
+	}
+	switch r.Method {
+	case "GET":
+		return handleAdminGET(w, r, user)
+	case "POST":
+		return handleAdminPOST(w, r, user)
+	default:
+		return handleAdminGET(w, r, user)
+	}
+}
+
 func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
 	isAdmin, err := data.IsUserAdmin(user.ID)
 	if err != nil {
@@ -338,7 +330,7 @@ func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedI
 		return nil
 	}
 
-	customer, err := data.GetCustomerByID(user.ID)
+	customer, err := data.GetCustomerByID(user.CustomerID)
 	if err != nil {
 		return err
 	}

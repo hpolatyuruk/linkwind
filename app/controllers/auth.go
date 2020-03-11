@@ -395,67 +395,12 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) error {
 func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
-		/*
-			isAuthenticated, _, err := shared.IsAuthenticated(r)
-			if err != nil {
-				return err
-			}
-			if !isAuthenticated {
-				http.Redirect(w, r, "/signin", http.StatusSeeOther)
-				return nil
-			}*/
 		return handleResetPasswordGET(w, r)
 	case "POST":
 		return handleResetPasswordPOST(w, r)
 	default:
 		return handleResetPasswordGET(w, r)
 	}
-}
-
-/*SetNewPasswordHandler handles set new password operations*/
-func SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) error {
-	switch r.Method {
-	case "GET":
-		return handleSetNewPasswordGET(w, r)
-	case "POST":
-		return handleSetNewPasswordPOST(w, r)
-	default:
-		return handleSetNewPasswordGET(w, r)
-	}
-}
-
-/*ChangePasswordHandler handles change password operations*/
-func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) error {
-	isAuthenticated, claims, err := shared.IsAuthenticated(r)
-	if err != nil {
-		return err
-	}
-	switch r.Method {
-	case "GET":
-		if !isAuthenticated {
-			http.Redirect(w, r, "/signin", http.StatusSeeOther)
-			return nil
-		}
-		return handleChangePasswordGET(w, r)
-	case "POST":
-		return handleChangePasswordPOST(w, r, claims.ID)
-	default:
-		return handleChangePasswordGET(w, r)
-	}
-}
-
-/*GenerateInviteCodeHandler generate the invite code to invite an user to join the system*/
-func GenerateInviteCodeHandler(w http.ResponseWriter, r *http.Request) error {
-	inviterUserID, _ := strconv.Atoi(r.URL.Query().Get("userid"))
-	invitedEmail := r.URL.Query().Get("invitedemail")
-	inviteCode, err := data.CreateInviteCode(inviterUserID, invitedEmail)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(200)
-	w.Header().Add("Content-Type", "text/plain")
-	w.Write([]byte(inviteCode))
-	return nil
 }
 
 func handleResetPasswordGET(w http.ResponseWriter, r *http.Request) error {
@@ -537,6 +482,18 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+/*SetNewPasswordHandler handles set new password operations*/
+func SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) error {
+	switch r.Method {
+	case "GET":
+		return handleSetNewPasswordGET(w, r)
+	case "POST":
+		return handleSetNewPasswordPOST(w, r)
+	default:
+		return handleSetNewPasswordGET(w, r)
+	}
+}
+
 func handleSetNewPasswordGET(w http.ResponseWriter, r *http.Request) error {
 	err := templates.RenderFile(
 		w,
@@ -591,6 +548,22 @@ func handleSetNewPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+/*ChangePasswordHandler handles change password operations*/
+func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) error {
+	_, claims, err := shared.IsAuthenticated(r)
+	if err != nil {
+		return err
+	}
+	switch r.Method {
+	case "GET":
+		return handleChangePasswordGET(w, r)
+	case "POST":
+		return handleChangePasswordPOST(w, r, claims.ID)
+	default:
+		return handleChangePasswordGET(w, r)
+	}
+}
+
 func handleChangePasswordGET(w http.ResponseWriter, r *http.Request) error {
 	err := templates.RenderFile(
 		w,
@@ -637,5 +610,19 @@ func handleChangePasswordPOST(w http.ResponseWriter, r *http.Request, userID int
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+/*GenerateInviteCodeHandler generate the invite code to invite an user to join the system*/
+func GenerateInviteCodeHandler(w http.ResponseWriter, r *http.Request) error {
+	inviterUserID, _ := strconv.Atoi(r.URL.Query().Get("userid"))
+	invitedEmail := r.URL.Query().Get("invitedemail")
+	inviteCode, err := data.CreateInviteCode(inviterUserID, invitedEmail)
+	if err != nil {
+		return err
+	}
+	w.WriteHeader(200)
+	w.Header().Add("Content-Type", "text/plain")
+	w.Write([]byte(inviteCode))
 	return nil
 }
