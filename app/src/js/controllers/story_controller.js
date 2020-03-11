@@ -1,4 +1,6 @@
-import { Controller } from 'stimulus';
+import {
+  Controller
+} from 'stimulus';
 
 export default class extends Controller {
   static targets = ['points', 'voterWrapper', 'voter'];
@@ -14,12 +16,12 @@ export default class extends Controller {
     const userID = this.data.get('userid');
     const storyID = this.data.get('storyid');
     fetch('/stories/upvote', {
-      method: 'POST',
-      body: JSON.stringify({
-        StoryID: parseInt(storyID),
-        UserID: parseInt(userID)
+        method: 'POST',
+        body: JSON.stringify({
+          StoryID: parseInt(storyID),
+          UserID: parseInt(userID)
+        })
       })
-    })
       .then(res => {
         return res.json();
       })
@@ -47,12 +49,12 @@ export default class extends Controller {
     const userID = this.data.get('userid');
     const storyID = this.data.get('storyid');
     fetch('/stories/unvote', {
-      method: 'POST',
-      body: JSON.stringify({
-        StoryID: parseInt(storyID),
-        UserID: parseInt(userID)
+        method: 'POST',
+        body: JSON.stringify({
+          StoryID: parseInt(storyID),
+          UserID: parseInt(userID)
+        })
       })
-    })
       .then(res => {
         return res.json();
       })

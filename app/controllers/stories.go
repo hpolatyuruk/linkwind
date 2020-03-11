@@ -82,15 +82,10 @@ func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.Respon
 		customerID = user.CustomerID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
-		}
-	} else {
-		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned: false,
 		}
 	}
 	var page int = getPage(r)
@@ -144,15 +139,10 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if isAuthenticated {
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned:   true,
 			UserID:     user.ID,
 			UserName:   user.UserName,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
-		}
-	} else {
-		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned: false,
 		}
 	}
 
@@ -165,19 +155,92 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if stories == nil || len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
-	templates.RenderInLayout(w, "stories.html", model)
+	err = templates.RenderInLayout(w, "stories.html", model)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+/*UserSubmittedStoriesHandler handles user's submitted stories*/
+func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
+	var model = &models.StoryPageViewModel{Title: "Stories"}
+
+	isAuthenticated, user, err := shared.IsAuthenticated(r)
+
+	if err != nil {
+		return err
+	}
+
+	if isAuthenticated {
+		model.IsAuthenticated = isAuthenticated
+		model.SignedInUser = &models.SignedInUserViewModel{
+			UserID:     user.ID,
+			UserName:   user.UserName,
+			CustomerID: user.CustomerID,
+			Email:      user.Email,
+		}
+	}
+
+	var page int = getPage(r)
+	stories, err := data.GetStories(user.ID, page, DefaultPageSize)
+	if err != nil {
+		return err
+	}
+
+	if stories == nil || len(*stories) > 0 {
+		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
+	}
+	err = templates.RenderInLayout(w, "stories.html", model)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+/*UserUpvotedStoriesHandler handles showing the upvoted stories by user*/
+func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
+	var model = &models.StoryPageViewModel{Title: "Stories"}
+
+	var userID int = -1
+
+	isAuthenticated, user, err := shared.IsAuthenticated(r)
+
+	if err != nil {
+		return err
+	}
+
+	if isAuthenticated {
+		userID = user.ID
+		model.IsAuthenticated = isAuthenticated
+		model.SignedInUser = &models.SignedInUserViewModel{
+			UserID:     user.ID,
+			UserName:   user.UserName,
+			CustomerID: user.CustomerID,
+			Email:      user.Email,
+		}
+	}
+
+	var page int = getPage(r)
+	stories, err := data.GetUserUpvotedStories(userID, page, DefaultPageSize)
+	if err != nil {
+		return err
+	}
+
+	if stories == nil || len(*stories) > 0 {
+		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
+	}
+	err = templates.RenderInLayout(w, "stories.html", model)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 /*SubmitStoryHandler handles to submit a new story*/
 func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
-	isAuthenticated, user, err := shared.IsAuthenticated(r)
+	_, user, err := shared.IsAuthenticated(r)
 	if err != nil {
-		return nil
-	}
-
-	if isAuthenticated == false {
-		http.Redirect(w, r, "/signin", http.StatusSeeOther)
 		return nil
 	}
 
@@ -194,8 +257,10 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
 func handlesSubmitGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
 	model := &StorySubmitModel{
 		SignedInUser: &models.SignedInUserViewModel{
-			IsSigned: true,
-			UserName: user.UserName,
+			UserName:   user.UserName,
+			UserID:     user.ID,
+			CustomerID: user.CustomerID,
+			Email:      user.Email,
 		},
 	}
 
@@ -213,8 +278,10 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.Signe
 		Title: r.FormValue("title"),
 		Text:  r.FormValue("text"),
 		SignedInUser: &models.SignedInUserViewModel{
-			IsSigned: true,
-			UserName: user.UserName,
+			UserName:   user.UserName,
+			UserID:     user.ID,
+			CustomerID: user.CustomerID,
+			Email:      user.Email,
 		},
 	}
 	if model.Validate() == false {
@@ -247,88 +314,6 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.Signe
 		return err
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-	return nil
-}
-
-/*UserSubmittedStoriesHandler handles user's submitted stories*/
-func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	var model = &models.StoryPageViewModel{Title: "Stories"}
-
-	isAuthenticated, user, err := shared.IsAuthenticated(r)
-
-	if err != nil {
-		return err
-	}
-
-	if isAuthenticated {
-		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned:   true,
-			UserID:     user.ID,
-			UserName:   user.UserName,
-			CustomerID: user.CustomerID,
-			Email:      user.Email,
-		}
-	} else {
-		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned: false,
-		}
-	}
-
-	var page int = getPage(r)
-	stories, err := data.GetStories(user.ID, page, DefaultPageSize)
-	if err != nil {
-		return err
-	}
-
-	if stories == nil || len(*stories) > 0 {
-		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
-	}
-	templates.RenderInLayout(w, "stories.html", model)
-	return nil
-}
-
-/*UserUpvotedStoriesHandler handles showing the upvoted stories by user*/
-func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	var model = &models.StoryPageViewModel{Title: "Stories"}
-
-	var userID int = -1
-
-	isAuthenticated, user, err := shared.IsAuthenticated(r)
-
-	if err != nil {
-		return err
-	}
-
-	if isAuthenticated {
-		userID = user.ID
-		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned:   true,
-			UserID:     user.ID,
-			UserName:   user.UserName,
-			CustomerID: user.CustomerID,
-			Email:      user.Email,
-		}
-	} else {
-		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned: false,
-		}
-	}
-
-	var page int = getPage(r)
-	stories, err := data.GetUserUpvotedStories(userID, page, DefaultPageSize)
-	if err != nil {
-		return err
-	}
-
-	if stories == nil || len(*stories) > 0 {
-		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
-	}
-	err = templates.RenderInLayout(w, "stories.html", model)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -371,15 +356,10 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	if isAuth {
 		model.IsAuthenticated = true
 		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned:   true,
 			UserID:     signedInUserClaims.ID,
 			CustomerID: signedInUserClaims.CustomerID,
 			Email:      signedInUserClaims.Email,
 			UserName:   signedInUserClaims.UserName,
-		}
-	} else {
-		model.SignedInUser = &models.SignedInUserViewModel{
-			IsSigned: false,
 		}
 	}
 	model.Story = mapStoryToStoryViewModel(story, model.SignedInUser)
@@ -390,21 +370,12 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*UpvoteStoryHandler runs when click to upvote story button. If not upvoted before by user, upvotes that story*/
 func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
-	isAuthenticated, _, err := shared.IsAuthenticated(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if isAuthenticated == false {
-		http.Redirect(w, r, "/signin", http.StatusSeeOther)
-		return
-	}
 	if r.Method == "GET" {
 		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
 		return
 	}
 	var model StoryVoteModel
-	err = json.NewDecoder(r.Body).Decode(&model)
+	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

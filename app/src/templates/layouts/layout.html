@@ -34,13 +34,13 @@
         <div class="float-right">
           <ul class="flex">
             <li class="mr-2">
-              <span>{{if .SignedInUser.IsSigned}}
+              <span>{{if .SignedInUser}}
                 <a class="text-gray-600 hover:text-gray-800"
                   href="/profile-edit?user={{.SignedInUser.UserName}}">{{.SignedInUser.UserName}}</a>{{end}}
               </span>
             </li>
             <li class="mr-2">
-              <span>{{if .SignedInUser.IsSigned}}
+              <span>{{if .SignedInUser}}
                 <a href="/signout" class="text-gray-600 hover:text-gray-800"> | Logout</a> {{else}}
                 <a href="/signin" class="text-gray-600 hover:text-gray-800">Login</a> {{end}}
               </span>

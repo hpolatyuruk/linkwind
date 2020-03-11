@@ -15,6 +15,7 @@
 .env.staging
 .env.production
 node_modules/
+.idea/
 
 # Ignoring env files
 .env.dev

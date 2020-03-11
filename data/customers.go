@@ -169,7 +169,7 @@ func GetCustomerByID(id int) (customer *Customer, err error) {
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT id, name, email, registeredon, domain FROM customers WHERE id = $1"
+	sql := "SELECT id, name, email, registeredon, domain, imglogo FROM customers WHERE id = $1"
 	row := db.QueryRow(sql, id)
 	customer, err = MapSQLRowToCustomer(row)
 	if err != nil {

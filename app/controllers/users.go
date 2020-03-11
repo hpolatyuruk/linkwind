@@ -37,14 +37,9 @@ func (model *UserProfileViewModel) Validate() bool {
 
 /*UserProfileHandler handles showing user profile detail*/
 func UserProfileHandler(w http.ResponseWriter, r *http.Request) error {
-	isAuthenticated, user, err := shared.IsAuthenticated(r)
+	_, user, err := shared.IsAuthenticated(r)
 	if err != nil {
-		return nil
-	}
-
-	if !isAuthenticated {
-		http.Redirect(w, r, "/signin", http.StatusSeeOther)
-		return nil
+		return err
 	}
 
 	switch r.Method {
@@ -60,8 +55,10 @@ func UserProfileHandler(w http.ResponseWriter, r *http.Request) error {
 func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) error {
 	model := &UserProfileViewModel{
 		SignedInUser: &models.SignedInUserViewModel{
-			IsSigned: true,
-			UserName: userClaims.UserName,
+			UserName:   userClaims.UserName,
+			UserID:     userClaims.ID,
+			CustomerID: userClaims.CustomerID,
+			Email:      userClaims.Email,
 		},
 	}
 	renderFilePath := "readonly-profile.html"
@@ -103,8 +100,10 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 		Email:    r.FormValue("email"),
 		About:    r.FormValue("about"),
 		SignedInUser: &models.SignedInUserViewModel{
-			IsSigned: true,
-			UserName: userClaims.UserName,
+			UserName:   userClaims.UserName,
+			UserID:     userClaims.ID,
+			CustomerID: userClaims.CustomerID,
+			Email:      userClaims.Email,
 		},
 	}
 
