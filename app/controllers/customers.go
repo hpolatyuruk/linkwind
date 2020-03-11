@@ -331,7 +331,7 @@ func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedI
 	}
 
 	if !isAdmin {
-		err = templates.RenderInLayout(w, "app/src/templates/errors/500.html", nil)
+		err = templates.RenderFile(w, "errors/500.html", nil)
 		if err != nil {
 			return err
 		}
