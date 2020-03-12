@@ -32,10 +32,7 @@ func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
 		http.Error(w, "Only POST method is supported.", http.StatusMethodNotAllowed)
 		return nil
 	}
-	_, signedInUser, err := shared.IsAuthenticated(r)
-	if err != nil {
-		return err
-	}
+	signedInUser := shared.GetUser(r)
 	commentText := r.FormValue("comment")
 	strStoryID := r.FormValue("storyID")
 	storyURL := fmt.Sprintf("/stories/detail?id=%s", strStoryID)
@@ -69,17 +66,13 @@ func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*ReplyToCommentHandler write a reply to comment.*/
 func ReplyToCommentHandler(w http.ResponseWriter, r *http.Request) {
-	_, user, err := shared.IsAuthenticated(r)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("An error occurred. Error:%v", err), http.StatusInternalServerError)
-		return
-	}
+	user := shared.GetUser(r)
 	if r.Method == "GET" {
 		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
 		return
 	}
 	var model ReplyModel
-	err = json.NewDecoder(r.Body).Decode(&model)
+	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
 		http.Error(w, "Cannot parse json.", http.StatusBadRequest)
 		return
@@ -121,18 +114,13 @@ func ReplyToCommentHandler(w http.ResponseWriter, r *http.Request) {
 
 /*UpvoteCommentHandler runs when click to upvote comment button. If not upvoted before by user, upvotes that comment*/
 func UpvoteCommentHandler(w http.ResponseWriter, r *http.Request) {
-	_, _, err := shared.IsAuthenticated(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 	if r.Method == "GET" {
 		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var model CommentVoteModel
-	err = json.NewDecoder(r.Body).Decode(&model)
+	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

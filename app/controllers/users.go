@@ -37,11 +37,7 @@ func (model *UserProfileViewModel) Validate() bool {
 
 /*UserProfileHandler handles showing user profile detail*/
 func UserProfileHandler(w http.ResponseWriter, r *http.Request) error {
-	_, user, err := shared.IsAuthenticated(r)
-	if err != nil {
-		return err
-	}
-
+	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
 		return handleUserProfileGET(w, r, user)

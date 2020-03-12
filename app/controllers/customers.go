@@ -225,10 +225,7 @@ func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 
 /*InviteUserHandler handles user invite operations*/
 func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
-	_, user, err := shared.IsAuthenticated(r)
-	if err != nil {
-		return err
-	}
+	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
 		return handleInviteUserGET(w, r, user)
@@ -302,10 +299,7 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 
 /*AdminHandler handles admin operations*/
 func AdminHandler(w http.ResponseWriter, r *http.Request) error {
-	_, user, err := shared.IsAuthenticated(r)
-	if err != nil {
-		return nil
-	}
+	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
 		return handleAdminGET(w, r, user)

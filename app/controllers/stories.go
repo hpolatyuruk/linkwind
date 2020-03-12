@@ -239,11 +239,7 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*SubmitStoryHandler handles to submit a new story*/
 func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
-	_, user, err := shared.IsAuthenticated(r)
-	if err != nil {
-		return nil
-	}
-
+	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
 		return handlesSubmitGET(w, r, user)

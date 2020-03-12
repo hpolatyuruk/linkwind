@@ -16,6 +16,7 @@ func main() {
 }
 
 func registerHandlers() {
+
 	http.HandleFunc(
 		"/users/profile",
 		middlewares.Middleware(
