@@ -20,7 +20,22 @@ type SignedInUserClaims struct {
 	CustomerID int    `json:"customerid"`
 	UserName   string `json:"username"`
 	Email      string `json:"email"`
+	Karma      int    `json:"karma"`
 	jwt.StandardClaims
+}
+
+/*CustomRequest represents the http request included defaul golang http.Request*/
+type CustomRequest struct {
+	*http.Request
+}
+
+/*GetUser gets authenticated user.*/
+func GetUser(r *http.Request) *SignedInUserClaims {
+	_, user, err := IsAuthenticated(r)
+	if err != nil {
+		panic(err)
+	}
+	return user
 }
 
 /*IsAuthenticated checks if user is signed in or not.*/

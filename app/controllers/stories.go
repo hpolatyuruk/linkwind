@@ -89,11 +89,15 @@ func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.Respon
 		}
 	}
 	var page int = getPage(r)
-	stories, err := fnGetStories(customerID, page-1, DefaultPageSize)
+	stories, err := fnGetStories(customerID, page, DefaultPageSize)
 	if err != nil {
 		return err
 	}
-	pagingModel, err := setPagingViewModel(customerID, page, len(*stories))
+	storiesCount, err := data.GetCustomerStoriesCount(customerID)
+	if err != nil {
+		return err
+	}
+	pagingModel, err := setPagingViewModel(customerID, page, storiesCount)
 	if err != nil {
 		return err
 	}
@@ -105,11 +109,7 @@ func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.Respon
 	return nil
 }
 
-func setPagingViewModel(customerID, currentPage, storiesLength int) (*models.Paging, error) {
-	storiesCount, err := data.GetStoriesCount(customerID)
-	if err != nil {
-		return nil, err
-	}
+func setPagingViewModel(customerID, currentPage, storiesCount int) (*models.Paging, error) {
 	totalPageCount := calcualteTotalPageCount(storiesCount)
 	isFinalPage := currentPage == totalPageCount
 	model := &models.Paging{
@@ -129,7 +129,7 @@ func calcualteTotalPageCount(storiesCount int) int {
 
 /*UserSavedStoriesHandler handles showing the saved stories of a user*/
 func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	var model = &models.StoryPageViewModel{Title: "Stories"}
+	var model = &models.StoryPageViewModel{Title: "Saved Stories"}
 
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
@@ -151,7 +151,15 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-
+	storiesCount, err := data.GetUserSavedStoriesCount(user.ID)
+	if err != nil {
+		return err
+	}
+	pagingModel, err := setPagingViewModel(user.CustomerID, page, storiesCount)
+	if err != nil {
+		return err
+	}
+	model.Page = pagingModel
 	if stories == nil || len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
@@ -164,14 +172,12 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*UserSubmittedStoriesHandler handles user's submitted stories*/
 func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	var model = &models.StoryPageViewModel{Title: "Stories"}
-
+	var model = &models.StoryPageViewModel{Title: "Submitted Stories"}
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 
 	if err != nil {
 		return err
 	}
-
 	if isAuthenticated {
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = &models.SignedInUserViewModel{
@@ -181,13 +187,22 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 			Email:      user.Email,
 		}
 	}
-
 	var page int = getPage(r)
-	stories, err := data.GetStories(user.ID, page, DefaultPageSize)
+	stories, err := data.GetUserSubmittedStories(user.ID, page, DefaultPageSize)
+	fmt.Print(len(*stories))
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	storiesCount, err := data.GetUserSubmittedStoriesCount(user.ID)
 	if err != nil {
 		return err
 	}
-
+	pagingModel, err := setPagingViewModel(user.CustomerID, page, storiesCount)
+	if err != nil {
+		return err
+	}
+	model.Page = pagingModel
 	if stories == nil || len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
@@ -200,16 +215,14 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*UserUpvotedStoriesHandler handles showing the upvoted stories by user*/
 func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	var model = &models.StoryPageViewModel{Title: "Stories"}
+	var model = &models.StoryPageViewModel{Title: "Upvoted Stories"}
 
 	var userID int = -1
-
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 
 	if err != nil {
 		return err
 	}
-
 	if isAuthenticated {
 		userID = user.ID
 		model.IsAuthenticated = isAuthenticated
@@ -220,13 +233,20 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 			Email:      user.Email,
 		}
 	}
-
 	var page int = getPage(r)
 	stories, err := data.GetUserUpvotedStories(userID, page, DefaultPageSize)
 	if err != nil {
 		return err
 	}
-
+	storiesCount, err := data.GetUserUpvotedStoriesCount(user.ID)
+	if err != nil {
+		return err
+	}
+	pagingModel, err := setPagingViewModel(user.CustomerID, page, storiesCount)
+	if err != nil {
+		return err
+	}
+	model.Page = pagingModel
 	if stories == nil || len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
@@ -239,11 +259,7 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 
 /*SubmitStoryHandler handles to submit a new story*/
 func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
-	_, user, err := shared.IsAuthenticated(r)
-	if err != nil {
-		return nil
-	}
-
+	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
 		return handlesSubmitGET(w, r, user)
