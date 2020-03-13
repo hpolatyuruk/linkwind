@@ -1,8 +1,14 @@
 package controllers
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"io/ioutil"
+	"log"
+	"mime/multipart"
 	"net/http"
 	"strings"
 	"time"
@@ -42,6 +48,7 @@ type CustomerAdminViewModel struct {
 	LogoImageAsBase64 string
 	Errors            map[string]string
 	SuccessMessage    string
+	SignedInUser      *models.SignedInUserViewModel
 }
 
 /*Validate validates the CustomerSignUpViewModel*/
@@ -335,12 +342,20 @@ func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedI
 		return err
 	}
 
-	model, err := setCustomerAdminViewModel(customer)
+	model, err := setCustomerAdminViewModel(customer, user)
 	if err != nil {
 		return err
 	}
 
-	err = templates.RenderInLayout(w, "layouts/users/admin.html", model)
+	if model.LogoImageAsBase64 != "" {
+		imageasB64, err := decodeLogoImageToBase64(customer.LogoImage)
+		if err != nil {
+			return err
+		}
+		model.LogoImageAsBase64 = imageasB64
+	}
+
+	err = templates.RenderInLayout(w, "admin.html", model)
 	if err != nil {
 		return err
 	}
@@ -348,64 +363,77 @@ func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedI
 }
 
 func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
-	model := &CustomerAdminViewModel{
-		Name:              r.FormValue("name"),
-		Domain:            r.FormValue("domain"),
-		LogoImageAsBase64: r.FormValue("logo"),
-	}
-
-	adminHTMLPath := "layouts/users/admin.html"
-	if model.Validate() == false {
-		err := templates.RenderFile(w, adminHTMLPath, model)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
-	exists, err := data.ExistsCustomerByName(model.Name)
+	file, err := getImageFile(r)
 	if err != nil {
 		return err
 	}
-	if exists {
-		model.Errors["Name"] = "This name is already taken"
-		err := templates.RenderFile(w, adminHTMLPath, model)
+
+	defer file.Close()
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	model := &CustomerAdminViewModel{
+		Name:              r.FormValue("name"),
+		Domain:            r.FormValue("domain"),
+		LogoImageAsBase64: base64.StdEncoding.EncodeToString(fileBytes),
+	}
+
+	adminHTMLPath := "admin.html"
+	if model.Validate() == false {
+		err := templates.RenderInLayout(w, adminHTMLPath, model)
 		if err != nil {
 			return err
 		}
 		return nil
 	}
 
-	var domain string
-	if model.Domain != "" {
-		exists, err := data.ExistsCustomerByDomain(model.Domain)
+	customer, err := data.GetCustomerByID(user.CustomerID)
+	if err != nil {
+		return err
+	}
+
+	if customer.Name != model.Name {
+		exists, err := data.ExistsCustomerByName(model.Name)
 		if err != nil {
 			return err
 		}
 		if exists {
-			model.Errors["Domain"] = "This domain is already taken"
-			err := templates.RenderFile(w, adminHTMLPath, model)
+			model.Errors["Name"] = "This name is already taken"
+			err := templates.RenderInLayout(w, adminHTMLPath, model)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		domain = model.Domain
+
 	}
 
-	customer, err := data.GetCustomerByID(user.ID)
-	if err != nil {
-		return err
+	if model.Domain != "" {
+		if customer.Domain != model.Domain {
+			exists, err := data.ExistsCustomerByDomain(model.Domain)
+			if err != nil {
+				return err
+			}
+			if exists {
+				model.Errors["Domain"] = "This domain is already taken"
+				err := templates.RenderInLayout(w, adminHTMLPath, model)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+		}
 	}
 
-	setUpdatedCustomerByModel(model, customer, domain)
+	setUpdatedCustomerByModel(model, customer)
 	err = data.UpdateCustomer(customer)
 	if err != nil {
 		return err
 	}
 
-	model.SuccessMessage = "Account created successfuly"
-	err = templates.RenderFile(w, adminHTMLPath, model)
+	model.SuccessMessage = "Account updated successfuly"
+	err = templates.RenderInLayout(w, adminHTMLPath, model)
 	if err != nil {
 		return err
 	}
@@ -444,19 +472,49 @@ func setCustomerSignUpViewModel(r *http.Request) (*CustomerSignUpViewModel, erro
 	return &model, nil
 }
 
-func setCustomerAdminViewModel(customer *data.Customer) (*CustomerAdminViewModel, error) {
+func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUserClaims) (*CustomerAdminViewModel, error) {
 	var model CustomerAdminViewModel
 	model.Domain = customer.Domain
 	model.LogoImageAsBase64 = base64.StdEncoding.EncodeToString(customer.LogoImage)
 	model.Name = customer.Name
+
+	var s models.SignedInUserViewModel
+	s.CustomerID = customer.ID
+	s.Email = customer.Email
+	s.UserID = user.ID
+	s.UserName = user.UserName
+	model.SignedInUser = &s
 	return &model, nil
 }
 
-func setUpdatedCustomerByModel(model *CustomerAdminViewModel, customer *data.Customer, domain string) {
+func setUpdatedCustomerByModel(model *CustomerAdminViewModel, customer *data.Customer) {
 	customer.Name = model.Name
-	customer.Domain = domain
+	customer.Domain = model.Domain
 	if model.LogoImageAsBase64 == "" {
 		return
 	}
 	customer.LogoImage = []byte(model.LogoImageAsBase64)
+}
+
+func getImageFile(r *http.Request) (multipart.File, error) {
+	file, _, err := r.FormFile("logo")
+	if err != nil {
+		return file, err
+	}
+	return file, err
+}
+
+func decodeLogoImageToBase64(logoImage []byte) (string, error) {
+	var img image.Image
+	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(string(logoImage)))
+	img, _, err := image.Decode(reader)
+	if err != nil {
+		return "", err
+	}
+	buffer := new(bytes.Buffer)
+	if err := jpeg.Encode(buffer, img, nil); err != nil {
+		log.Fatalln("unable to encode image.")
+	}
+	return base64.StdEncoding.EncodeToString(buffer.Bytes()), err
+
 }

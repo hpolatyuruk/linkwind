@@ -254,7 +254,7 @@ func GetUserByResetPasswordToken(token string) (user *User, err error) {
 	if err != nil {
 		return nil, err
 	}
-	sql := "SELECT id, username, fullname, email, registeredon, password, website, about,  invitecode, karma FROM users INNER JOIN resetpasswordtokens on users.Id = resetpasswordtokens.userid WHERE resetpasswordtokens.token = $1"
+	sql := "SELECT id, username, fullname, email, registeredon, password, website, about,  invitecode, karma,customerid FROM users INNER JOIN resetpasswordtokens on users.Id = resetpasswordtokens.userid WHERE resetpasswordtokens.token = $1"
 	row := db.QueryRow(sql, token)
 	user, err = MapSQLRowToUser(row)
 	if err != nil {

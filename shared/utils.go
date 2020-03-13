@@ -4,14 +4,25 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
+	"math/rand"
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"time"
 	"unicode"
 
 	"golang.org/x/net/html"
 )
+
+const (
+	Charset = "abcdefghijklmnopqrstuvwxyz" +
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+)
+
+/*SeededRand is help to create random values by time*/
+var SeededRand = rand.New(
+	rand.NewSource(time.Now().UnixNano()))
 
 /*IsEmailAdrressValid takes mail address, if address is valid return true.*/
 func IsEmailAdrressValid(email string) bool {
@@ -167,4 +178,24 @@ func DateToString(submittedOn time.Time) string {
 		}
 	}
 	return text
+}
+
+/*GenerateResetPasswordToken generates password token for reset*/
+func GenerateResetPasswordToken() string {
+	c := ""
+	for i := 0; i < 4; i++ {
+		s := StringWithCharset(1)
+		i := SeededRand.Intn(10)
+		c = c + strconv.Itoa(i) + s
+	}
+	return c
+}
+
+/*StringWithCharset generate random string by length*/
+func StringWithCharset(length int) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = Charset[SeededRand.Intn(len(Charset))]
+	}
+	return string(b)
 }

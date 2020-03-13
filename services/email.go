@@ -2,19 +2,10 @@ package services
 
 import (
 	"fmt"
-	"math/rand"
 	"net/smtp"
 	"strconv"
-	"time"
+	"turkdev/shared"
 )
-
-const (
-	charset = "abcdefghijklmnopqrstuvwxyz" +
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-)
-
-var seededRand = rand.New(
-	rand.NewSource(time.Now().UnixNano()))
 
 /*SetInviteMailBody combine parameters and return body for UserInviteMail*/
 func SetInviteMailBody(to, userName, memo, inviteCode string) string {
@@ -55,14 +46,13 @@ func SendInvitemail(mailAddress, memo, inviteCode, userName string) error {
 
 /*SendResetPasswordMail send to mail for reset password with resetPassword token*/
 //TODO: In lobsters they add coming ip for reset pass request. Should we do that? Do not forget to change "pass" and "to" variables.
-func SendResetPasswordMail(email, userName, domain string) error {
-	pass := "..."
-	from := "..."
+func SendResetPasswordMail(email, userName, domain, token string) error {
+	pass := "Sedat.1242"
+	from := "sedata38@gmail.com"
 	to := email
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	subject := "Subject: " + "[" + domain + "] Reset Your Password\n"
 
-	token := generateResetPasswordToken()
 	body := setResetPasswordMailBody(token, userName, domain)
 	msg := []byte(subject + mime + "\n" + body)
 
@@ -91,30 +81,12 @@ func setResetPasswordMailBody(token, userName, domain string) string {
 	return content
 }
 
-func generateResetPasswordToken() string {
-	c := ""
-	for i := 0; i < 4; i++ {
-		s := stringWithCharset(1)
-		i := seededRand.Intn(10)
-		c = c + strconv.Itoa(i) + s
-	}
-	return c
-}
-
 func inviteCodeGenerator() string {
 	c := ""
 	for i := 0; i < 4; i++ {
-		i := seededRand.Intn(10)
-		s := stringWithCharset(1)
+		i := shared.SeededRand.Intn(10)
+		s := shared.StringWithCharset(1)
 		c = c + strconv.Itoa(i) + s
 	}
 	return c
-}
-
-func stringWithCharset(length int) string {
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[seededRand.Intn(len(charset))]
-	}
-	return string(b)
 }

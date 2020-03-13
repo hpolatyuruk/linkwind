@@ -455,25 +455,27 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 			}
 			return nil
 		}
-		user, err = data.GetUserByUserName(model.EmailOrUserName)
-		userName = user.UserName
-		email = user.Email
-
+		userName = model.EmailOrUserName
 	}
 	if err != nil {
 		return err
 	}
+
+	user, err = data.GetUserByUserName(userName)
+	email = user.Email
 
 	domain, err := data.GetCustomerDomainByUserName(userName)
 	if err != nil {
 		return err
 	}
 
-	err = services.SendResetPasswordMail(email, userName, domain)
+	token := shared.GenerateResetPasswordToken()
+	err = services.SendResetPasswordMail(email, userName, domain, token)
 	if err != nil {
 		return err
 	}
 
+	data.SaveResetPasswordToken(token, user.ID)
 	model.SuccessMessage = "Password recovery message sent. If you don't see it, you might want to check your spam folder."
 	err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
 	if err != nil {
@@ -495,7 +497,21 @@ func SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handleSetNewPasswordGET(w http.ResponseWriter, r *http.Request) error {
-	err := templates.RenderFile(
+	token := r.URL.Query().Get("token")
+	if strings.TrimSpace(token) == "" {
+		http.Error(w, "Missing Token! ", http.StatusBadRequest)
+		return nil
+	}
+
+	user, err := data.GetUserByResetPasswordToken(token)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		http.Error(w, "Token is not valid! ", http.StatusBadRequest)
+		return nil
+	}
+	err = templates.RenderFile(
 		w,
 		"layouts/users/set-new-password.html",
 		SetNewPasswordViewModel{},
