@@ -3,7 +3,7 @@ package shared
 import (
 	"net/http"
 	"time"
-	"turkdev/data"
+	"turkdev/src/data"
 
 	"github.com/dgrijalva/jwt-go"
 )

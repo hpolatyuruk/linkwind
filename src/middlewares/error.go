@@ -3,7 +3,7 @@ package middlewares
 import (
 	"fmt"
 	"net/http"
-	"turkdev/shared"
+	"turkdev/src/shared"
 )
 
 /*Error is a middleware which handles errors for fiven http handlers.*/

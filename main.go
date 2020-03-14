@@ -2,15 +2,15 @@ package main
 
 import (
 	"net/http"
-	"turkdev/app/controllers"
-	"turkdev/middlewares"
+	"turkdev/src/controllers"
+	"turkdev/src/middlewares"
 )
 
 func main() {
 
 	registerHandlers()
 
-	staticFileServer := http.FileServer(http.Dir("app/dist/"))
+	staticFileServer := http.FileServer(http.Dir("dist/"))
 	http.Handle("/dist/", http.StripPrefix("/dist/", staticFileServer))
 	http.ListenAndServe(":80", nil)
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/smtp"
 	"strconv"
-	"turkdev/shared"
+	"turkdev/src/shared"
 )
 
 /*SetInviteMailBody combine parameters and return body for UserInviteMail*/

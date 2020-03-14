@@ -68,6 +68,7 @@ func GetStories(customerID, pageNumber, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
+		fmt.Print(err)
 		return nil, err
 	}
 	// TODO(Huseyin): Sort it by point algorithim when sedat finishes it

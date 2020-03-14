@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"net/http"
-	"turkdev/shared"
+	"turkdev/src/shared"
 )
 
 /*NotFound is a middleware which handeles not found page for given handler.*/

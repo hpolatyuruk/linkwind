@@ -12,11 +12,11 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"turkdev/app/models"
-	"turkdev/app/src/templates"
-	"turkdev/data"
-	"turkdev/services"
-	"turkdev/shared"
+	"turkdev/src/data"
+	"turkdev/src/models"
+	"turkdev/src/services"
+	"turkdev/src/shared"
+	"turkdev/src/templates"
 )
 
 const (

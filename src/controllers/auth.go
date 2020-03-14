@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"turkdev/app/src/templates"
-	"turkdev/data"
-	"turkdev/services"
-	"turkdev/shared"
+	"turkdev/src/data"
+	"turkdev/src/services"
+	"turkdev/src/shared"
+	"turkdev/src/templates"
 )
 
 const authExpirationMinutes = 1440

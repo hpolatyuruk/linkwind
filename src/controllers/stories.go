@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"turkdev/app/models"
-	"turkdev/app/src/templates"
-	"turkdev/data"
-	"turkdev/shared"
+	"turkdev/src/data"
+	"turkdev/src/models"
+	"turkdev/src/shared"
+	"turkdev/src/templates"
 )
 
 const (

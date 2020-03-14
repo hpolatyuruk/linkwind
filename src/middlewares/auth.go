@@ -2,8 +2,8 @@ package middlewares
 
 import (
 	"net/http"
-	"turkdev/app/src/templates"
-	"turkdev/shared"
+	"turkdev/src/shared"
+	"turkdev/src/templates"
 )
 
 /*Auth checks if user is authenticated to process the request.*/

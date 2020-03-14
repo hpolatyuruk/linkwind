@@ -5,9 +5,9 @@ const TerserJSPlugin = require('terser-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
 module.exports = {
-  entry: './app/src/js/app.js',
+  entry: './src/js/app.js',
   output: {
-    path: path.resolve(__dirname, 'app/dist'),
+    path: path.resolve(__dirname, 'dist'),
     filename: 'app.js'
   },
   optimization: {
@@ -22,8 +22,7 @@ module.exports = {
     })
   ],
   module: {
-    rules: [
-      {
+    rules: [{
         test: /\.css$/,
         use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader']
       },
