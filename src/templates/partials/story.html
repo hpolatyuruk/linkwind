@@ -25,9 +25,11 @@
       {{.SubmittedOnText}}
     </span>
     {{if .SignedInUser}}
-    <span>{{if .IsSavedBySignedInUser}} |
-      <a href="/unsavestory" class="text-gray-600">unsave</a> {{else}} |
-      <a href="/savestory" class="text-gray-600">save</a> {{end}}
+    <span>
+      |
+      <a data-target="story.saver"
+        data-action="{{if .IsSavedBySignedInUser}} click->story#unsave {{else}} click->story#save {{end}}"
+        class="text-gray-600">{{if .IsSavedBySignedInUser}}unsave{{else}}save{{end}}</a>
     </span>
     {{end}}
     <span>

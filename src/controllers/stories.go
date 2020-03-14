@@ -27,6 +27,12 @@ type StoryVoteModel struct {
 	UserID  int
 }
 
+/*StorySaveModel represents the data in http request body to save story.*/
+type StorySaveModel struct {
+	StoryID int
+	UserID  int
+}
+
 /*StorySubmitModel represents the data to submit a story.*/
 type StorySubmitModel struct {
 	URL          string
@@ -468,77 +474,95 @@ func UnvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /*SaveStoryHandler saves a story for user*/
-func SaveStoryHandler(w http.ResponseWriter, r *http.Request) error {
+func SaveStoryHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		return fmt.Errorf("Reqeuest should be POSTm request")
+		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
+		return
+	}
+	var model StorySaveModel
+	err := json.NewDecoder(r.Body).Decode(&model)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		return fmt.Errorf("Error occured when parse from. Error : %v", err)
-	}
-
-	userIDStr := r.FormValue("userID")
-	storyIDStr := r.FormValue("storyID")
-	userID, err := strconv.Atoi(userIDStr)
+	isSaved, err := data.CheckIfUserSavedStory(model.UserID, model.StoryID)
 	if err != nil {
-		return fmt.Errorf("Error occured when convert string userID to int userID. Error : %v", err)
-	}
-	storyID, err := strconv.Atoi(storyIDStr)
-	if err != nil {
-		return fmt.Errorf("Error occured when convert string storyID to int storyID. Error : %v", err)
-	}
-
-	isSaved, err := data.CheckIfUserSavedStory(userID, storyID)
-	if err != nil {
-		return fmt.Errorf("Error occured when check user save story. Error : %v", err)
+		fmt.Println(err)
+		http.Error(w, "An error occured while parsing json.", http.StatusInternalServerError)
+		return
 	}
 
 	if isSaved {
-		return nil
+		res, _ := json.Marshal(&JSONResponse{
+			Result: "AlreadySaved",
+		})
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(res))
+		return
 	}
 
-	err = data.SaveStory(userID, storyID)
+	err = data.SaveStory(model.UserID, model.StoryID)
 	if err != nil {
-		return fmt.Errorf("Error occured when save story. Error : %v", err)
+		fmt.Println(err)
+		http.Error(w, "Error occured while saving story", http.StatusInternalServerError)
+		return
 	}
-	return nil
+
+	res, _ := json.Marshal(&JSONResponse{
+		Result: "Saved",
+	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(res))
 }
 
 /*UnSaveStoryHandler unsaves a story if user save that story*/
-func UnSaveStoryHandler(w http.ResponseWriter, r *http.Request) error {
+func UnSaveStoryHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		return fmt.Errorf("Reqeuest should be POSTm request")
+		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
+		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		return fmt.Errorf("Error occured when parse from. Error : %v", err)
+	var model StorySaveModel
+	err := json.NewDecoder(r.Body).Decode(&model)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "An error occured while parsing json.", http.StatusBadRequest)
+		return
 	}
 
-	userIDStr := r.FormValue("userID")
-	storyIDStr := r.FormValue("storyID")
-	userID, err := strconv.Atoi(userIDStr)
+	isSaved, err := data.CheckIfUserSavedStory(model.UserID, model.StoryID)
 	if err != nil {
-		return fmt.Errorf("Error occured when convert string userID to int userID. Error : %v", err)
-	}
-	storyID, err := strconv.Atoi(storyIDStr)
-	if err != nil {
-		return fmt.Errorf("Error occured when convert string storyID to int storyID. Error : %v", err)
-	}
-
-	isSaved, err := data.CheckIfUserSavedStory(userID, storyID)
-	if err != nil {
-		return fmt.Errorf("Error occured when check user save story. Error : %v", err)
+		fmt.Println(err)
+		http.Error(w, "An error occured while unsaving json.", http.StatusInternalServerError)
+		return
 	}
 
 	if isSaved == false {
-		return nil
+		res, _ := json.Marshal(&JSONResponse{
+			Result: "AlreadyUnsaved",
+		})
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(res))
+		return
 	}
 
-	err = data.UnSaveStory(userID, storyID)
+	err = data.UnSaveStory(model.UserID, model.StoryID)
 	if err != nil {
-		return fmt.Errorf("Error occured when unsave story. Error : %v", err)
+		fmt.Println(err)
+		http.Error(w, "Error occured when unsave story", http.StatusInternalServerError)
+		return
 	}
-	return nil
+	res, _ := json.Marshal(&JSONResponse{
+		Result: "Unsaved",
+	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(res))
 }
 
 func getPage(r *http.Request) int {

@@ -11,14 +11,14 @@ func NotFound(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc
 		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
 			err := f(w, r)
 			if err != nil {
-				renderFile(w, "app/src/templates/errors/500.html", http.StatusInternalServerError)
+				renderFile(w, "src/templates/errors/500.html", http.StatusInternalServerError)
 			}
 		} else if r.URL.Path == "/robots.txt" {
 			w.Header().Set("Content-Type", "text/plain")
 			// TODO: Should be removed in production.
 			w.Write([]byte("User-agent: *\nDisallow: /"))
 		} else {
-			renderFile(w, "app/src/templates/errors/404.html", http.StatusNotFound)
+			renderFile(w, "src/templates/errors/404.html", http.StatusNotFound)
 		}
 	}
 }

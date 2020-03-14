@@ -60,6 +60,18 @@ func registerHandlers() {
 			middlewares.Auth))
 
 	http.HandleFunc(
+		"/stories/save",
+		middlewares.Middleware(
+			controllers.SaveStoryHandler,
+			middlewares.Auth))
+
+	http.HandleFunc(
+		"/stories/unsave",
+		middlewares.Middleware(
+			controllers.UnSaveStoryHandler,
+			middlewares.Auth))
+
+	http.HandleFunc(
 		"/submit",
 		middlewares.Middleware(
 			middlewares.Error(controllers.SubmitStoryHandler),
