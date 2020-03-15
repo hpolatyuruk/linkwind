@@ -19,7 +19,7 @@ export default class extends Controller {
   }
 
   unvote(event) {
-    this.sendRequest(event, '/stories/unvote', (data) => {
+    this.sendRequest(event, '/stories/remove/upvote', (data) => {
       if (data.Result === 'Unvoted') {
         this.voterTarget.setAttribute('data-action', 'click->story#upvote');
         this.voterWrapperTarget.classList.remove('upvoted');

@@ -187,6 +187,12 @@ func UpVoteComment(userID int, commentID int) error {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Cannot update comment's upvotes. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
+	sql = "UPDATE users SET karma = karma + 1 WHERE id = (SELECT userid FROM comments WHERE id = $1)"
+	_, err = tran.Exec(sql, commentID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Error occurred while increasing user's karma. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
 	err = tran.Commit()
 	if err != nil {
 		return &DBError{fmt.Sprintf("Cannot commit transaction. UserID: %d, CommentID: %d", userID, commentID), err}
@@ -194,8 +200,8 @@ func UpVoteComment(userID int, commentID int) error {
 	return nil
 }
 
-/*UnVoteComment unvotes the comment on database*/
-func UnVoteComment(userID int, commentID int) error {
+/*RemoveCommentVote unvotes the comment on database*/
+func RemoveCommentVote(userID int, commentID int) error {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
@@ -216,6 +222,12 @@ func UnVoteComment(userID int, commentID int) error {
 	if err != nil {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Cannot update comment's upvotes. UserID: %d, CommentID: %d", userID, commentID), err}
+	}
+	sql = "UPDATE users SET karma = karma - 1 WHERE id = (SELECT userid FROM comments WHERE id = $1)"
+	_, err = tran.Exec(sql, commentID)
+	if err != nil {
+		tran.Rollback()
+		return &DBError{fmt.Sprintf("Error occurred while decreasing user's karma. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
 	err = tran.Commit()
 	if err != nil {

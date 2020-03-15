@@ -54,9 +54,9 @@ func registerHandlers() {
 			middlewares.Auth))
 
 	http.HandleFunc(
-		"/stories/unvote",
+		"/stories/remove/upvote",
 		middlewares.Middleware(
-			controllers.UnvoteStoryHandler,
+			controllers.RemoveStoryUpvoteHandler,
 			middlewares.Auth))
 
 	http.HandleFunc(
@@ -90,9 +90,9 @@ func registerHandlers() {
 			middlewares.Auth))
 
 	http.HandleFunc(
-		"/comments/unvote",
+		"/comments/remove/upvote",
 		middlewares.Middleware(
-			controllers.UnvoteCommentHandler,
+			controllers.RemoveCommentVoteHandler,
 			middlewares.Auth))
 
 	http.HandleFunc(

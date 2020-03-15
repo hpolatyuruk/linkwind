@@ -34,6 +34,7 @@
     "webpack-cli": "^3.3.10"
   },
   "dependencies": {
+    "acorn": "^6.4.1",
     "stimulus": "^1.1.1"
   }
 }

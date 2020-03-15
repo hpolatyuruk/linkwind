@@ -431,8 +431,8 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(res)
 }
 
-/*UnvoteStoryHandler handles unvote button. If a story voted by user before, this handler undo that operation*/
-func UnvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
+/*RemoveStoryUpvoteHandler handles unvote button. If a story voted by user before, this handler undo that operation*/
+func RemoveStoryUpvoteHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		http.Error(w, "Unsupported request method. Only POST method is supported", http.StatusMethodNotAllowed)
 		return
@@ -460,7 +460,7 @@ func UnvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = data.UnVoteStory(model.UserID, model.StoryID)
+	err = data.RemoveStoryUpvote(model.UserID, model.StoryID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured while unvoting story. Error : %v", err), http.StatusInternalServerError)
 		return

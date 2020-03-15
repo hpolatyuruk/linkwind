@@ -69,39 +69,32 @@ export default class extends Controller {
   }
 
   upvote(event) {
-    event.preventDefault();
-    const isAuthenticated = this.data.get('isauthenticated') == 'true';
-    if (isAuthenticated === false) {
-      window.location = '/signin';
-      return;
-    }
-
-    const userID = this.data.get('userid');
-    const commentID = this.data.get('commentid');
-    fetch('/comments/upvote', {
-        method: 'POST',
-        body: JSON.stringify({
-          UserID: parseInt(userID),
-          CommentID: parseInt(commentID)
-        })
-      })
-      .then(res => {
-        return res.json();
-      })
-      .then(data => {
-        console.log(data);
-        if (data.Result === 'Upvoted') {
-          this.voterTarget.setAttribute('data-action', 'click->comment#unvote');
-          this.voterWrapperTarget.classList.add('upvoted');
-          const currentPoints = this.data.get('points');
-          const newPoints = parseInt(currentPoints) + 1;
-          this.data.set('points', newPoints);
-          this.pointsTarget.innerHTML = ` | ${newPoints} points`;
-        }
-      });
+    this.sendVoteRequest(event, '/comments/upvote', (data) => {
+      if (data.Result === 'Upvoted') {
+        this.voterTarget.setAttribute('data-action', 'click->comment#unvote');
+        this.voterWrapperTarget.classList.add('upvoted');
+        const currentPoints = this.data.get('points');
+        const newPoints = parseInt(currentPoints) + 1;
+        this.data.set('points', newPoints);
+        this.pointsTarget.innerHTML = ` | ${newPoints} points`;
+      }
+    })
   }
 
   unvote(event) {
+    this.sendVoteRequest(event, '/comments/remove/upvote', (data) => {
+      if (data.Result === 'Unvoted') {
+        this.voterTarget.setAttribute('data-action', 'click->comment#upvote');
+        this.voterWrapperTarget.classList.remove('upvoted');
+        const currentPoints = this.data.get('points');
+        const newPoints = parseInt(currentPoints) - 1;
+        this.data.set('points', newPoints);
+        this.pointsTarget.innerHTML = ` | ${newPoints} points`;
+      }
+    })
+  }
+
+  sendVoteRequest(event, url, onSuccess) {
     event.preventDefault();
     const isAuthenticated = this.data.get('isauthenticated') == 'true';
     if (isAuthenticated === false) {
@@ -111,7 +104,7 @@ export default class extends Controller {
 
     const userID = this.data.get('userid');
     const commentID = this.data.get('commentid');
-    fetch('/comments/unvote', {
+    fetch(url, {
         method: 'POST',
         body: JSON.stringify({
           UserID: parseInt(userID),
@@ -122,15 +115,7 @@ export default class extends Controller {
         return res.json();
       })
       .then(data => {
-        console.log(data);
-        if (data.Result === 'Unvoted') {
-          this.voterTarget.setAttribute('data-action', 'click->comment#upvote');
-          this.voterWrapperTarget.classList.remove('upvoted');
-          const currentPoints = this.data.get('points');
-          const newPoints = parseInt(currentPoints) - 1;
-          this.data.set('points', newPoints);
-          this.pointsTarget.innerHTML = ` | ${newPoints} points`;
-        }
+        onSuccess(data);
       });
   }
 

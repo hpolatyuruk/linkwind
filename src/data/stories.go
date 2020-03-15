@@ -8,6 +8,11 @@ import (
 	"github.com/lib/pq"
 )
 
+const (
+	UPVOTE_TYPE_ID   int = 1
+	DOWNVOTE_TYPE_ID int = 2
+)
+
 /*Story represents the story which contains shared article or link info*/
 type Story struct {
 	ID           int
@@ -117,8 +122,8 @@ func UpVoteStory(userID int, storyID int) error {
 	if err != nil {
 		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
-	sql := "INSERT INTO storyvotes(storyid, userid) VALUES($1, $2)"
-	_, err = tran.Exec(sql, storyID, userID)
+	sql := "INSERT INTO storyvotes(storyid, userid, votetype) VALUES($1, $2, $3)"
+	_, err = tran.Exec(sql, storyID, userID, UPVOTE_TYPE_ID)
 	if err != nil {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Error occurred while inserting storyvotes. UserID: %d, StoryID: %d", userID, storyID), err}
@@ -142,8 +147,8 @@ func UpVoteStory(userID int, storyID int) error {
 	return nil
 }
 
-/*UnVoteStory unvotes the story on database*/
-func UnVoteStory(userID int, storyID int) error {
+/*RemoveStoryUpvote unvotes the story on database*/
+func RemoveStoryUpvote(userID int, storyID int) error {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
