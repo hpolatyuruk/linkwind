@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "acorn": "^6.4.1",
+    "minimist": "^1.2.2",
     "stimulus": "^1.1.1"
   }
 }
