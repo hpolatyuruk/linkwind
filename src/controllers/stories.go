@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 	"turkdev/src/data"
+	"turkdev/src/enums"
 	"turkdev/src/models"
 	"turkdev/src/shared"
 	"turkdev/src/templates"
@@ -23,8 +24,9 @@ const (
 
 /*StoryVoteModel represents the data in http request body to upvote story.*/
 type StoryVoteModel struct {
-	StoryID int
-	UserID  int
+	StoryID  int
+	UserID   int
+	VoteType enums.VoteType
 }
 
 /*StorySaveModel represents the data in http request body to save story.*/
@@ -390,8 +392,8 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-/*UpvoteStoryHandler runs when click to upvote story button. If not upvoted before by user, upvotes that story*/
-func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
+/*VoteStoryHandler runs when click to upvote and downvote story button. If not voted before by user, votes that story*/
+func VoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
 		return
@@ -399,40 +401,39 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 	var model StoryVoteModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	isUpvoted, err := data.CheckIfStoryUpVotedByUser(model.UserID, model.StoryID)
+	fmt.Println(model)
+	isUpvoted, err := data.CheckIfStoryVotedByUser(model.UserID, model.StoryID, model.VoteType)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error occured while checking if user already upvoted. Error : %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error occured while checking if user already voted. UserID: %d, StoryID: %d, VoteType: %d,  Error : %v", model.UserID, model.StoryID, model.VoteType, err), http.StatusInternalServerError)
 		return
 	}
 	if isUpvoted {
 		res, _ := json.Marshal(&JSONResponse{
-			Result: "AlreadyUpvoted",
+			Result: "AlreadyVoted",
 		})
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(res)
 		return
 	}
-	err = data.UpVoteStory(model.UserID, model.StoryID)
+	err = data.VoteStory(model.UserID, model.StoryID, model.VoteType)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error occured while upvoting story. Error : %v", err), http.StatusInternalServerError)
-	}
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error occured while increasing karma. Error : %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error occured while voting story. UserID: %d, StoryID: %d, VoteType: %d, Error : %v", model.UserID, model.StoryID, model.VoteType, err), http.StatusInternalServerError)
 	}
 	res, _ := json.Marshal(&JSONResponse{
-		Result: "Upvoted",
+		Result: "Voted",
 	})
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(res)
 }
 
-/*RemoveStoryUpvoteHandler handles unvote button. If a story voted by user before, this handler undo that operation*/
-func RemoveStoryUpvoteHandler(w http.ResponseWriter, r *http.Request) {
+/*RemoveStoryVoteHandler handles removing upvote and downvote button. If a story voted by user before, this handler undo that operation*/
+func RemoveStoryVoteHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		http.Error(w, "Unsupported request method. Only POST method is supported", http.StatusMethodNotAllowed)
 		return
@@ -445,9 +446,9 @@ func RemoveStoryUpvoteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isUpvoted, err := data.CheckIfStoryUpVotedByUser(model.UserID, model.StoryID)
+	isUpvoted, err := data.CheckIfStoryVotedByUser(model.UserID, model.StoryID, model.VoteType)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error occured while checking user story vote. Error : %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error occured while checking user story vote. UserID: %d, StoryID: %d, VoteType: %d, Error : %v", model.UserID, model.StoryID, model.VoteType, err), http.StatusInternalServerError)
 		return
 	}
 	if isUpvoted == false {
@@ -460,9 +461,9 @@ func RemoveStoryUpvoteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = data.RemoveStoryUpvote(model.UserID, model.StoryID)
+	err = data.RemoveStoryVote(model.UserID, model.StoryID, model.VoteType)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error occured while unvoting story. Error : %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error occured while unvoting story. UserID: %d, StoryID: %d, VoteType: %d, Error : %v", model.UserID, model.StoryID, model.VoteType, err), http.StatusInternalServerError)
 		return
 	}
 	res, _ := json.Marshal(&JSONResponse{
@@ -603,8 +604,7 @@ func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUs
 	}
 
 	if signedInUser != nil {
-		isUpvoted, err := data.CheckIfStoryUpVotedByUser(signedInUser.UserID, story.ID)
-
+		isUpvoted, err := data.CheckIfStoryVotedByUser(signedInUser.UserID, story.ID, enums.UpVote)
 		if err != nil {
 			// TODO: log error here
 			isUpvoted = false

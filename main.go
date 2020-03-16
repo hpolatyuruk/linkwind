@@ -48,15 +48,15 @@ func registerHandlers() {
 		middlewares.Error(controllers.StoryDetailHandler))
 
 	http.HandleFunc(
-		"/stories/upvote",
+		"/stories/vote",
 		middlewares.Middleware(
-			controllers.UpvoteStoryHandler,
+			controllers.VoteStoryHandler,
 			middlewares.Auth))
 
 	http.HandleFunc(
-		"/stories/remove/upvote",
+		"/stories/remove/vote",
 		middlewares.Middleware(
-			controllers.RemoveStoryUpvoteHandler,
+			controllers.RemoveStoryVoteHandler,
 			middlewares.Auth))
 
 	http.HandleFunc(

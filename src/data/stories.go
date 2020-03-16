@@ -4,13 +4,9 @@ import (
 	"fmt"
 	"math"
 	"time"
+	"turkdev/src/enums"
 
 	"github.com/lib/pq"
-)
-
-const (
-	UPVOTE_TYPE_ID   int = 1
-	DOWNVOTE_TYPE_ID int = 2
 )
 
 /*Story represents the story which contains shared article or link info*/
@@ -111,8 +107,12 @@ func GetStoryByID(storyID int) (*Story, error) {
 	return story, nil
 }
 
-/*UpVoteStory increases votes for story on database*/
-func UpVoteStory(userID int, storyID int) error {
+/*VoteStory votes (upvote, downvote) the story on database*/
+func VoteStory(userID, storyID int, voteType enums.VoteType) error {
+	voteUpdateSQL := "UPDATE stories SET upvotes = upvotes + 1 WHERE id = $1"
+	if voteType == enums.DownVote {
+		voteUpdateSQL = "UPDATE stories SET downvotes = downvotes + 1 WHERE id = $1"
+	}
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
@@ -123,22 +123,23 @@ func UpVoteStory(userID int, storyID int) error {
 		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
 	sql := "INSERT INTO storyvotes(storyid, userid, votetype) VALUES($1, $2, $3)"
-	_, err = tran.Exec(sql, storyID, userID, UPVOTE_TYPE_ID)
+	_, err = tran.Exec(sql, storyID, userID, voteType)
 	if err != nil {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Error occurred while inserting storyvotes. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
-	sql = "UPDATE stories SET upvotes = upvotes + 1 WHERE id = $1"
-	_, err = tran.Exec(sql, storyID)
+	_, err = tran.Exec(voteUpdateSQL, storyID)
 	if err != nil {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Error occurred while increasing story upvotes. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
-	sql = "UPDATE users SET karma = karma + 1 WHERE id = (SELECT userid FROM stories WHERE id = $1)"
-	_, err = tran.Exec(sql, storyID)
-	if err != nil {
-		tran.Rollback()
-		return &DBError{fmt.Sprintf("Error occurred while increasing user's karma. UserID: %d, StoryID: %d", userID, storyID), err}
+	if voteType == enums.UpVote {
+		sql = "UPDATE users SET karma = karma + 1 WHERE id = (SELECT userid FROM stories WHERE id = $1)"
+		_, err = tran.Exec(sql, storyID)
+		if err != nil {
+			tran.Rollback()
+			return &DBError{fmt.Sprintf("Error occurred while increasing user's karma. UserID: %d, StoryID: %d", userID, storyID), err}
+		}
 	}
 	err = tran.Commit()
 	if err != nil {
@@ -147,8 +148,32 @@ func UpVoteStory(userID int, storyID int) error {
 	return nil
 }
 
-/*RemoveStoryUpvote unvotes the story on database*/
-func RemoveStoryUpvote(userID int, storyID int) error {
+/*CheckIfStoryVotedByUser check if user already voted(upvote or downvote) to given story*/
+func CheckIfStoryVotedByUser(userID, storyID int, voteType enums.VoteType) (bool, error) {
+	db, err := connectToDB()
+	defer db.Close()
+	if err != nil {
+		return false, &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	sql := "SELECT COUNT(*) as count FROM storyvotes WHERE userid = $1 AND storyid = $2 AND votetype = $3"
+	row := db.QueryRow(sql, userID, storyID, voteType)
+	count := 0
+	err = row.Scan(&count)
+	if err != nil {
+		return false, &DBError{fmt.Sprintf("Cannot read db row. UserID: %d, StoryID: %d", userID, storyID), err}
+	}
+	if count > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+/*RemoveStoryVote removes the vote (upvote, downvote) of story on database*/
+func RemoveStoryVote(userID, storyID int, voteType enums.VoteType) error {
+	voteUpdateSQL := "UPDATE stories SET upvotes = upvotes - 1 WHERE id = $1"
+	if voteType == enums.DownVote {
+		voteUpdateSQL = "UPDATE stories SET downvotes = downvotes - 1 WHERE id = $1"
+	}
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
@@ -164,43 +189,24 @@ func RemoveStoryUpvote(userID int, storyID int) error {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Cannot delete story vote. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
-	sql = "UPDATE stories SET upvotes = upvotes - 1 WHERE id = $1"
-	_, err = tran.Exec(sql, storyID)
+	_, err = tran.Exec(voteUpdateSQL, storyID)
 	if err != nil {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Cannot update story's vote. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
-	sql = "UPDATE users SET karma = karma - 1 WHERE id = (SELECT userid FROM stories WHERE id = $1)"
-	_, err = tran.Exec(sql, storyID)
-	if err != nil {
-		tran.Rollback()
-		return &DBError{fmt.Sprintf("Error occurred while decreasing user's karma. UserID: %d, StoryID: %d", userID, storyID), err}
+	if voteType == enums.UpVote {
+		sql = "UPDATE users SET karma = karma - 1 WHERE id = (SELECT userid FROM stories WHERE id = $1)"
+		_, err = tran.Exec(sql, storyID)
+		if err != nil {
+			tran.Rollback()
+			return &DBError{fmt.Sprintf("Error occurred while decreasing user's karma. UserID: %d, StoryID: %d", userID, storyID), err}
+		}
 	}
 	err = tran.Commit()
 	if err != nil {
 		return &DBError{fmt.Sprintf("Cannot commit transaction. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
 	return nil
-}
-
-/*CheckIfStoryUpVotedByUser check if user already upvoted to given story*/
-func CheckIfStoryUpVotedByUser(userID int, storyID int) (bool, error) {
-	db, err := connectToDB()
-	defer db.Close()
-	if err != nil {
-		return false, &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
-	}
-	sql := "SELECT COUNT(*) as count FROM storyvotes WHERE userid = $1 and storyid = $2"
-	row := db.QueryRow(sql, userID, storyID)
-	count := 0
-	err = row.Scan(&count)
-	if err != nil {
-		return false, &DBError{fmt.Sprintf("Cannot read db row. UserID: %d, StoryID: %d", userID, storyID), err}
-	}
-	if count > 0 {
-		return true, nil
-	}
-	return false, nil
 }
 
 /*SaveStory saves the given story to user's favorites*/

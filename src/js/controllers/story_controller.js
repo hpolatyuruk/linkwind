@@ -6,9 +6,14 @@ export default class extends Controller {
   static targets = ['points', 'voterWrapper', 'voter', 'saver'];
 
   upvote(event) {
-    this.sendRequest(event, '/stories/upvote', (data) => {
-      if (data.Result === 'Upvoted') {
-        this.voterTarget.setAttribute('data-action', 'click->story#unvote');
+    const model = {
+      UserID: parseInt(this.data.get('userid')),
+      StoryID: parseInt(this.data.get('storyid')),
+      VoteType: 1, // upvote
+    }
+    this.sendRequest(event, '/stories/vote', model, (res) => {
+      if (res.Result === 'Voted') {
+        this.voterTarget.setAttribute('data-action', 'click->story#removeUpvote');
         this.voterWrapperTarget.classList.add('upvoted');
         const currentPoints = this.data.get('points');
         const newPoints = parseInt(currentPoints) + 1;
@@ -18,9 +23,14 @@ export default class extends Controller {
     })
   }
 
-  unvote(event) {
-    this.sendRequest(event, '/stories/remove/upvote', (data) => {
-      if (data.Result === 'Unvoted') {
+  removeUpvote(event) {
+    const model = {
+      UserID: parseInt(this.data.get('userid')),
+      StoryID: parseInt(this.data.get('storyid')),
+      VoteType: 1, // upvote
+    }
+    this.sendRequest(event, '/stories/remove/vote', model, (res) => {
+      if (res.Result === 'Unvoted') {
         this.voterTarget.setAttribute('data-action', 'click->story#upvote');
         this.voterWrapperTarget.classList.remove('upvoted');
         const currentPoints = this.data.get('points');
@@ -31,9 +41,21 @@ export default class extends Controller {
     })
   }
 
+  downvote(event) {
+
+  }
+
+  removeDownvote(event) {
+
+  }
+
   save(event) {
-    this.sendRequest(event, '/stories/save', (data) => {
-      if (data.Result === 'Saved') {
+    const model = {
+      UserID: parseInt(this.data.get('userid')),
+      StoryID: parseInt(this.data.get('storyid')),
+    }
+    this.sendRequest(event, '/stories/save', model, (res) => {
+      if (res.Result === 'Saved') {
         this.saverTarget.setAttribute('data-action', 'click->story#unsave');
         this.saverTarget.innerHTML = 'unsave';
       }
@@ -41,35 +63,34 @@ export default class extends Controller {
   }
 
   unsave(event) {
-    this.sendRequest(event, '/stories/unsave', (data) => {
-      if (data.Result === 'Unsaved') {
+    const model = {
+      UserID: parseInt(this.data.get('userid')),
+      StoryID: parseInt(this.data.get('storyid')),
+    }
+    this.sendRequest(event, '/stories/unsave', model, (res) => {
+      if (res.Result === 'Unsaved') {
         this.saverTarget.setAttribute('data-action', 'click->story#save');
         this.saverTarget.innerHTML = 'save';
       }
     })
   }
 
-  sendRequest(event, url, onSuccess) {
+  sendRequest(event, url, model, onSuccess) {
     event.preventDefault();
     const isAuthenticated = this.data.get('isauthenticated') == 'true';
     if (isAuthenticated === false) {
       window.location = '/signin';
       return;
     }
-    const userID = this.data.get('userid');
-    const storyID = this.data.get('storyid');
     fetch(url, {
         method: 'POST',
-        body: JSON.stringify({
-          StoryID: parseInt(storyID),
-          UserID: parseInt(userID)
-        })
+        body: JSON.stringify(model)
       })
       .then(res => {
         return res.json();
       })
-      .then(data => {
-        onSuccess(data);
+      .then(res => {
+        onSuccess(res);
       });
   }
 }
