@@ -3,7 +3,7 @@ import {
 } from 'stimulus';
 
 export default class extends Controller {
-  static targets = ['points', 'voterWrapper', 'voter', 'saver'];
+  static targets = ['points', 'voterWrapper', 'upvoter', 'downvoter', 'saver'];
 
   upvote(event) {
     const model = {
@@ -13,7 +13,10 @@ export default class extends Controller {
     }
     this.sendRequest(event, '/stories/vote', model, (res) => {
       if (res.Result === 'Voted') {
-        this.voterTarget.setAttribute('data-action', 'click->story#removeUpvote');
+        this.upvoterTarget.setAttribute('data-action', 'click->story#removeUpvote');
+        if (this.voterWrapperTarget.classList.contains('downvoted')) {
+          this.voterWrapperTarget.classList.remove('downvoted');
+        }
         this.voterWrapperTarget.classList.add('upvoted');
         const currentPoints = this.data.get('points');
         const newPoints = parseInt(currentPoints) + 1;
@@ -31,7 +34,7 @@ export default class extends Controller {
     }
     this.sendRequest(event, '/stories/remove/vote', model, (res) => {
       if (res.Result === 'Unvoted') {
-        this.voterTarget.setAttribute('data-action', 'click->story#upvote');
+        this.upvoterTarget.setAttribute('data-action', 'click->story#upvote');
         this.voterWrapperTarget.classList.remove('upvoted');
         const currentPoints = this.data.get('points');
         const newPoints = parseInt(currentPoints) - 1;
@@ -42,11 +45,34 @@ export default class extends Controller {
   }
 
   downvote(event) {
-
+    const model = {
+      UserID: parseInt(this.data.get('userid')),
+      StoryID: parseInt(this.data.get('storyid')),
+      VoteType: 2, // downvote
+    }
+    this.sendRequest(event, '/stories/vote', model, (res) => {
+      if (res.Result === 'Voted') {
+        if (this.voterWrapperTarget.classList.contains('upvoted')) {
+          this.voterWrapperTarget.classList.remove('upvoted');
+        }
+        this.voterWrapperTarget.classList.add('downvoted');
+        this.downvoterTarget.setAttribute('data-action', 'click->story#removeDownvote');
+      }
+    })
   }
 
   removeDownvote(event) {
-
+    const model = {
+      UserID: parseInt(this.data.get('userid')),
+      StoryID: parseInt(this.data.get('storyid')),
+      VoteType: 2, // downvote
+    }
+    this.sendRequest(event, '/stories/remove/vote', model, (res) => {
+      if (res.Result === 'Unvoted') {
+        this.voterWrapperTarget.classList.remove('downvoted');
+        this.downvoterTarget.setAttribute('data-action', 'click->story#downvote');
+      }
+    })
   }
 
   save(event) {

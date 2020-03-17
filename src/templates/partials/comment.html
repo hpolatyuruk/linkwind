@@ -5,11 +5,11 @@
   data-comment-isauthenticated="{{if .SignedInUser}}true{{else}}false{{end}}" data-comment-points="{{.Points}}"
   class="flex flex-wrap w-full mt-3 {{if not .IsRoot}}pl-6{{end}}">
   <li class="w-full">
-    <div data-target="comment.voterWrapper" class="flex-row w-full {{if .IsUpvotedBySignedInUser}} upvoted {{end}}">
+    <div data-target="comment.voterWrapper" class="flex-row w-full {{if .IsUpvoted}} upvoted {{end}}">
       <div class="voters">
         <a data-target="comment.voter"
-          data-action="{{if .IsUpvotedBySignedInUser}} click->comment#unvote {{else}} click->comment#upvote {{end}}"
-          class="upvoter" title="{{if .IsUpvotedBySignedInUser}}Remove vote{{else}}Add upvote{{end}}"></a>
+          data-action="{{if .IsUpvoted}} click->comment#unvote {{else}} click->comment#upvote {{end}}" class="upvoter"
+          title="{{if .IsUpvoted}}Remove vote{{else}}Add upvote{{end}}"></a>
       </div>
       <div class="text-gray-600 text-xs font-medium">
         <span>{{.UserName}}</span>

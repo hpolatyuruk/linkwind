@@ -1,6 +1,7 @@
 package data
 
 import (
+	"database/sql"
 	"fmt"
 	"math"
 	"time"
@@ -148,24 +149,24 @@ func VoteStory(userID, storyID int, voteType enums.VoteType) error {
 	return nil
 }
 
-/*CheckIfStoryVotedByUser check if user already voted(upvote or downvote) to given story*/
-func CheckIfStoryVotedByUser(userID, storyID int, voteType enums.VoteType) (bool, error) {
+/*GetStoryVoteByUser check if user already voted(upvote or downvote) to given story*/
+func GetStoryVoteByUser(userID, storyID int) (*enums.VoteType, error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
-		return false, &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
+		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
-	sql := "SELECT COUNT(*) as count FROM storyvotes WHERE userid = $1 AND storyid = $2 AND votetype = $3"
-	row := db.QueryRow(sql, userID, storyID, voteType)
-	count := 0
-	err = row.Scan(&count)
+	query := "SELECT votetype as count FROM storyvotes WHERE userid = $1 AND storyid = $2"
+	row := db.QueryRow(query, userID, storyID)
+	var voteType *enums.VoteType = nil
+	err = row.Scan(&voteType)
 	if err != nil {
-		return false, &DBError{fmt.Sprintf("Cannot read db row. UserID: %d, StoryID: %d", userID, storyID), err}
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, &DBError{fmt.Sprintf("Cannot read db row. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
-	if count > 0 {
-		return true, nil
-	}
-	return false, nil
+	return voteType, nil
 }
 
 /*RemoveStoryVote removes the vote (upvote, downvote) of story on database*/

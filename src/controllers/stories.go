@@ -405,20 +405,27 @@ func VoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Println(model)
-	isUpvoted, err := data.CheckIfStoryVotedByUser(model.UserID, model.StoryID, model.VoteType)
+	voteType, err := data.GetStoryVoteByUser(model.UserID, model.StoryID)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error occured while checking if user already voted. UserID: %d, StoryID: %d, VoteType: %d,  Error : %v", model.UserID, model.StoryID, model.VoteType, err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error occured while getting user's current vote. UserID: %d, StoryID: %d, VoteType: %d,  Error : %v", model.UserID, model.StoryID, model.VoteType, err), http.StatusInternalServerError)
 		return
 	}
-	if isUpvoted {
-		res, _ := json.Marshal(&JSONResponse{
-			Result: "AlreadyVoted",
-		})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(res)
-		return
+	if voteType != nil {
+		if model.VoteType == *voteType {
+			res, _ := json.Marshal(&JSONResponse{
+				Result: "AlreadyVoted",
+			})
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(res)
+			return
+		}
+		// Remove story's previous vote given by user to make sure that there can be only one type of vote at a time
+		err = data.RemoveStoryVote(model.UserID, model.StoryID, *voteType)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error occured while removing user's previous vote. UserID: %d, StoryID: %d, VoteType: %d,  Error : %v", model.UserID, model.StoryID, *voteType, err), http.StatusInternalServerError)
+			return
+		}
 	}
 	err = data.VoteStory(model.UserID, model.StoryID, model.VoteType)
 	if err != nil {
@@ -446,12 +453,12 @@ func RemoveStoryVoteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isUpvoted, err := data.CheckIfStoryVotedByUser(model.UserID, model.StoryID, model.VoteType)
+	voteType, err := data.GetStoryVoteByUser(model.UserID, model.StoryID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured while checking user story vote. UserID: %d, StoryID: %d, VoteType: %d, Error : %v", model.UserID, model.StoryID, model.VoteType, err), http.StatusInternalServerError)
 		return
 	}
-	if isUpvoted == false {
+	if voteType == nil {
 		res, _ := json.Marshal(&JSONResponse{
 			Result: "AlreadyUnvoted",
 		})
@@ -460,7 +467,6 @@ func RemoveStoryVoteHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(res)
 		return
 	}
-
 	err = data.RemoveStoryVote(model.UserID, model.StoryID, model.VoteType)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured while unvoting story. UserID: %d, StoryID: %d, VoteType: %d, Error : %v", model.UserID, model.StoryID, model.VoteType, err), http.StatusInternalServerError)
@@ -588,26 +594,33 @@ func mapStoriesToStoryViewModel(stories *[]data.Story, signedInUser *models.Sign
 func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUserViewModel) *models.StoryViewModel {
 	uri, _ := url.Parse(story.URL)
 	var viewModel = models.StoryViewModel{
-		ID:                      story.ID,
-		Title:                   story.Title,
-		URL:                     story.URL,
-		Text:                    template.HTML(strings.ReplaceAll(story.Text, "\n", "<br />")),
-		Host:                    uri.Hostname(),
-		Points:                  story.UpVotes, // TODO: call point calculation function here
-		UserID:                  story.UserID,
-		UserName:                story.UserName,
-		CommentCount:            story.CommentCount,
-		IsUpvotedBySignedInUser: false,
-		IsSavedBySignedInUser:   false,
-		SubmittedOnText:         shared.DateToString(story.SubmittedOn),
-		SignedInUser:            signedInUser,
+		ID:              story.ID,
+		Title:           story.Title,
+		URL:             story.URL,
+		Text:            template.HTML(strings.ReplaceAll(story.Text, "\n", "<br />")),
+		Host:            uri.Hostname(),
+		Points:          story.UpVotes, // TODO: call point calculation function here
+		UserID:          story.UserID,
+		UserName:        story.UserName,
+		CommentCount:    story.CommentCount,
+		IsUpvoted:       false,
+		IsDownvoted:     false,
+		IsSaved:         false,
+		SubmittedOnText: shared.DateToString(story.SubmittedOn),
+		SignedInUser:    signedInUser,
 	}
 
 	if signedInUser != nil {
-		isUpvoted, err := data.CheckIfStoryVotedByUser(signedInUser.UserID, story.ID, enums.UpVote)
+		voteType, err := data.GetStoryVoteByUser(signedInUser.UserID, story.ID)
 		if err != nil {
 			// TODO: log error here
-			isUpvoted = false
+		}
+		if voteType != nil {
+			if *voteType == enums.UpVote {
+				viewModel.IsUpvoted = true
+			} else if *voteType == enums.DownVote {
+				viewModel.IsDownvoted = true
+			}
 		}
 
 		isSaved, err := data.CheckIfUserSavedStory(signedInUser.UserID, story.ID)
@@ -616,8 +629,8 @@ func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUs
 			// TODO: log error here
 			isSaved = false
 		}
-		viewModel.IsUpvotedBySignedInUser = isUpvoted
-		viewModel.IsSavedBySignedInUser = isSaved
+
+		viewModel.IsSaved = isSaved
 	}
 	return &viewModel
 }
@@ -642,7 +655,7 @@ func mapCommentToCommentViewModel(comment *data.Comment, signedInUser *models.Si
 		if err != nil {
 			isUpvoted = false
 		}
-		model.IsUpvotedBySignedInUser = isUpvoted
+		model.IsUpvoted = isUpvoted
 	}
 	return model
 }
