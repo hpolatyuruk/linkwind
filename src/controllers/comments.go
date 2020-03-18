@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 	"turkdev/src/data"
+	"turkdev/src/enums"
 	"turkdev/src/models"
 	"turkdev/src/shared"
 	"turkdev/src/templates"
@@ -17,6 +18,7 @@ import (
 type CommentVoteModel struct {
 	CommentID int
 	UserID    int
+	VoteType  enums.VoteType
 }
 
 /*ReplyModel represents the data to reply to comment.*/
@@ -112,13 +114,12 @@ func ReplyToCommentHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(output))
 }
 
-/*UpvoteCommentHandler runs when click to upvote comment button. If not upvoted before by user, upvotes that comment*/
-func UpvoteCommentHandler(w http.ResponseWriter, r *http.Request) {
+/*VoteCommentHandler runs when click to upvote and downvote comment button. If it's not voted before by user, votes that comment*/
+func VoteCommentHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
 		return
 	}
-
 	var model CommentVoteModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
@@ -126,29 +127,36 @@ func UpvoteCommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isUpvoted, err := data.CheckIfCommentUpVotedByUser(model.UserID, model.CommentID)
+	voteType, err := data.GetCommentVoteByUser(model.UserID, model.CommentID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured while checking if user already upvoted. Error : %v", err), http.StatusInternalServerError)
 		return
 	}
-	if isUpvoted {
-		res, _ := json.Marshal(&JSONResponse{
-			Result: "AlreadyUpvoted",
-		})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(res)
-		return
+	if voteType != nil {
+		if model.VoteType == *voteType {
+			res, _ := json.Marshal(&JSONResponse{
+				Result: "AlreadyUpvoted",
+			})
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(res)
+			return
+		}
+		//Remove comment's previous vote given by user to make sure that there can be only one type of vote at a time
+		err = data.RemoveCommentVote(model.UserID, model.CommentID, *voteType)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error occured while removing user's previous vote. UserID: %d, CommentID: %d, VoteType: %d,  Error : %v", model.UserID, model.CommentID, *voteType, err), http.StatusInternalServerError)
+			return
+		}
 	}
-
-	err = data.UpVoteComment(model.UserID, model.CommentID)
+	err = data.VoteComment(model.UserID, model.CommentID, model.VoteType)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, fmt.Sprintf("Error occured while upvoting story. Error : %v", err), http.StatusInternalServerError)
 		return
 	}
 	res, _ := json.Marshal(&JSONResponse{
-		Result: "Upvoted",
+		Result: "Voted",
 	})
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -161,20 +169,18 @@ func RemoveCommentVoteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unsupported request method. Only POST method is supported", http.StatusMethodNotAllowed)
 		return
 	}
-
 	var model CommentVoteModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	isUpvoted, err := data.CheckIfCommentUpVotedByUser(model.UserID, model.CommentID)
+	voteType, err := data.GetCommentVoteByUser(model.UserID, model.CommentID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured while checking user story vote. Error : %v", err), http.StatusInternalServerError)
 		return
 	}
-	if isUpvoted == false {
+	if voteType == nil {
 		res, _ := json.Marshal(&JSONResponse{
 			Result: "AlreadyUnvoted",
 		})
@@ -184,7 +190,7 @@ func RemoveCommentVoteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = data.RemoveCommentVote(model.UserID, model.CommentID)
+	err = data.RemoveCommentVote(model.UserID, model.CommentID, model.VoteType)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error occured while unvoting story. Error : %v", err), http.StatusInternalServerError)
 		return

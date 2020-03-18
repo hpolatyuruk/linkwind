@@ -16,6 +16,7 @@ export default class extends Controller {
         this.upvoterTarget.setAttribute('data-action', 'click->story#removeUpvote');
         if (this.voterWrapperTarget.classList.contains('downvoted')) {
           this.voterWrapperTarget.classList.remove('downvoted');
+          this.downvoterTarget.setAttribute('data-action', 'click->story#downvote');
         }
         this.voterWrapperTarget.classList.add('upvoted');
         const currentPoints = this.data.get('points');
@@ -54,6 +55,7 @@ export default class extends Controller {
       if (res.Result === 'Voted') {
         if (this.voterWrapperTarget.classList.contains('upvoted')) {
           this.voterWrapperTarget.classList.remove('upvoted');
+          this.upvoterTarget.setAttribute('data-action', 'click->story#upvote');
         }
         this.voterWrapperTarget.classList.add('downvoted');
         this.downvoterTarget.setAttribute('data-action', 'click->story#removeDownvote');

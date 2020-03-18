@@ -3,7 +3,7 @@ import {
 } from 'stimulus';
 
 export default class extends Controller {
-  static targets = ['replyForm', 'replyText', 'replyOutput', 'voter', 'voterWrapper', 'points'];
+  static targets = ['replyForm', 'replyText', 'replyOutput', 'upvoter', 'downvoter', 'voterWrapper', 'points'];
 
   showReplyBox(event) {
     event.preventDefault();
@@ -69,9 +69,18 @@ export default class extends Controller {
   }
 
   upvote(event) {
-    this.sendVoteRequest(event, '/comments/upvote', (data) => {
-      if (data.Result === 'Upvoted') {
-        this.voterTarget.setAttribute('data-action', 'click->comment#unvote');
+    const model = {
+      UserID: parseInt(this.data.get('userid')),
+      CommentID: parseInt(this.data.get('commentid')),
+      VoteType: 1, //upvote
+    }
+    this.sendVoteRequest(event, '/comments/vote', model, (res) => {
+      if (res.Result === 'Voted') {
+        this.upvoterTarget.setAttribute('data-action', 'click->comment#removeUpvote');
+        if (this.voterWrapperTarget.classList.contains('downvoted')) {
+          this.voterWrapperTarget.classList.remove('downvoted');
+          this.downvoterTarget.setAttribute('data-action', 'click->comment#upvote');
+        }
         this.voterWrapperTarget.classList.add('upvoted');
         const currentPoints = this.data.get('points');
         const newPoints = parseInt(currentPoints) + 1;
@@ -81,10 +90,15 @@ export default class extends Controller {
     })
   }
 
-  unvote(event) {
-    this.sendVoteRequest(event, '/comments/remove/upvote', (data) => {
-      if (data.Result === 'Unvoted') {
-        this.voterTarget.setAttribute('data-action', 'click->comment#upvote');
+  removeUpvote(event) {
+    const model = {
+      UserID: parseInt(this.data.get('userid')),
+      CommentID: parseInt(this.data.get('commentid')),
+      VoteType: 1, //upvote
+    }
+    this.sendVoteRequest(event, '/comments/remove/vote', model, (res) => {
+      if (res.Result === 'Unvoted') {
+        this.upvoterTarget.setAttribute('data-action', 'click->comment#upvote');
         this.voterWrapperTarget.classList.remove('upvoted');
         const currentPoints = this.data.get('points');
         const newPoints = parseInt(currentPoints) - 1;
@@ -94,28 +108,54 @@ export default class extends Controller {
     })
   }
 
-  sendVoteRequest(event, url, onSuccess) {
+  downvote(event) {
+    const model = {
+      UserID: parseInt(this.data.get('userid')),
+      CommentID: parseInt(this.data.get('commentid')),
+      VoteType: 2, //downvote
+    }
+    this.sendVoteRequest(event, '/comments/vote', model, (res) => {
+      if (res.Result === 'Voted') {
+        this.downvoterTarget.setAttribute('data-action', 'click->comment#removeDownvote');
+        if (this.voterWrapperTarget.classList.contains('upvoted')) {
+          this.voterWrapperTarget.classList.remove('upvoted');
+          this.upvoterTarget.setAttribute('data-action', 'click->comment#upvote');
+        }
+        this.voterWrapperTarget.classList.add('downvoted');
+      }
+    })
+  }
+
+  removeDownvote(event) {
+    const model = {
+      UserID: parseInt(this.data.get('userid')),
+      CommentID: parseInt(this.data.get('commentid')),
+      VoteType: 2, //downvote
+    }
+    this.sendVoteRequest(event, '/comments/remove/vote', model, (res) => {
+      if (res.Result === 'Unvoted') {
+        this.voterWrapperTarget.classList.remove('downvoted');
+        this.downvoterTarget.setAttribute('data-action', 'click->comment#downvote');
+      }
+    })
+  }
+
+  sendVoteRequest(event, url, model, onSuccess) {
     event.preventDefault();
     const isAuthenticated = this.data.get('isauthenticated') == 'true';
     if (isAuthenticated === false) {
       window.location = '/signin';
       return;
     }
-
-    const userID = this.data.get('userid');
-    const commentID = this.data.get('commentid');
     fetch(url, {
         method: 'POST',
-        body: JSON.stringify({
-          UserID: parseInt(userID),
-          CommentID: parseInt(commentID)
-        })
+        body: JSON.stringify(model)
       })
       .then(res => {
         return res.json();
       })
-      .then(data => {
-        onSuccess(data);
+      .then(res => {
+        onSuccess(res);
       });
   }
 

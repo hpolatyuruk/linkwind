@@ -156,7 +156,7 @@ func GetStoryVoteByUser(userID, storyID int) (*enums.VoteType, error) {
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
-	query := "SELECT votetype as count FROM storyvotes WHERE userid = $1 AND storyid = $2"
+	query := "SELECT votetype FROM storyvotes WHERE userid = $1 AND storyid = $2"
 	row := db.QueryRow(query, userID, storyID)
 	var voteType *enums.VoteType = nil
 	err = row.Scan(&voteType)

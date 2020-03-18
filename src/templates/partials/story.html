@@ -9,9 +9,11 @@
       <a data-target="story.upvoter"
         data-action="{{if .IsUpvoted}} click->story#removeUpvote {{else}} click->story#upvote {{end}}"
         class="upvoter"></a>
+      {{if .ShowDownvoteBtn}}
       <a data-target="story.downvoter"
         data-action="{{if .IsDownvoted}} click->story#removeDownvote {{else}} click->story#downvote {{end}}"
         class="downvoter"></a>
+      {{end}}
     </div>
     <div>
       <a href="{{if .URL}}{{.URL}}{{else}}/stories/detail?id={{.ID}}{{end}}"

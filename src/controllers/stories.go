@@ -20,6 +20,8 @@ import (
 const (
 	/*DefaultPageSize represents story count to be listed per page*/
 	DefaultPageSize = 15
+	/*MinKarmaToDownVote represents minimum number of karma a user needs to downvote a story or comment*/
+	MinKarmaToDownVote = 100
 )
 
 /*StoryVoteModel represents the data in http request body to upvote story.*/
@@ -89,12 +91,7 @@ func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.Respon
 	if isAuthenticated {
 		customerID = user.CustomerID
 		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = &models.SignedInUserViewModel{
-			UserID:     user.ID,
-			UserName:   user.UserName,
-			CustomerID: user.CustomerID,
-			Email:      user.Email,
-		}
+		model.SignedInUser = mapUserClaimsToSignedUserViewModel(user)
 	}
 	var page int = getPage(r)
 	stories, err := fnGetStories(customerID, page, DefaultPageSize)
@@ -146,12 +143,7 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 
 	if isAuthenticated {
 		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = &models.SignedInUserViewModel{
-			UserID:     user.ID,
-			UserName:   user.UserName,
-			CustomerID: user.CustomerID,
-			Email:      user.Email,
-		}
+		model.SignedInUser = mapUserClaimsToSignedUserViewModel(user)
 	}
 
 	var page int = getPage(r)
@@ -188,16 +180,10 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	if isAuthenticated {
 		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = &models.SignedInUserViewModel{
-			UserID:     user.ID,
-			UserName:   user.UserName,
-			CustomerID: user.CustomerID,
-			Email:      user.Email,
-		}
+		model.SignedInUser = mapUserClaimsToSignedUserViewModel(user)
 	}
 	var page int = getPage(r)
 	stories, err := data.GetUserSubmittedStories(user.ID, page, DefaultPageSize)
-	fmt.Print(len(*stories))
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -234,12 +220,7 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	if isAuthenticated {
 		userID = user.ID
 		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = &models.SignedInUserViewModel{
-			UserID:     user.ID,
-			UserName:   user.UserName,
-			CustomerID: user.CustomerID,
-			Email:      user.Email,
-		}
+		model.SignedInUser = mapUserClaimsToSignedUserViewModel(user)
 	}
 	var page int = getPage(r)
 	stories, err := data.GetUserUpvotedStories(userID, page, DefaultPageSize)
@@ -379,12 +360,7 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	if isAuth {
 		model.IsAuthenticated = true
-		model.SignedInUser = &models.SignedInUserViewModel{
-			UserID:     signedInUserClaims.ID,
-			CustomerID: signedInUserClaims.CustomerID,
-			Email:      signedInUserClaims.Email,
-			UserName:   signedInUserClaims.UserName,
-		}
+		model.SignedInUser = mapUserClaimsToSignedUserViewModel(signedInUserClaims)
 	}
 	model.Story = mapStoryToStoryViewModel(story, model.SignedInUser)
 	model.Comments = mapCommentsToViewModelsWithChildren(comments, model.SignedInUser, storyID)
@@ -401,7 +377,6 @@ func VoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 	var model StoryVoteModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
-		fmt.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -489,14 +464,12 @@ func SaveStoryHandler(w http.ResponseWriter, r *http.Request) {
 	var model StorySaveModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
-		fmt.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	isSaved, err := data.CheckIfUserSavedStory(model.UserID, model.StoryID)
 	if err != nil {
-		fmt.Println(err)
 		http.Error(w, "An error occured while parsing json.", http.StatusInternalServerError)
 		return
 	}
@@ -513,7 +486,6 @@ func SaveStoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = data.SaveStory(model.UserID, model.StoryID)
 	if err != nil {
-		fmt.Println(err)
 		http.Error(w, "Error occured while saving story", http.StatusInternalServerError)
 		return
 	}
@@ -536,14 +508,12 @@ func UnSaveStoryHandler(w http.ResponseWriter, r *http.Request) {
 	var model StorySaveModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
-		fmt.Println(err)
 		http.Error(w, "An error occured while parsing json.", http.StatusBadRequest)
 		return
 	}
 
 	isSaved, err := data.CheckIfUserSavedStory(model.UserID, model.StoryID)
 	if err != nil {
-		fmt.Println(err)
 		http.Error(w, "An error occured while unsaving json.", http.StatusInternalServerError)
 		return
 	}
@@ -560,7 +530,6 @@ func UnSaveStoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = data.UnSaveStory(model.UserID, model.StoryID)
 	if err != nil {
-		fmt.Println(err)
 		http.Error(w, "Error occured when unsave story", http.StatusInternalServerError)
 		return
 	}
@@ -606,11 +575,13 @@ func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUs
 		IsUpvoted:       false,
 		IsDownvoted:     false,
 		IsSaved:         false,
+		ShowDownvoteBtn: false,
 		SubmittedOnText: shared.DateToString(story.SubmittedOn),
 		SignedInUser:    signedInUser,
 	}
 
 	if signedInUser != nil {
+		viewModel.ShowDownvoteBtn = signedInUser.Karma > MinKarmaToDownVote
 		voteType, err := data.GetStoryVoteByUser(signedInUser.UserID, story.ID)
 		if err != nil {
 			// TODO: log error here
@@ -629,7 +600,6 @@ func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUs
 			// TODO: log error here
 			isSaved = false
 		}
-
 		viewModel.IsSaved = isSaved
 	}
 	return &viewModel
@@ -651,11 +621,19 @@ func mapCommentToCommentViewModel(comment *data.Comment, signedInUser *models.Si
 		model.IsRoot = true
 	}
 	if signedInUser != nil {
-		isUpvoted, err := data.CheckIfCommentUpVotedByUser(signedInUser.UserID, comment.ID)
+		model.ShowDownvoteBtn = signedInUser.Karma > MinKarmaToDownVote
+		voteType, err := data.GetCommentVoteByUser(signedInUser.UserID, comment.ID)
 		if err != nil {
-			isUpvoted = false
+			// TODO: Log here
 		}
-		model.IsUpvoted = isUpvoted
+		if voteType != nil {
+			if *voteType == enums.UpVote {
+				model.IsUpvoted = true
+			}
+			if *voteType == enums.DownVote {
+				model.IsDownvoted = true
+			}
+		}
 	}
 	return model
 }
@@ -673,4 +651,14 @@ func mapCommentsToViewModelsWithChildren(comments *[]data.Comment, signedInUser 
 		viewModels = append(viewModels, viewModel)
 	}
 	return &viewModels
+}
+
+func mapUserClaimsToSignedUserViewModel(signedInUserClaims *shared.SignedInUserClaims) *models.SignedInUserViewModel {
+	return &models.SignedInUserViewModel{
+		UserID:     signedInUserClaims.ID,
+		CustomerID: signedInUserClaims.CustomerID,
+		Email:      signedInUserClaims.Email,
+		UserName:   signedInUserClaims.UserName,
+		Karma:      signedInUserClaims.Karma,
+	}
 }

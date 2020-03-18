@@ -84,13 +84,13 @@ func registerHandlers() {
 			middlewares.Auth))
 
 	http.HandleFunc(
-		"/comments/upvote",
+		"/comments/vote",
 		middlewares.Middleware(
-			controllers.UpvoteCommentHandler,
+			controllers.VoteCommentHandler,
 			middlewares.Auth))
 
 	http.HandleFunc(
-		"/comments/remove/upvote",
+		"/comments/remove/vote",
 		middlewares.Middleware(
 			controllers.RemoveCommentVoteHandler,
 			middlewares.Auth))

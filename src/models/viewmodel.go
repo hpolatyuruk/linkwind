@@ -7,6 +7,7 @@ type SignedInUserViewModel struct {
 	CustomerID int
 	UserName   string
 	Email      string
+	Karma      int
 }
 
 type Paging struct {
@@ -39,6 +40,7 @@ type StoryViewModel struct {
 	IsSaved         bool
 	IsUpvoted       bool
 	IsDownvoted     bool
+	ShowDownvoteBtn bool
 	SignedInUser    *SignedInUserViewModel
 }
 
@@ -52,6 +54,7 @@ type CommentViewModel struct {
 	CommentedOnText string
 	IsUpvoted       bool
 	IsDownvoted     bool
+	ShowDownvoteBtn bool
 	IsRoot          bool
 	ParentID        int
 	ChildComments   []CommentViewModel
