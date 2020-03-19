@@ -1,10 +1,29 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"time"
 	"turkdev/src/controllers"
 	"turkdev/src/middlewares"
+
+	"github.com/getsentry/sentry-go"
 )
+
+func init() {
+	err := sentry.Init(sentry.ClientOptions{
+		// Either set your DSN here or set the SENTRY_DSN environment variable.
+		Dsn: "https://0045a83f06f1493c9c6aa1a063570e3a@sentry.io/5167796",
+		// Enable printing of SDK debug messages.
+		// Useful when getting started or trying to figure something out.
+		Debug: false,
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
+
+	defer sentry.Flush(2 * time.Second)
+}
 
 func main() {
 

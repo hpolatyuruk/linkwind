@@ -14,6 +14,8 @@ import (
 	"turkdev/src/models"
 	"turkdev/src/shared"
 	"turkdev/src/templates"
+
+	"github.com/getsentry/sentry-go"
 )
 
 const (
@@ -197,7 +199,6 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	stories, err := data.GetUserSubmittedStories(user.ID, page, DefaultPageSize)
 	fmt.Print(len(*stories))
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	storiesCount, err := data.GetUserSubmittedStoriesCount(user.ID)
@@ -399,11 +400,13 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 	var model StoryVoteModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	isUpvoted, err := data.CheckIfStoryUpVotedByUser(model.UserID, model.StoryID)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, fmt.Sprintf("Error occured while checking if user already upvoted. Error : %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -418,9 +421,11 @@ func UpvoteStoryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = data.UpVoteStory(model.UserID, model.StoryID)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, fmt.Sprintf("Error occured while upvoting story. Error : %v", err), http.StatusInternalServerError)
 	}
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, fmt.Sprintf("Error occured while increasing karma. Error : %v", err), http.StatusInternalServerError)
 	}
 	res, _ := json.Marshal(&JSONResponse{
@@ -441,12 +446,14 @@ func RemoveStoryUpvoteHandler(w http.ResponseWriter, r *http.Request) {
 	var model StoryVoteModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	isUpvoted, err := data.CheckIfStoryUpVotedByUser(model.UserID, model.StoryID)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, fmt.Sprintf("Error occured while checking user story vote. Error : %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -462,6 +469,7 @@ func RemoveStoryUpvoteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = data.RemoveStoryUpvote(model.UserID, model.StoryID)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, fmt.Sprintf("Error occured while unvoting story. Error : %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -482,14 +490,14 @@ func SaveStoryHandler(w http.ResponseWriter, r *http.Request) {
 	var model StorySaveModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
-		fmt.Println(err)
+		sentry.CaptureException(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	isSaved, err := data.CheckIfUserSavedStory(model.UserID, model.StoryID)
 	if err != nil {
-		fmt.Println(err)
+		sentry.CaptureException(err)
 		http.Error(w, "An error occured while parsing json.", http.StatusInternalServerError)
 		return
 	}
@@ -506,7 +514,7 @@ func SaveStoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = data.SaveStory(model.UserID, model.StoryID)
 	if err != nil {
-		fmt.Println(err)
+		sentry.CaptureException(err)
 		http.Error(w, "Error occured while saving story", http.StatusInternalServerError)
 		return
 	}
@@ -529,14 +537,14 @@ func UnSaveStoryHandler(w http.ResponseWriter, r *http.Request) {
 	var model StorySaveModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
-		fmt.Println(err)
+		sentry.CaptureException(err)
 		http.Error(w, "An error occured while parsing json.", http.StatusBadRequest)
 		return
 	}
 
 	isSaved, err := data.CheckIfUserSavedStory(model.UserID, model.StoryID)
 	if err != nil {
-		fmt.Println(err)
+		sentry.CaptureException(err)
 		http.Error(w, "An error occured while unsaving json.", http.StatusInternalServerError)
 		return
 	}
@@ -553,7 +561,7 @@ func UnSaveStoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = data.UnSaveStory(model.UserID, model.StoryID)
 	if err != nil {
-		fmt.Println(err)
+		sentry.CaptureException(err)
 		http.Error(w, "Error occured when unsave story", http.StatusInternalServerError)
 		return
 	}

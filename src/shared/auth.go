@@ -6,6 +6,7 @@ import (
 	"turkdev/src/data"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/getsentry/sentry-go"
 )
 
 const (
@@ -33,6 +34,7 @@ type CustomRequest struct {
 func GetUser(r *http.Request) *SignedInUserClaims {
 	_, user, err := IsAuthenticated(r)
 	if err != nil {
+		sentry.CaptureException(err)
 		panic(err)
 	}
 	return user

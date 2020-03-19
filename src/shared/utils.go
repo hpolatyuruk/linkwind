@@ -75,7 +75,6 @@ func IsPasswordValid(password string) bool {
 func FetchURL(url string) (string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Println(err)
 		return "", fmt.Errorf("Error occured when get url response. Error: %v", err)
 	}
 	defer resp.Body.Close()

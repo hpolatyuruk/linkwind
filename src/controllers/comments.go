@@ -11,6 +11,8 @@ import (
 	"turkdev/src/models"
 	"turkdev/src/shared"
 	"turkdev/src/templates"
+
+	"github.com/getsentry/sentry-go"
 )
 
 /*CommentVoteModel represents the data in http request body to upvote comment.*/
@@ -43,6 +45,7 @@ func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	storyID, err := strconv.Atoi(strStoryID)
 	if err != nil {
+		sentry.CaptureException(err)
 		return err
 	}
 	comment := &data.Comment{
@@ -58,6 +61,7 @@ func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	_, err = data.WriteComment(comment)
 	if err != nil {
+		sentry.CaptureException(err)
 		return err
 	}
 	http.Redirect(w, r, storyURL, http.StatusSeeOther)
@@ -74,6 +78,7 @@ func ReplyToCommentHandler(w http.ResponseWriter, r *http.Request) {
 	var model ReplyModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, "Cannot parse json.", http.StatusBadRequest)
 		return
 	}
@@ -90,7 +95,7 @@ func ReplyToCommentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	commentID, err := data.WriteComment(comment)
 	if err != nil {
-		fmt.Println(err)
+		sentry.CaptureException(err)
 		http.Error(w, "Something went wrong :(", http.StatusInternalServerError)
 		return
 	}
@@ -104,6 +109,7 @@ func ReplyToCommentHandler(w http.ResponseWriter, r *http.Request) {
 	output, err := templates.RenderAsString("partials/comment.html", "comment",
 		mapCommentToCommentViewModel(comment, signedUserModel))
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, fmt.Sprintf("Cannot render comment template. Error: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -122,12 +128,14 @@ func UpvoteCommentHandler(w http.ResponseWriter, r *http.Request) {
 	var model CommentVoteModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	isUpvoted, err := data.CheckIfCommentUpVotedByUser(model.UserID, model.CommentID)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, fmt.Sprintf("Error occured while checking if user already upvoted. Error : %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -143,7 +151,7 @@ func UpvoteCommentHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = data.UpVoteComment(model.UserID, model.CommentID)
 	if err != nil {
-		fmt.Println(err)
+		sentry.CaptureException(err)
 		http.Error(w, fmt.Sprintf("Error occured while upvoting story. Error : %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -165,12 +173,14 @@ func RemoveCommentVoteHandler(w http.ResponseWriter, r *http.Request) {
 	var model CommentVoteModel
 	err := json.NewDecoder(r.Body).Decode(&model)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	isUpvoted, err := data.CheckIfCommentUpVotedByUser(model.UserID, model.CommentID)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, fmt.Sprintf("Error occured while checking user story vote. Error : %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -186,6 +196,7 @@ func RemoveCommentVoteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = data.RemoveCommentVote(model.UserID, model.CommentID)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, fmt.Sprintf("Error occured while unvoting story. Error : %v", err), http.StatusInternalServerError)
 		return
 	}

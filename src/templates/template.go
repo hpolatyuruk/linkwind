@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/oxtoacart/bpool"
 )
 
@@ -28,11 +29,13 @@ func init() {
 
 	layouts, err := listAllHtmlsRecursively(templatesDir + "layouts")
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Fatal(err)
 	}
 
 	partials, err := listAllHtmlsRecursively(templatesDir + "partials")
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Fatal(err)
 	}
 

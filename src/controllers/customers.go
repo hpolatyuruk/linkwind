@@ -7,7 +7,6 @@ import (
 	"image"
 	"image/jpeg"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"strings"
@@ -17,6 +16,8 @@ import (
 	"turkdev/src/services"
 	"turkdev/src/shared"
 	"turkdev/src/templates"
+
+	"github.com/getsentry/sentry-go"
 )
 
 const (
@@ -507,7 +508,7 @@ func decodeLogoImageToBase64(logoImage []byte) (string, error) {
 	}
 	buffer := new(bytes.Buffer)
 	if err := jpeg.Encode(buffer, img, nil); err != nil {
-		log.Fatalln("unable to encode image.")
+		sentry.CaptureException(err)
 	}
 	return base64.StdEncoding.EncodeToString(buffer.Bytes()), err
 
