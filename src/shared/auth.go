@@ -104,6 +104,7 @@ func GenerateAuthToken(user data.User, expirationTime time.Time) (string, error)
 		CustomerID: user.CustomerID,
 		UserName:   user.UserName,
 		Email:      user.Email,
+		Karma:      user.Karma,
 		StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
 			ExpiresAt: expirationTime.Unix(),

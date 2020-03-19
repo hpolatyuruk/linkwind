@@ -67,15 +67,15 @@ func registerHandlers() {
 		middlewares.Error(controllers.StoryDetailHandler))
 
 	http.HandleFunc(
-		"/stories/upvote",
+		"/stories/vote",
 		middlewares.Middleware(
-			controllers.UpvoteStoryHandler,
+			controllers.VoteStoryHandler,
 			middlewares.Auth))
 
 	http.HandleFunc(
-		"/stories/remove/upvote",
+		"/stories/remove/vote",
 		middlewares.Middleware(
-			controllers.RemoveStoryUpvoteHandler,
+			controllers.RemoveStoryVoteHandler,
 			middlewares.Auth))
 
 	http.HandleFunc(
@@ -103,13 +103,13 @@ func registerHandlers() {
 			middlewares.Auth))
 
 	http.HandleFunc(
-		"/comments/upvote",
+		"/comments/vote",
 		middlewares.Middleware(
-			controllers.UpvoteCommentHandler,
+			controllers.VoteCommentHandler,
 			middlewares.Auth))
 
 	http.HandleFunc(
-		"/comments/remove/upvote",
+		"/comments/remove/vote",
 		middlewares.Middleware(
 			controllers.RemoveCommentVoteHandler,
 			middlewares.Auth))

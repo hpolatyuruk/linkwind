@@ -4,12 +4,15 @@
 h1 {
   @apply text-2xl;
 }
+
 h2 {
   @apply text-xl;
 }
+
 h3 {
   @apply text-lg;
 }
+
 a {
   @apply text-blue-600 no-underline cursor-pointer;
 }
@@ -37,12 +40,12 @@ div.voters .upvoter,
 div.voters .downvoter {
   border-color: transparent transparent #bbb transparent;
   border-style: solid;
-  border-width: 6px;
+  border-width: 5px;
   text-decoration: none;
   width: 0px;
   height: 0;
   margin-bottom: 0px;
-  margin-left: 14px;
+  margin-left: 15px;
   padding: 0;
   display: block;
 }
@@ -59,11 +62,12 @@ div.voters .upvoter {
 div.voters .downvoter {
   border-color: #bbb transparent transparent transparent;
   border-width: 5px;
-  margin-top: 4px;
+  margin-top: 5px;
   margin-left: 15px;
   margin-bottom: -5px;
   border-top-width: 9px;
 }
+
 div.voters .downvoter:hover,
 .downvoted div.voters .downvoter {
   border-top-color: gray;

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+	"turkdev/src/enums"
 )
 
 const (
@@ -164,8 +165,12 @@ func GetCommentsByParentIDAndStoryID(parentID int, storyID int) (comments *[]Com
 	return comments, nil
 }
 
-/*UpVoteComment increases votes for comment on database*/
-func UpVoteComment(userID int, commentID int) error {
+/*VoteComment votes (upvote, downvote) for comment on database*/
+func VoteComment(userID int, commentID int, voteType enums.VoteType) error {
+	updateQuery := "UPDATE comments SET upvotes = upvotes + 1 WHERE id = $1"
+	if voteType == enums.DownVote {
+		updateQuery = "UPDATE comments SET downvotes = downvotes + 1 WHERE id = $1"
+	}
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
@@ -175,23 +180,24 @@ func UpVoteComment(userID int, commentID int) error {
 	if err != nil {
 		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
-	sql := "INSERT INTO commentvotes (userid, commentid) VALUES ($1, $2)"
-	_, err = tran.Exec(sql, userID, commentID)
+	sql := "INSERT INTO commentvotes (userid, commentid, votetype) VALUES ($1, $2, $3)"
+	_, err = tran.Exec(sql, userID, commentID, voteType)
 	if err != nil {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Cannot insert commentvotes. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
-	sql = "UPDATE comments SET upvotes = upvotes + 1 WHERE id = $1"
-	_, err = tran.Exec(sql, commentID)
+	_, err = tran.Exec(updateQuery, commentID)
 	if err != nil {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Cannot update comment's upvotes. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
-	sql = "UPDATE users SET karma = karma + 1 WHERE id = (SELECT userid FROM comments WHERE id = $1)"
-	_, err = tran.Exec(sql, commentID)
-	if err != nil {
-		tran.Rollback()
-		return &DBError{fmt.Sprintf("Error occurred while increasing user's karma. UserID: %d, CommentID: %d", userID, commentID), err}
+	if voteType == enums.UpVote {
+		sql = "UPDATE users SET karma = karma + 1 WHERE id = (SELECT userid FROM comments WHERE id = $1)"
+		_, err = tran.Exec(sql, commentID)
+		if err != nil {
+			tran.Rollback()
+			return &DBError{fmt.Sprintf("Error occurred while increasing user's karma. UserID: %d, CommentID: %d", userID, commentID), err}
+		}
 	}
 	err = tran.Commit()
 	if err != nil {
@@ -200,8 +206,12 @@ func UpVoteComment(userID int, commentID int) error {
 	return nil
 }
 
-/*RemoveCommentVote unvotes the comment on database*/
-func RemoveCommentVote(userID int, commentID int) error {
+/*RemoveCommentVote unvotes (upvote, downvote) the comment on database*/
+func RemoveCommentVote(userID int, commentID int, voteType enums.VoteType) error {
+	updateQuery := "UPDATE comments SET upvotes = upvotes - 1 WHERE id = $1"
+	if voteType == enums.DownVote {
+		updateQuery = "UPDATE comments SET downvotes = downvotes - 1 WHERE id = $1"
+	}
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
@@ -217,17 +227,18 @@ func RemoveCommentVote(userID int, commentID int) error {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Cannot delete commentvotes. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
-	sql = "UPDATE comments SET upvotes = upvotes - 1 WHERE id = $1"
-	_, err = tran.Exec(sql, commentID)
+	_, err = tran.Exec(updateQuery, commentID)
 	if err != nil {
 		tran.Rollback()
 		return &DBError{fmt.Sprintf("Cannot update comment's upvotes. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
-	sql = "UPDATE users SET karma = karma - 1 WHERE id = (SELECT userid FROM comments WHERE id = $1)"
-	_, err = tran.Exec(sql, commentID)
-	if err != nil {
-		tran.Rollback()
-		return &DBError{fmt.Sprintf("Error occurred while decreasing user's karma. UserID: %d, CommentID: %d", userID, commentID), err}
+	if voteType == enums.UpVote {
+		sql = "UPDATE users SET karma = karma - 1 WHERE id = (SELECT userid FROM comments WHERE id = $1)"
+		_, err = tran.Exec(sql, commentID)
+		if err != nil {
+			tran.Rollback()
+			return &DBError{fmt.Sprintf("Error occurred while decreasing user's karma. UserID: %d, CommentID: %d", userID, commentID), err}
+		}
 	}
 	err = tran.Commit()
 	if err != nil {
@@ -236,24 +247,24 @@ func RemoveCommentVote(userID int, commentID int) error {
 	return nil
 }
 
-/*CheckIfCommentUpVotedByUser check if user already upvoted to given story*/
-func CheckIfCommentUpVotedByUser(userID int, commentID int) (bool, error) {
+/*GetCommentVoteByUser gets type of vote to given comment by user*/
+func GetCommentVoteByUser(userID int, commentID int) (*enums.VoteType, error) {
 	db, err := connectToDB()
 	defer db.Close()
 	if err != nil {
-		return false, &DBError{fmt.Sprintf("DB connection error. UserID: %d, CommentID: %d", userID, commentID), err}
+		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
-	sql := "SELECT COUNT(*) as count FROM commentvotes WHERE userid = $1 and commentid = $2"
-	row := db.QueryRow(sql, userID, commentID)
-	count := 0
-	err = row.Scan(&count)
+	query := "SELECT votetype FROM commentvotes WHERE userid = $1 and commentid = $2"
+	row := db.QueryRow(query, userID, commentID)
+	var voteType *enums.VoteType = nil
+	err = row.Scan(&voteType)
 	if err != nil {
-		return false, &DBError{fmt.Sprintf("Cannot read db row. UserID: %d, CommentID: %d", userID, commentID), err}
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, &DBError{fmt.Sprintf("Cannot read db row. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
-	if count > 0 {
-		return true, nil
-	}
-	return false, nil
+	return voteType, nil
 }
 
 /*GetUserReplies returns reply list by provided user id and paging parameters*/
