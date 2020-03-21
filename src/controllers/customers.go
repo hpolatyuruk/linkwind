@@ -160,7 +160,6 @@ func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 		}
 		return nil
 	}
-	// TODO: Db sorgulamaları daha sonra refoctor edilecek.
 	exists, err := data.ExistsCustomerByName(model.Name)
 	if err != nil {
 		return err

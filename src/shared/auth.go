@@ -63,7 +63,7 @@ func IsAuthenticated(r *http.Request) (bool, *SignedInUserClaims, error) {
 		return true, claims, nil
 	}
 
-	// TODO: log error here
+	sentry.CaptureException(err)
 
 	switch err.(type) {
 	case nil:

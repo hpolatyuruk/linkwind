@@ -315,8 +315,6 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.Signe
 
 	err := data.CreateStory(&story)
 	if err != nil {
-		// TODO: log error here
-		fmt.Fprintf(w, "Error creating story: %v", err)
 		return err
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -582,7 +580,7 @@ func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUs
 		URL:             story.URL,
 		Text:            template.HTML(strings.ReplaceAll(story.Text, "\n", "<br />")),
 		Host:            uri.Hostname(),
-		Points:          story.UpVotes, // TODO: call point calculation function here
+		Points:          story.UpVotes,
 		UserID:          story.UserID,
 		UserName:        story.UserName,
 		CommentCount:    story.CommentCount,
@@ -598,7 +596,7 @@ func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUs
 		viewModel.ShowDownvoteBtn = signedInUser.Karma > MinKarmaToDownVote
 		voteType, err := data.GetStoryVoteByUser(signedInUser.UserID, story.ID)
 		if err != nil {
-			// TODO: log error here
+			sentry.CaptureException(err)
 		}
 		if voteType != nil {
 			if *voteType == enums.UpVote {
@@ -611,7 +609,7 @@ func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUs
 		isSaved, err := data.CheckIfUserSavedStory(signedInUser.UserID, story.ID)
 
 		if err != nil {
-			// TODO: log error here
+			sentry.CaptureException(err)
 			isSaved = false
 		}
 		viewModel.IsSaved = isSaved
@@ -638,7 +636,7 @@ func mapCommentToCommentViewModel(comment *data.Comment, signedInUser *models.Si
 		model.ShowDownvoteBtn = signedInUser.Karma > MinKarmaToDownVote
 		voteType, err := data.GetCommentVoteByUser(signedInUser.UserID, comment.ID)
 		if err != nil {
-			// TODO: Log here
+			sentry.CaptureException(err)
 		}
 		if voteType != nil {
 			if *voteType == enums.UpVote {
@@ -658,7 +656,7 @@ func mapCommentsToViewModelsWithChildren(comments *[]data.Comment, signedInUser 
 		viewModel := *mapCommentToCommentViewModel(&comment, signedInUser)
 		childComments, err := data.GetCommentsByParentIDAndStoryID(comment.ID, storyID)
 		if err != nil {
-			// TODO: Log error here
+			sentry.CaptureException(err)
 			continue
 		}
 		viewModel.ChildComments = *mapCommentsToViewModelsWithChildren(childComments, signedInUser, storyID)

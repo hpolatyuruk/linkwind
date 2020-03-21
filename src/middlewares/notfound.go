@@ -18,7 +18,6 @@ func NotFound(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc
 			}
 		} else if r.URL.Path == "/robots.txt" {
 			w.Header().Set("Content-Type", "text/plain")
-			// TODO: Should be removed in production.
 			w.Write([]byte("User-agent: *\nDisallow: /"))
 		} else {
 			renderFile(w, "src/templates/errors/404.html", http.StatusNotFound)
