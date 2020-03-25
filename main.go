@@ -8,10 +8,16 @@ import (
 	"turkdev/src/middlewares"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/joho/godotenv"
 )
 
 func init() {
-	err := sentry.Init(sentry.ClientOptions{
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	err = sentry.Init(sentry.ClientOptions{
 		// Either set your DSN here or set the SENTRY_DSN environment variable.
 		Dsn: "https://0045a83f06f1493c9c6aa1a063570e3a@sentry.io/5167796",
 		// Enable printing of SDK debug messages.

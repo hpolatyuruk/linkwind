@@ -4,17 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/lib/pq"
-)
-
-var (
-	DBHost        = "localhost"
-	DBPort        = "5432"
-	DBUser        = "postgres"
-	DBPassword    = "3842"
-	DBName        = "postgres"
-	JWTPrivateKey = "jwtprivatekeyfordebug"
 )
 
 /*DBError represents the database error*/
@@ -28,9 +20,14 @@ func (err *DBError) Error() string {
 }
 
 func connectionString() (conStr string, err error) {
+	host := os.Getenv("DBHost")
+	user := os.Getenv("DBUser")
+	password := os.Getenv("DBPassword")
+	dbName := os.Getenv("DBName")
+	port := os.Getenv("DBPort")
 
 	conStr = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		DBHost, DBPort, DBUser, DBPassword, DBName)
+		host, port, user, password, dbName)
 
 	return conStr, err
 }
