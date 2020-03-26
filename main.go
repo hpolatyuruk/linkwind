@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 	"turkdev/src/controllers"
 	"turkdev/src/middlewares"
@@ -14,7 +17,7 @@ import (
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatalf("Error loading .env file. Error: %v", err)
 	}
 
 	err = sentry.Init(sentry.ClientOptions{
@@ -37,7 +40,13 @@ func main() {
 
 	staticFileServer := http.FileServer(http.Dir("dist/"))
 	http.Handle("/dist/", http.StripPrefix("/dist/", staticFileServer))
-	http.ListenAndServe(":80", nil)
+
+	port, err := strconv.Atoi(os.Getenv("Port"))
+	if err != nil {
+		sentry.CaptureException(err)
+		panic(err)
+	}
+	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
 func registerHandlers() {

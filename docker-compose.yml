@@ -1,10 +1,10 @@
 version: '3'
 services:
   app:
-    container_name: full_app
+    container_name: turkdev
     build:
       context: .
-      dockerfile: D:\Projects\go\src\turkdev\DockerFile
+      dockerfile: DockerFile.dev
     ports:
       - 8080:8080
     restart: on-failure
@@ -12,7 +12,6 @@ services:
       - api:/usr/src/app/
     depends_on:
       - fullstack-postgres # Uncomment this when using postgres.
-      # - fullstack-mysql           # Uncomment this when using mysql.
     networks:
       - fullstack
 
@@ -24,6 +23,9 @@ services:
       - POSTGRES_USER=${DBUser}
       - POSTGRES_PASSWORD=${DBPassword}
       - POSTGRES_DB=${DBName}
+    build:
+      context: .
+      dockerfile: ./src/data/DockerFile
     ports:
       - '5432:5432'
     volumes:

@@ -1,0 +1,3 @@
+FROM postgres:latest
+
+COPY src/data/deploy_schemas.sql /docker-entrypoint-initdb.d/

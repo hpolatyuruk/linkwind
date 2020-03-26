@@ -4,7 +4,7 @@ FROM golang:alpine as builder
 # ENV GO111MODULE=on
 
 # Add Maintainer info
-LABEL maintainer="Steven Victor <chikodi543@gmail.com>"
+LABEL maintainer="HPY & Sedat"
 
 # Install git.
 # Git is required for fetching the dependencies.
@@ -23,7 +23,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main
 
 # Start a new stage from scratch
 FROM alpine:latest
@@ -31,12 +31,15 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-# Copy the Pre-built binary file from the previous stage. Observe we also copied the .env file
+# Copy the Pre-built binary file from the previous stage.
 COPY --from=builder /app/main .
-COPY --from=builder /app/.env .       
+COPY --from=builder /app/.env .
+COPY --from=builder /app/src/templates ./src/templates
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/data/sql_scripts ./sql_scripts
 
-# Expose port 8080 to the outside world
+# Expose port to the outside world
 EXPOSE 8080
 
 #Command to run the executable
-CMD ["./main"]
+CMD [ "./main" ]

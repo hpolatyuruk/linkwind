@@ -14,7 +14,7 @@ import (
 	"github.com/oxtoacart/bpool"
 )
 
-const templatesDir = "./src/templates/"
+const templatesDir = "src/templates/"
 
 var bufpool *bpool.BufferPool
 var templates map[string]*template.Template
