@@ -9,7 +9,7 @@ require (
 	github.com/gobuffalo/envy v1.9.0 // indirect
 	github.com/gobuffalo/packr v1.30.1 // indirect
 	github.com/gobuffalo/packr/v2 v2.8.0 // indirect
-	github.com/joho/godotenv v1.3.0 // indirect
+	github.com/joho/godotenv v1.3.0
 	github.com/karrick/godirwalk v1.15.5 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c

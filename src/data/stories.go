@@ -43,10 +43,10 @@ func (err *StoryError) Error() string {
 /*CreateStory creates a story on database*/
 func CreateStory(story *Story) error {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	sql := "INSERT INTO stories (url, title, text, tags, upvotes, downvotes,  commentcount, userid, submittedon) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)"
 	_, err = db.Exec(
 		sql,
@@ -68,11 +68,10 @@ func CreateStory(story *Story) error {
 /*GetStories returns story list according to customer id by provided paging parameters*/
 func GetStories(customerID, pageNumber, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
-		fmt.Print(err)
 		return nil, err
 	}
+	defer db.Close()
 	// TODO(Huseyin): Sort it by point algorithim when sedat finishes it
 	sql := "SELECT stories.*, users.UserName FROM stories INNER JOIN users ON users.id = stories.userid WHERE users.customerid = $1 LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, customerID, pageRowCount, (pageNumber-1)*pageRowCount)
@@ -95,10 +94,10 @@ func GetCustomerStoriesCount(customerID int) (int, error) {
 /*GetStoryByID gets story by id from db*/
 func GetStoryByID(storyID int) (*Story, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	sql := "SELECT stories.*, users.UserName FROM stories INNER JOIN users ON users.id = stories.userid WHERE stories.id = $1"
 	row := db.QueryRow(sql, storyID)
 	story, err := MapSQLRowToStory(row)
@@ -115,10 +114,10 @@ func VoteStory(userID, storyID int, voteType enums.VoteType) error {
 		voteUpdateSQL = "UPDATE stories SET downvotes = downvotes + 1 WHERE id = $1"
 	}
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
+	defer db.Close()
 	tran, err := db.Begin()
 	if err != nil {
 		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, StoryID: %d", userID, storyID), err}
@@ -152,10 +151,10 @@ func VoteStory(userID, storyID int, voteType enums.VoteType) error {
 /*GetStoryVoteByUser check if user already voted(upvote or downvote) to given story*/
 func GetStoryVoteByUser(userID, storyID int) (*enums.VoteType, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
+	defer db.Close()
 	query := "SELECT votetype FROM storyvotes WHERE userid = $1 AND storyid = $2"
 	row := db.QueryRow(query, userID, storyID)
 	var voteType *enums.VoteType = nil
@@ -176,10 +175,10 @@ func RemoveStoryVote(userID, storyID int, voteType enums.VoteType) error {
 		voteUpdateSQL = "UPDATE stories SET downvotes = downvotes - 1 WHERE id = $1"
 	}
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
+	defer db.Close()
 	tran, err := db.Begin()
 	if err != nil {
 		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, StoryID: %d", userID, storyID), err}
@@ -213,10 +212,10 @@ func RemoveStoryVote(userID, storyID int, voteType enums.VoteType) error {
 /*SaveStory saves the given story to user's favorites*/
 func SaveStory(userID int, storyID int) error {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
+	defer db.Close()
 	sql := "INSERT INTO saved (userid, storyid, savedon) VALUES ($1, $2, $3)"
 	_, err = db.Exec(sql, userID, storyID, time.Now())
 	if err != nil {
@@ -228,10 +227,10 @@ func SaveStory(userID int, storyID int) error {
 /*UnSaveStory removes the given story from user's favorites*/
 func UnSaveStory(userID int, storyID int) error {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
+	defer db.Close()
 	sql := "DELETE FROM saved WHERE userid = $1 AND storyid = $2"
 	_, err = db.Exec(sql, userID, storyID)
 	if err != nil {
@@ -243,10 +242,10 @@ func UnSaveStory(userID int, storyID int) error {
 /*CheckIfUserSavedStory check if user already saved the story*/
 func CheckIfUserSavedStory(userID int, storyID int) (bool, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return false, &DBError{fmt.Sprintf("DB connection error. UserID: %d, StoryID: %d", userID, storyID), err}
 	}
+	defer db.Close()
 	sql := "SELECT COUNT(*) as count FROM saved WHERE userid = $1 AND storyid = $2"
 	row := db.QueryRow(sql, userID, storyID)
 	count := 0
@@ -263,10 +262,10 @@ func CheckIfUserSavedStory(userID int, storyID int) (bool, error) {
 /*GetRecentStories returns the paging recently published stories*/
 func GetRecentStories(customerID, pageNumber, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
 	}
+	defer db.Close()
 	sql := "SELECT stories.*, users.username FROM stories INNER JOIN users ON stories.userid = users.id WHERE users.customerid = $1 ORDER BY stories.submittedon DESC LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, customerID, pageRowCount, (pageNumber-1)*pageRowCount)
 	if err != nil {
@@ -282,10 +281,10 @@ func GetRecentStories(customerID, pageNumber, pageRowCount int) (*[]Story, error
 /*GetUserSavedStories returns the paging user's favorite stories*/
 func GetUserSavedStories(userID int, pageNumber int, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d PageNo: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
 	}
+	defer db.Close()
 	sql := "SELECT stories.*, users.username FROM stories INNER JOIN saved ON stories.id = saved.storyid INNER JOIN users ON users.id = saved.userid WHERE saved.userid = $1 ORDER BY savedon DESC LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, userID, pageRowCount, (pageNumber-1)*pageRowCount)
 	if err != nil {
@@ -307,10 +306,10 @@ func GetUserSavedStoriesCount(userID int) (int, error) {
 /*GetUserUpvotedStories returns the paging user's upvoted stories*/
 func GetUserUpvotedStories(userID int, pageNumber int, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d PageNo: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
 	}
+	defer db.Close()
 	sql := "SELECT stories.*, users.username FROM stories INNER JOIN storyvotes ON stories.id = storyvotes.storyid INNER JOIN users ON users.id = storyvotes.userid WHERE storyvotes.userid = $1 ORDER BY stories.submittedon DESC LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, userID, pageRowCount, (pageNumber-1)*pageRowCount)
 	if err != nil {
@@ -332,11 +331,10 @@ func GetUserUpvotedStoriesCount(userID int) (int, error) {
 /*GetUserSubmittedStories get user's stories from db according to userID*/
 func GetUserSubmittedStories(userID int, pageNumber int, pageRowCount int) (*[]Story, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
-
+	defer db.Close()
 	sql := "SELECT stories.*, users.username FROM stories INNER JOIN users ON users.id = stories.userid WHERE stories.userid = $1 ORDER BY submittedon DESC LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, userID, pageRowCount, (pageNumber-1)*pageRowCount)
 	if err != nil {

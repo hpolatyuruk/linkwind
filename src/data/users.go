@@ -43,10 +43,10 @@ func (err *UserError) Error() string {
 /*CreateUser creates a user*/
 func CreateUser(user *User) (err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &UserError{"Cannot connect to db", user, err}
 	}
+	defer db.Close()
 	sql := "INSERT INTO users (username, fullname, email, registeredon," + "password, website, about, invitecode, karma, customerid) " +
 		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
 
@@ -75,10 +75,10 @@ func CreateUser(user *User) (err error) {
 /*ChangePassword changes user password associated with provided user id*/
 func ChangePassword(userID int, newPassword string) error {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	sql := "UPDATE users SET password = $1 WHERE Id = $2"
 	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
@@ -95,10 +95,10 @@ func ChangePassword(userID int, newPassword string) error {
 func ConfirmPasswordMatch(userID int, password string) (matched bool, err error) {
 	matched = false
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return matched, err
 	}
+	defer db.Close()
 	sql := "SELECT password FROM users WHERE Id = $1"
 	row := db.QueryRow(sql, userID)
 	var userPassword string
@@ -114,10 +114,10 @@ func ConfirmPasswordMatch(userID int, password string) (matched bool, err error)
 /*UpdateUser updates the provided user on database*/
 func UpdateUser(user *User) error {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &UserError{"Db connection error", user, err}
 	}
+	defer db.Close()
 	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return &UserError{"Cannot encrypt passoword", user, err}
@@ -142,10 +142,10 @@ func UpdateUser(user *User) error {
 func ExistsUserByEmail(email string) (exists bool, err error) {
 	exists = false
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return exists, err
 	}
+	defer db.Close()
 	sql := "SELECT COUNT(*) AS count FROM users WHERE email = $1"
 	row := db.QueryRow(sql, email)
 	recordCount := 0
@@ -163,10 +163,10 @@ func ExistsUserByEmail(email string) (exists bool, err error) {
 func ExistsUserByUserName(userName string) (exists bool, err error) {
 	exists = false
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return exists, err
 	}
+	defer db.Close()
 	sql := "SELECT COUNT(*) AS count FROM users WHERE username = $1"
 	row := db.QueryRow(sql, userName)
 	recordCount := 0
@@ -183,10 +183,10 @@ func ExistsUserByUserName(userName string) (exists bool, err error) {
 /*GetUserByUserName gets user associated with user name from database*/
 func GetUserByUserName(userName string) (user *User, err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma, customerid FROM users WHERE username = $1"
 	row := db.QueryRow(sql, userName)
 	user, err = MapSQLRowToUser(row)
@@ -199,10 +199,10 @@ func GetUserByUserName(userName string) (user *User, err error) {
 /*GetUserByID gets user associated with user id from database*/
 func GetUserByID(userID int) (user *User, err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma, customerid FROM users WHERE id = $1"
 	row := db.QueryRow(sql, userID)
 	user, err = MapSQLRowToUser(row)
@@ -215,11 +215,10 @@ func GetUserByID(userID int) (user *User, err error) {
 /*GetUsersByCustomerID retunrs users list by provided customerID parameter*/
 func GetUsersByCustomerID(customerID int) (*[]User, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
-
+	defer db.Close()
 	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma, customerid FROM users WHERE customerID = $1"
 	rows, err := db.Query(sql, customerID)
 	if err != nil {
@@ -235,10 +234,10 @@ func GetUsersByCustomerID(customerID int) (*[]User, error) {
 /*SaveResetPasswordToken inserts given token and user id to database*/
 func SaveResetPasswordToken(token string, userID int) error {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	sql := "INSERT INTO resetpasswordtokens (token, userid) VALUES ($1, $2)"
 	_, err = db.Exec(sql, token, userID)
 	if err != nil {
@@ -250,10 +249,10 @@ func SaveResetPasswordToken(token string, userID int) error {
 /*GetUserByResetPasswordToken gets user associated with token from database*/
 func GetUserByResetPasswordToken(token string) (user *User, err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	sql := "SELECT id, username, fullname, email, registeredon, password, website, about,  invitecode, karma,customerid FROM users INNER JOIN resetpasswordtokens on users.Id = resetpasswordtokens.userid WHERE resetpasswordtokens.token = $1"
 	row := db.QueryRow(sql, token)
 	user, err = MapSQLRowToUser(row)
@@ -266,10 +265,10 @@ func GetUserByResetPasswordToken(token string) (user *User, err error) {
 /*FindUserByEmailAndPassword returns user associated with email and password from database*/
 func FindUserByEmailAndPassword(email string, password string) (user *User, err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma, customerid FROM users WHERE email = $1"
 	row := db.QueryRow(sql, email)
 	user, err = MapSQLRowToUser(row)
@@ -286,10 +285,10 @@ func FindUserByEmailAndPassword(email string, password string) (user *User, err 
 /*FindUserByUserNameAndPassword returns user associated with user name and password from database*/
 func FindUserByUserNameAndPassword(userName string, password string) (user *User, err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	sql := "SELECT id, username, fullname, email, registeredon, password, website, about, invitecode, karma, customerid FROM users WHERE username = $1"
 	row := db.QueryRow(sql, userName)
 	user, err = MapSQLRowToUser(row)
@@ -306,10 +305,10 @@ func FindUserByUserNameAndPassword(userName string, password string) (user *User
 /*GetUserNameByEmail returns username by email*/
 func GetUserNameByEmail(email string) (string, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return "", err
 	}
+	defer db.Close()
 	sql := "SELECT username FROM users where email =$1;"
 	row := db.QueryRow(sql, email)
 	var username string
@@ -324,10 +323,10 @@ func GetUserNameByEmail(email string) (string, error) {
 /*GetCustomerDomainByUserName returns customer's domain by user name*/
 func GetCustomerDomainByUserName(userName string) (string, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return "", err
 	}
+	defer db.Close()
 	sql := "SELECT domain FROM customers INNER JOIN users ON users.customerid = customers.id WHERE users.username = $1 ;"
 	row := db.QueryRow(sql, userName)
 	var domain string
@@ -346,10 +345,10 @@ func GetCustomerDomainByUserName(userName string) (string, error) {
 func IsUserAdmin(userID int) (isAdmin bool, err error) {
 	isAdmin = false
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return isAdmin, err
 	}
+	defer db.Close()
 	sql := "SELECT COUNT(*) AS count FROM customers INNER JOIN users ON users.email = customers.email WHERE users.id = $1"
 	row := db.QueryRow(sql, userID)
 	recordCount := 0

@@ -19,7 +19,7 @@ func (err *DBError) Error() string {
 	return fmt.Sprintf("%s | OriginalError: %v", err.Message, err.OriginalError)
 }
 
-func connectionString() (conStr string, err error) {
+func connectionString() (conStr string) {
 	host := os.Getenv("DBHost")
 	user := os.Getenv("DBUser")
 	password := os.Getenv("DBPassword")
@@ -29,15 +29,12 @@ func connectionString() (conStr string, err error) {
 	conStr = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbName)
 
-	return conStr, err
+	return conStr
 }
 
-func connectToDB() (db *sql.DB, err error) {
-	connStr, err := connectionString()
-	if err != nil {
-		return nil, &DBError{"Cannot read connection string!", err}
-	}
-	db, err = sql.Open("postgres", connStr)
+func connectToDB() (*sql.DB, error) {
+	connStr := connectionString()
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, &DBError{"Cannot open db connection!", err}
 	}

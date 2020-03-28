@@ -63,10 +63,10 @@ func nullCommentParentID(i int) sql.NullInt32 {
 func WriteComment(comment *Comment) (*int, error) {
 	var commentID int
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &commentID, &CommentError{"DB connection error", comment, err}
 	}
+	defer db.Close()
 	tran, err := db.Begin()
 	if err != nil {
 		return &commentID, &CommentError{"Can not start the transaction.", comment, err}
@@ -110,10 +110,11 @@ func WriteComment(comment *Comment) (*int, error) {
 /*GetComments retunrs comment list by provided story id*/
 func GetComments(storyID int) (comments *[]Comment, err error) {
 	db, err := connectToDB()
-	defer db.Close()
+
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. StoryID: %d.", storyID), err}
 	}
+	defer db.Close()
 	// TODO(Huseyin): Order by special algorithm when Sedat finishes it
 	sql := "SELECT comments.*, users.username FROM comments INNER JOIN users ON users.id = comments.userid WHERE storyid = $1"
 	rows, err := db.Query(sql, storyID)
@@ -130,10 +131,10 @@ func GetComments(storyID int) (comments *[]Comment, err error) {
 /*GetRootCommentsByStoryID retunrs only root comments by provided story id*/
 func GetRootCommentsByStoryID(storyID int) (comments *[]Comment, err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. StoryID: %d.", storyID), err}
 	}
+	defer db.Close()
 	sql := "SELECT comments.*, users.username FROM comments INNER JOIN users ON users.id = comments.userid WHERE storyid = $1 AND parentid is null ORDER BY commentedon ASC"
 	rows, err := db.Query(sql, storyID)
 	if err != nil {
@@ -149,10 +150,10 @@ func GetRootCommentsByStoryID(storyID int) (comments *[]Comment, err error) {
 /*GetCommentsByParentIDAndStoryID retunrs only root comments by provided story id*/
 func GetCommentsByParentIDAndStoryID(parentID int, storyID int) (comments *[]Comment, err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. ParentID: %d, StoryID: %d.", parentID, storyID), err}
 	}
+	defer db.Close()
 	sql := "SELECT comments.*, users.username FROM comments INNER JOIN users ON users.id = comments.userid WHERE storyid = $1 AND parentid = $2 ORDER BY commentedon ASC"
 	rows, err := db.Query(sql, storyID, parentID)
 	if err != nil {
@@ -172,10 +173,10 @@ func VoteComment(userID int, commentID int, voteType enums.VoteType) error {
 		updateQuery = "UPDATE comments SET downvotes = downvotes + 1 WHERE id = $1"
 	}
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
+	defer db.Close()
 	tran, err := db.Begin()
 	if err != nil {
 		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, CommentID: %d", userID, commentID), err}
@@ -213,10 +214,10 @@ func RemoveCommentVote(userID int, commentID int, voteType enums.VoteType) error
 		updateQuery = "UPDATE comments SET downvotes = downvotes - 1 WHERE id = $1"
 	}
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &DBError{fmt.Sprintf("DB connection error. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
+	defer db.Close()
 	tran, err := db.Begin()
 	if err != nil {
 		return &DBError{fmt.Sprintf("Cannot begin transaction. UserID: %d, CommentID: %d", userID, commentID), err}
@@ -250,10 +251,10 @@ func RemoveCommentVote(userID int, commentID int, voteType enums.VoteType) error
 /*GetCommentVoteByUser gets type of vote to given comment by user*/
 func GetCommentVoteByUser(userID int, commentID int) (*enums.VoteType, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d, CommentID: %d", userID, commentID), err}
 	}
+	defer db.Close()
 	query := "SELECT votetype FROM commentvotes WHERE userid = $1 and commentid = $2"
 	row := db.QueryRow(query, userID, commentID)
 	var voteType *enums.VoteType = nil
@@ -270,10 +271,10 @@ func GetCommentVoteByUser(userID int, commentID int) (*enums.VoteType, error) {
 /*GetUserReplies returns reply list by provided user id and paging parameters*/
 func GetUserReplies(userID int) (replies *[]Reply, err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d.", userID), err}
 	}
+	defer db.Close()
 	sql := "SELECT comments.*, stories.title, stories.id, users.username FROM comments INNER JOIN stories ON comments.storyid = stories.id INNER JOIN users ON users.id = stories.userid WHERE stories.userid = $1 ORDER BY comments.commentedon DESC"
 	rows, err := db.Query(sql, userID)
 	if err != nil {
@@ -289,10 +290,10 @@ func GetUserReplies(userID int) (replies *[]Reply, err error) {
 /*GetUserCommentsNotPaging get user's comments from db according to userID and not paging*/
 func GetUserCommentsNotPaging(userID int) (comments *[]Comment, err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d.", userID), err}
 	}
+	defer db.Close()
 	// TODO(Huseyin): Order by special algorithm when Sedat finishes it
 	sql := "SELECT * FROM public.comments WHERE userid = $1"
 	rows, err := db.Query(sql, userID)

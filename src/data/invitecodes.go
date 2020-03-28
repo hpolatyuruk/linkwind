@@ -19,10 +19,10 @@ type InviteCodeInfo struct {
 /*CreateInviteCode creates an invite code.*/
 func CreateInviteCode(inviterUserID int, invitedEmail string) (string, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return "", &DBError{fmt.Sprintf("Cannot conenct to db to create new invite code. InviterUserID: %d, InvitedEmail: %s", inviterUserID, invitedEmail), err}
 	}
+	defer db.Close()
 	inviteCode := xid.New().String()
 	sql := "INSERT INTO invitecodes (code, inviteruserid, invitedemail, createdon) VALUES ($1, $2, $3, $4) RETURNING code"
 	_, err = db.Exec(
@@ -41,10 +41,10 @@ func CreateInviteCode(inviterUserID int, invitedEmail string) (string, error) {
 func ExistsInviteCode(inviteCode string) (exists bool, err error) {
 	exists = false
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return exists, &DBError{fmt.Sprintf("Cannot conenct to db to if invite code is already existed. InviteCode: %s", inviteCode), err}
 	}
+	defer db.Close()
 	sql := "SELECT COUNT(*) AS count FROM invitecodes WHERE code = $1"
 	row := db.QueryRow(sql, inviteCode)
 	recordCount := 0
@@ -61,10 +61,10 @@ func ExistsInviteCode(inviteCode string) (exists bool, err error) {
 /*FindInviterEmailByInviteCode returns inviter email address by invite code.*/
 func FindInviterEmailByInviteCode(inviteCode string) (string, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return "", err
 	}
+	defer db.Close()
 	sql := "SELECT users.email FROM users INNER JOIN invitecodes ON users.id = invitecodes.userid where invitecodes.code =$1;"
 	row := db.QueryRow(sql, inviteCode)
 	var email string
@@ -78,10 +78,10 @@ func FindInviterEmailByInviteCode(inviteCode string) (string, error) {
 /*MarkInviteCodeAsUsed marks invite code as used*/
 func MarkInviteCodeAsUsed(inviteCode string) error {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &DBError{fmt.Sprintf("Cannot connect to db to mark invite code as used. InviteCode: %s", inviteCode), err}
 	}
+	defer db.Close()
 	sql := "UPDATE invitecodes SET used = true WHERE code = $1"
 	_, err = db.Exec(
 		sql,
@@ -96,10 +96,10 @@ func MarkInviteCodeAsUsed(inviteCode string) error {
 func IsInviteCodeUsed(inviteCode string) (used bool, err error) {
 	used = false
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return used, &DBError{fmt.Sprintf("Cannot connec to db to check if invite code is already used. InviteCode: %s", inviteCode), err}
 	}
+	defer db.Close()
 	sql := "SELECT used FROM invitecodes WHERE code = $1"
 	row := db.QueryRow(sql, inviteCode)
 	err = row.Scan(&used)
@@ -112,10 +112,10 @@ func IsInviteCodeUsed(inviteCode string) (used bool, err error) {
 /*GetInviteCodeInfoByCode gets invite code info form database.*/
 func GetInviteCodeInfoByCode(inviteCode string) (*InviteCodeInfo, error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	sql := "SELECT code, inviteruserid, invitedemail, used, createdon FROM invitecodes WHERE code = $1"
 	row := db.QueryRow(sql, inviteCode)
 	inviteCodeInfo, err := MapSQLRowToInviteCodeInfo(row)

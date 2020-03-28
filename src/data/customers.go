@@ -42,10 +42,10 @@ func (err *CustomerError) Error() string {
 /*CreateCustomer creates a customer*/
 func CreateCustomer(customer *Customer) (err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &CustomerError{"Cannot connect to db", customer, err}
 	}
+	defer db.Close()
 	query := "INSERT INTO customers (email, name, domain,registeredon,imglogo) VALUES ($1, $2, $3, $4, $5)"
 	_, err = db.Exec(
 		query,
@@ -63,11 +63,10 @@ func CreateCustomer(customer *Customer) (err error) {
 /*UpdateCustomer updates the provided customer on database*/
 func UpdateCustomer(customer *Customer) error {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return &CustomerError{"Db connection error", customer, err}
 	}
-
+	defer db.Close()
 	sql := "UPDATE customers SET name = $1, email = $2, domain = $3, registeredon = $4, imglogo = $5 WHERE id = $6"
 	_, err = db.Exec(
 		sql,
@@ -87,10 +86,10 @@ func UpdateCustomer(customer *Customer) error {
 func ExistsCustomerByName(name string) (exists bool, err error) {
 	exists = false
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return exists, err
 	}
+	defer db.Close()
 	sql := "SELECT COUNT(*) AS count FROM customers WHERE name = $1"
 	row := db.QueryRow(sql, name)
 	recordCount := 0
@@ -108,10 +107,10 @@ func ExistsCustomerByName(name string) (exists bool, err error) {
 func ExistsCustomerByEmail(email string) (exists bool, err error) {
 	exists = false
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return exists, err
 	}
+	defer db.Close()
 	sql := "SELECT COUNT(*) AS count FROM customers WHERE email = $1"
 	row := db.QueryRow(sql, email)
 	recordCount := 0
@@ -129,10 +128,10 @@ func ExistsCustomerByEmail(email string) (exists bool, err error) {
 func ExistsCustomerByDomain(domain string) (exists bool, err error) {
 	exists = false
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return exists, err
 	}
+	defer db.Close()
 	sql := "SELECT COUNT(*) AS count FROM customers WHERE domain = $1"
 	row := db.QueryRow(sql, domain)
 	recordCount := 0
@@ -149,10 +148,10 @@ func ExistsCustomerByDomain(domain string) (exists bool, err error) {
 /*GetCustomerByName gets customer associated with name from database*/
 func GetCustomerByName(name string) (customer *Customer, err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	sql := "SELECT id, name, email, registeredon, domain, imglogo FROM customers WHERE name = $1"
 	row := db.QueryRow(sql, name)
 	customer, err = MapSQLRowToCustomer(row)
@@ -165,10 +164,10 @@ func GetCustomerByName(name string) (customer *Customer, err error) {
 /*GetCustomerByID gets customer associated with id from database*/
 func GetCustomerByID(id int) (customer *Customer, err error) {
 	db, err := connectToDB()
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 	sql := "SELECT id, name, email, registeredon, domain, imglogo FROM customers WHERE id = $1"
 	row := db.QueryRow(sql, id)
 	customer, err = MapSQLRowToCustomer(row)
