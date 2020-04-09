@@ -1,3 +1,5 @@
+CREATE DATABASE turkdev;
+
 -- Table: public.customers
 
 -- DROP TABLE public.customers;

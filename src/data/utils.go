@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/lib/pq"
 )
@@ -33,14 +34,24 @@ func connectionString() (conStr string) {
 }
 
 func connectToDB() (*sql.DB, error) {
+	var db *sql.DB
+	var err error
 	connStr := connectionString()
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, &DBError{"Cannot open db connection!", err}
+	retries := 5
+	for retries >= 1 {
+		db, err = sql.Open("postgres", connStr)
+		if err == nil {
+			err = db.Ping()
+			if err == nil {
+				break
+			}
+		}
+		retries--
+		fmt.Println(fmt.Printf("An error occured. Trying to reconnect to the db. %d attempt left. Error: %v", retries, err))
+		time.Sleep(5 * time.Second)
 	}
-	err = db.Ping()
 	if err != nil {
-		return nil, &DBError{"Cannot ping db!", err}
+		return nil, &DBError{"Cannot connect to db!", err}
 	}
 	return db, err
 }
