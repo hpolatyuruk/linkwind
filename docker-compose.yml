@@ -1,57 +1,48 @@
 version: '3'
 services:
-  app:
-    container_name: turkdev
-    build:
-      context: .
-      dockerfile: DockerFile.dev
-    ports:
-      - 8080:8080
-    restart: on-failure
-    volumes:
-      - api:/usr/src/app/
-    depends_on:
-      - fullstack-postgres # Uncomment this when using postgres.
-    networks:
-      - fullstack
-
-  fullstack-postgres:
+  db:
     image: postgres:latest
-    container_name: full_db_postgres
-    environment:
-      - DATABASE_HOST=${DBHost}
-      - POSTGRES_USER=${DBUser}
-      - POSTGRES_PASSWORD=${DBPassword}
-      - POSTGRES_DB=${DBName}
+    container_name: turkdev_db
     build:
       context: .
       dockerfile: ./src/data/DockerFile
     ports:
       - '5432:5432'
+    environment:
+      - POSTGRES_USER=${DBUser}
+      - POSTGRES_PASSWORD=${DBPassword}
+      - POSTGRES_DB=${DBName}
+      - PGDATA=/pgdata
     volumes:
-      - ./database_postgres:/var/lib/postgresql/data
-    networks:
-      - fullstack
+      - ./pgdata:/var/lib/postgresql/data
+
+  app:
+    container_name: turkdev_app
+    build:
+      context: .
+      args:
+        app_env: ${APP_ENV}
+      dockerfile: DockerFile.dev
+    ports:
+      - 8080:8080
+    restart: on-failure
+    volumes:
+      - api:/go/src/turkdev/api
+    depends_on:
+      - db
 
   pgadmin:
+    container_name: turkdev_pg
     image: dpage/pgadmin4
-    container_name: pgadmin_container
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGAdminDefaultEmail}
       PGADMIN_DEFAULT_PASSWORD: ${PGAdminDefaultPassword}
     depends_on:
-      - fullstack-postgres
+      - db
     ports:
       - '5050:80'
-    networks:
-      - fullstack
     restart: unless-stopped
 
 volumes:
   api:
-  database_postgres: # Uncomment this when using postgres.
-
-# Networks to be created to facilitate communication between containers
-networks:
-  fullstack:
-    driver: bridge
+  pgdata:

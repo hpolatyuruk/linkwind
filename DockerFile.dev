@@ -1,17 +1,11 @@
 # Start from golang base image
-FROM golang:alpine as builder
+FROM golang:latest as builder
 
-# ENV GO111MODULE=on
+ARG app_env
+ENV APP_ENV $app_env
 
-# Add Maintainer info
-LABEL maintainer="HPY & Sedat"
-
-# Install git.
-# Git is required for fetching the dependencies.
-RUN apk update && apk add --no-cache git
-
-# Set the current working directory inside the container 
-WORKDIR /app
+COPY . /go/src/turkdev/api
+WORKDIR /go/src/turkdev/api
 
 # Copy go mod and sum files 
 COPY go.mod go.sum ./
@@ -19,11 +13,9 @@ COPY go.mod go.sum ./
 # Download all dependencies. Dependencies will be cached if the go.mod and the go.sum files are not changed 
 RUN go mod download 
 
-# Copy the source from the current directory to the working Directory inside the container 
-COPY . .
-
 # Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main
+# CGO_ENABLED=0 GOARCH=386 -a -installsuffix
+RUN CGO_ENABLED=0 go build -o main .
 
 # Start a new stage from scratch
 FROM alpine:latest
@@ -32,14 +24,23 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 # Copy the Pre-built binary file from the previous stage.
-COPY --from=builder /app/main .
-COPY --from=builder /app/.env .
-COPY --from=builder /app/src/templates ./src/templates
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src/data/sql_scripts ./sql_scripts
+COPY --from=builder /go/src/turkdev/api/main .
+COPY --from=builder /go/src/turkdev/api/.env .
+COPY --from=builder /go/src/turkdev/api/src/templates ./src/templates
+COPY --from=builder /go/src/turkdev/api/dist ./dist
+COPY --from=builder /go/src/turkdev/api/src/data/sql_scripts ./sql_scripts
 
 # Expose port to the outside world
 EXPOSE 8080
 
-#Command to run the executable
-CMD [ "./main" ]
+ENTRYPOINT [./main];
+
+# if dev setting will use pilu/fresh for code reloading via docker-compose volume sharing with local machine
+# if production setting will build binary
+# CMD if [ ${APP_ENV} = production ]; \
+#     then \
+#     [./main]; \
+#     else \
+#     go get github.com/pilu/fresh && \
+#     fresh; \
+#     fi
