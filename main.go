@@ -35,7 +35,6 @@ func init() {
 }
 
 func main() {
-
 	registerHandlers()
 
 	staticFileServer := http.FileServer(http.Dir("dist/"))
