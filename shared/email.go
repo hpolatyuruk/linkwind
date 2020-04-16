@@ -1,10 +1,9 @@
-package services
+package shared
 
 import (
 	"fmt"
 	"net/smtp"
 	"strconv"
-	"turkdev/src/shared"
 )
 
 /*SetInviteMailBody combine parameters and return body for UserInviteMail*/
@@ -84,8 +83,8 @@ func setResetPasswordMailBody(token, userName, domain string) string {
 func inviteCodeGenerator() string {
 	c := ""
 	for i := 0; i < 4; i++ {
-		i := shared.SeededRand.Intn(10)
-		s := shared.StringWithCharset(1)
+		i := SeededRand.Intn(10)
+		s := StringWithCharset(1)
 		c = c + strconv.Itoa(i) + s
 	}
 	return c

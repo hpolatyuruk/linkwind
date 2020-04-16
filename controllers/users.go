@@ -3,10 +3,10 @@ package controllers
 import (
 	"net/http"
 	"strings"
-	"turkdev/src/data"
-	"turkdev/src/models"
-	"turkdev/src/shared"
-	"turkdev/src/templates"
+	"turkdev/data"
+	"turkdev/models"
+	"turkdev/shared"
+	"turkdev/templates"
 )
 
 /*UserProfileViewModel represents the data which is needed on sigin UI.*/

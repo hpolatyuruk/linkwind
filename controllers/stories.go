@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"turkdev/src/data"
-	"turkdev/src/enums"
-	"turkdev/src/models"
-	"turkdev/src/shared"
-	"turkdev/src/templates"
+	"turkdev/data"
+	"turkdev/enums"
+	"turkdev/models"
+	"turkdev/shared"
+	"turkdev/templates"
 
 	"github.com/getsentry/sentry-go"
 )

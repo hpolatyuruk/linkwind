@@ -7,8 +7,8 @@ import (
 	"os"
 	"strconv"
 	"time"
-	"turkdev/src/controllers"
-	"turkdev/src/middlewares"
+	"turkdev/controllers"
+	"turkdev/middlewares"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/joho/godotenv"
@@ -47,8 +47,8 @@ func init() {
 func main() {
 	registerHandlers()
 
-	staticFileServer := http.FileServer(http.Dir("dist/"))
-	http.Handle("/dist/", http.StripPrefix("/dist/", staticFileServer))
+	staticFileServer := http.FileServer(http.Dir("public/"))
+	http.Handle("/public/", http.StripPrefix("/public/", staticFileServer))
 
 	port, err := strconv.Atoi(os.Getenv("APP_PORT"))
 	if err != nil {

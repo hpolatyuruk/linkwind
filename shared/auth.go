@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 	"time"
-	"turkdev/src/data"
+	"turkdev/data"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/getsentry/sentry-go"

@@ -11,11 +11,10 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"turkdev/src/data"
-	"turkdev/src/models"
-	"turkdev/src/services"
-	"turkdev/src/shared"
-	"turkdev/src/templates"
+	"turkdev/data"
+	"turkdev/models"
+	"turkdev/shared"
+	"turkdev/templates"
 
 	"github.com/getsentry/sentry-go"
 )
@@ -292,7 +291,7 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 		return err
 	}
 
-	err = services.SendInvitemail(model.EmailAddress, model.Memo, inviteCode, user.UserName)
+	err = shared.SendInvitemail(model.EmailAddress, model.Memo, inviteCode, user.UserName)
 	if err != nil {
 		return err
 	}

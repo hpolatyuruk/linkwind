@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math"
 	"time"
-	"turkdev/src/enums"
+	"turkdev/enums"
 
 	"github.com/lib/pq"
 )

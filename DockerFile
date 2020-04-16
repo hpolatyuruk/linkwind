@@ -23,9 +23,9 @@ RUN apk --no-cache add ca-certificates
 # Copy the Pre-built binary file from the previous stage.
 COPY --from=builder /go/src/turkdev/api/main .
 COPY --from=builder /go/src/turkdev/api/.env .
-COPY --from=builder /go/src/turkdev/api/src/templates ./src/templates
-COPY --from=builder /go/src/turkdev/api/dist ./dist
-COPY --from=builder /go/src/turkdev/api/src/data/sql_scripts ./sql_scripts
+COPY --from=builder /go/src/turkdev/api/templates ./templates
+COPY --from=builder /go/src/turkdev/api/public ./public
+COPY --from=builder /go/src/turkdev/api/data/sql_scripts ./sql_scripts
 
 # Expose port to the outside world
 EXPOSE 8080

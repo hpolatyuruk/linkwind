@@ -6,10 +6,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"turkdev/src/data"
-	"turkdev/src/services"
-	"turkdev/src/shared"
-	"turkdev/src/templates"
+	"turkdev/data"
+	"turkdev/shared"
+	"turkdev/templates"
 )
 
 const authExpirationMinutes = 1440
@@ -470,7 +469,7 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	token := shared.GenerateResetPasswordToken()
-	err = services.SendResetPasswordMail(email, userName, domain, token)
+	err = shared.SendResetPasswordMail(email, userName, domain, token)
 	if err != nil {
 		return err
 	}

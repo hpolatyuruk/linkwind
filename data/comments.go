@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
-	"turkdev/src/enums"
+	"turkdev/enums"
 )
 
 const (

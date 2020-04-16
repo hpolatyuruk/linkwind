@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"net/http"
-	"turkdev/src/shared"
+	"turkdev/shared"
 
 	"github.com/getsentry/sentry-go"
 )
