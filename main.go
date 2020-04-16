@@ -15,10 +15,20 @@ import (
 )
 
 func init() {
-	err := godotenv.Load()
+	envFileName := ".env.dev"
+	env := os.Getenv("APP_ENV")
+	if env == "development" {
+		envFileName = ".env.dev"
+	}
+	if env == "production" {
+		envFileName = ".env"
+	}
+	err := godotenv.Load(envFileName)
 	if err != nil {
 		log.Fatalf("Error loading .env file. Error: %v", err)
 	}
+
+	fmt.Printf("App is initialized in %s mode", env)
 
 	err = sentry.Init(sentry.ClientOptions{
 		// Either set your DSN here or set the SENTRY_DSN environment variable.
@@ -40,7 +50,7 @@ func main() {
 	staticFileServer := http.FileServer(http.Dir("dist/"))
 	http.Handle("/dist/", http.StripPrefix("/dist/", staticFileServer))
 
-	port, err := strconv.Atoi(os.Getenv("Port"))
+	port, err := strconv.Atoi(os.Getenv("APP_PORT"))
 	if err != nil {
 		sentry.CaptureException(err)
 		panic(err)

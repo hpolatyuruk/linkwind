@@ -21,11 +21,11 @@ func (err *DBError) Error() string {
 }
 
 func connectionString() (conStr string) {
-	host := os.Getenv("DBHost")
-	user := os.Getenv("DBUser")
-	password := os.Getenv("DBPassword")
-	dbName := os.Getenv("DBName")
-	port := os.Getenv("DBPort")
+	host := os.Getenv("DB_HOST")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	port := os.Getenv("DB_PORT")
 
 	// postgresql://user:password@ip:port/database?sslmode=disable
 	conStr = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbName)

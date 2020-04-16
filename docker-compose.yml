@@ -8,16 +8,20 @@ services:
       dockerfile: ./src/data/DockerFile
     ports:
       - '5432:5432'
+    env_file:
+      - ./.env
     environment:
-      - POSTGRES_USER=${DBUser}
-      - POSTGRES_PASSWORD=${DBPassword}
-      - POSTGRES_DB=${DBName}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
       - PGDATA=/pgdata
     volumes:
       - ./pgdata:/var/lib/postgresql/data
 
   app:
     container_name: turkdev_app
+    env_file:
+      - ./.env
     build:
       context: .
       args:
@@ -34,9 +38,11 @@ services:
   pgadmin:
     container_name: turkdev_pg
     image: dpage/pgadmin4
+    env_file:
+      - ./.env
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGAdminDefaultEmail}
-      PGADMIN_DEFAULT_PASSWORD: ${PGAdminDefaultPassword}
+      PGADMIN_DEFAULT_EMAIL: ${PG_ADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PG_ADMIN_PASSWORD}
     depends_on:
       - db
     ports:

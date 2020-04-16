@@ -17,5 +17,6 @@ node_modules/
 .env
 .env.dev
 .env.prod
+.env.development
 .env.staging
 .env.production

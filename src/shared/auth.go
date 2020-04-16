@@ -2,6 +2,7 @@ package shared
 
 import (
 	"net/http"
+	"os"
 	"time"
 	"turkdev/src/data"
 
@@ -10,8 +11,6 @@ import (
 )
 
 const (
-	/*JWTPrivateKey is a private key to generate jwt token.*/
-	JWTPrivateKey = "sample-key"
 	authCookieKey = "token"
 )
 
@@ -55,7 +54,7 @@ func IsAuthenticated(r *http.Request) (bool, *SignedInUserClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenCookie.Value, &SignedInUserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// since we only use the one private key to sign the tokens,
 		// we also only use its public counter part to verify
-		return []byte(JWTPrivateKey), nil
+		return []byte(os.Getenv("JWT_SECRET_KEY")), nil
 	})
 
 	if err == nil {
@@ -113,7 +112,7 @@ func GenerateAuthToken(user data.User, expirationTime time.Time) (string, error)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	tokenString, err := token.SignedString([]byte(JWTPrivateKey))
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
 	if err != nil {
 		return "", err
 	}
