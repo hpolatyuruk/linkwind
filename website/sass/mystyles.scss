@@ -1,0 +1,57 @@
+@charset "utf-8";
+
+@font-face {
+    font-family: "Graphik";
+    font-style: normal;
+    font-weight: 700;
+    src: local('Graphik Bold'), local('Graphik-Bold'),
+        url("../fonts/Graphik-Bold.woff2") format("woff2"),
+        url("../fonts/Graphik-Bold.woff") format("woff"),
+        url("../fonts/Graphik-Bold.otf") format("opentype"),
+        url("../fonts/Graphik-Bold.ttf") format("ttf");
+}
+
+@font-face {
+    font-family: "Graphik";
+    font-style: normal;
+    font-weight: 400;
+    src: local('Graphik Regular'), local('Graphik-Regular'),
+        url("../fonts/Graphik-Regular.woff2") format("woff2"),
+        url("../fonts/Graphik-Regular.woff") format("woff"),
+        url("../fonts/Graphik-Regular.otf") format("opentype"),
+        url("../fonts/Graphik-Regular.ttf") format("ttf");
+}
+
+// colors
+
+$blue: #3273dc;
+$white: #ffffff;
+
+// Update Bulma's global variables
+$family-sans-serif: "Graphik",
+sans-serif;
+$text: #4a5568;
+$text-light: #718096;
+$text-strong: #1d2d35;
+$primary: $blue;
+$link: $blue;
+$hr-height: 5px;
+$hr-background-color: #edf2f7;
+
+// Update some of Bulma's component variables
+$body-background-color: $white;
+$control-border-width: 2px;
+$input-border-color: transparent;
+$input-shadow: none;
+
+// Import only what you need from Bulma
+@import "../node_modules/bulma/sass/utilities/_all.sass";
+@import "../node_modules/bulma/sass/base/_all.sass";
+@import "../node_modules/bulma/sass/elements/button.sass";
+@import "../node_modules/bulma/sass/elements/container.sass";
+@import "../node_modules/bulma/sass/elements/title.sass";
+@import "../node_modules/bulma/sass/elements/box.sass";
+@import "../node_modules/bulma/sass/form/_all.sass";
+@import "../node_modules/bulma/sass/layout/hero.sass";
+@import "../node_modules/bulma/sass/layout/section.sass";
+@import "../node_modules/bulma/sass/grid/columns.sass"

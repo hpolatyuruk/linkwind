@@ -1,0 +1,28 @@
+{
+  "name": "turkdev-website",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sass/mystyles.scss",
+  "scripts": {
+    "css-build": "node-sass --omit-source-map-url sass/mystyles.scss css/mystyles.css --output-style compressed",
+    "css-watch": "npm run css-build -- --watch",
+    "start": "npm run css-watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hpolatyuruk/turkdev-website.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hpolatyuruk/turkdev-website/issues"
+  },
+  "homepage": "https://github.com/hpolatyuruk/turkdev-website#readme",
+  "devDependencies": {
+    "bulma": "^0.8.0",
+    "node-sass": "^4.13.1"
+  },
+  "dependencies": {
+    "minimist": "^1.2.5"
+  }
+}

@@ -1,0 +1,22 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+.env
+.env.dev
+.env.staging
+.env.production
+node_modules/
+
+# Ignoring env files
+.env.dev
+.env.staging
+.env.prod
