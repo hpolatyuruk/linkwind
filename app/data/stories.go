@@ -3,9 +3,9 @@ package data
 import (
 	"database/sql"
 	"fmt"
+	"linkwind/app/enums"
 	"math"
 	"time"
-	"turkdev/enums"
 
 	"github.com/lib/pq"
 )

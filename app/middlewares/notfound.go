@@ -1,8 +1,8 @@
 package middlewares
 
 import (
+	"linkwind/app/shared"
 	"net/http"
-	"turkdev/shared"
 
 	"github.com/getsentry/sentry-go"
 )

@@ -2,13 +2,13 @@ package controllers
 
 import (
 	"fmt"
+	"linkwind/app/data"
+	"linkwind/app/shared"
+	"linkwind/app/templates"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
-	"turkdev/data"
-	"turkdev/shared"
-	"turkdev/templates"
 )
 
 const authExpirationMinutes = 1440

@@ -1,22 +1,22 @@
 {
-  "name": "turkdev",
+  "name": "linkwind",
   "version": "1.0.0",
-  "description": "turkdev",
+  "description": "linkwind",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hpolatyuruk/turkdev.git"
+    "url": "git+https://github.com/hpolatyuruk/linkwind.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/hpolatyuruk/turkdev/issues"
+    "url": "https://github.com/hpolatyuruk/linkwind/issues"
   },
-  "homepage": "https://github.com/hpolatyuruk/turkdev#readme",
+  "homepage": "https://github.com/hpolatyuruk/linkwind#readme",
   "devDependencies": {
     "@babel/core": "^7.8.4",
     "@babel/plugin-proposal-class-properties": "^7.8.3",

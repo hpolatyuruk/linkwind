@@ -1,9 +1,9 @@
 package middlewares
 
 import (
+	"linkwind/app/shared"
+	"linkwind/app/templates"
 	"net/http"
-	"turkdev/shared"
-	"turkdev/templates"
 
 	"github.com/getsentry/sentry-go"
 )

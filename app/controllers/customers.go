@@ -7,14 +7,14 @@ import (
 	"image"
 	"image/jpeg"
 	"io/ioutil"
+	"linkwind/app/data"
+	"linkwind/app/models"
+	"linkwind/app/shared"
+	"linkwind/app/templates"
 	"mime/multipart"
 	"net/http"
 	"strings"
 	"time"
-	"turkdev/data"
-	"turkdev/models"
-	"turkdev/shared"
-	"turkdev/templates"
 
 	"github.com/getsentry/sentry-go"
 )

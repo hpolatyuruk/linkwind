@@ -2,44 +2,44 @@ version: '3'
 services:
   db:
     image: postgres:latest
-    container_name: turkdev_db
+    container_name: linkwind_db
     build:
       context: .
-      dockerfile: ./data/DockerFile
+      dockerfile: db_dockerfile
     ports:
       - '5432:5432'
     env_file:
-      - ./.env
+      - .env
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
       - PGDATA=/pgdata
     volumes:
-      - ./data/pgdata:/var/lib/postgresql/data
+      - ./app/data/pgdata:/var/lib/postgresql/data
 
   app:
-    container_name: turkdev_app
+    container_name: linkwind_app
     env_file:
-      - ./.env
+      - .env
     build:
       context: .
       args:
         app_env: ${APP_ENV}
-      dockerfile: DockerFile
+      dockerfile: app_dockerfile
     ports:
-      - 8080:8080
+      - ${APP_PORT}:${APP_PORT}
     restart: on-failure
     volumes:
-      - api:/go/src/turkdev/api
+      - app:/go/src/linkwind/app
     depends_on:
       - db
 
   pgadmin:
-    container_name: turkdev_pg
+    container_name: linkwind_pg
     image: dpage/pgadmin4
     env_file:
-      - ./.env
+      - .env
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PG_ADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PG_ADMIN_PASSWORD}
@@ -50,5 +50,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  api:
+  app:
   pgdata:

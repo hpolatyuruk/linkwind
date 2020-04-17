@@ -1,10 +1,10 @@
 package shared
 
 import (
+	"linkwind/app/data"
 	"net/http"
 	"os"
 	"time"
-	"turkdev/data"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/getsentry/sentry-go"

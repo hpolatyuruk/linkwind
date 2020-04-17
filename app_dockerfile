@@ -4,11 +4,14 @@ FROM golang:latest as builder
 ARG app_env
 ENV APP_ENV $app_env
 
-COPY . /go/src/turkdev/api
-WORKDIR /go/src/turkdev/api
+COPY ./app /go/src/linkwind/app
+WORKDIR /go/src/linkwind/app
+
+COPY .env ./
+COPY .env.dev ./
 
 # Copy go mod and sum files 
-COPY go.mod go.sum ./
+COPY ./app/go.mod ./app/go.sum ./
 
 # Download all dependencies. Dependencies will be cached if the go.mod and the go.sum files are not changed 
 RUN go mod download 
@@ -21,11 +24,11 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 
 # Copy the Pre-built binary file from the previous stage.
-COPY --from=builder /go/src/turkdev/api/main .
-COPY --from=builder /go/src/turkdev/api/.env .
-COPY --from=builder /go/src/turkdev/api/templates ./templates
-COPY --from=builder /go/src/turkdev/api/public ./public
-COPY --from=builder /go/src/turkdev/api/data/sql_scripts ./sql_scripts
+COPY --from=builder /go/src/linkwind/app/main .
+COPY --from=builder /go/src/linkwind/app/.env .
+COPY --from=builder /go/src/linkwind/app/templates ./templates
+COPY --from=builder /go/src/linkwind/app/public ./public
+COPY --from=builder /go/src/linkwind/app/data/sql_scripts ./sql_scripts
 
 # Expose port to the outside world
 EXPOSE 8080

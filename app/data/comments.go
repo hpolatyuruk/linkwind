@@ -3,8 +3,8 @@ package data
 import (
 	"database/sql"
 	"fmt"
+	"linkwind/app/enums"
 	"time"
-	"turkdev/enums"
 )
 
 const (

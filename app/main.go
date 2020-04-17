@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"linkwind/app/controllers"
+	"linkwind/app/middlewares"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
-	"turkdev/controllers"
-	"turkdev/middlewares"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/joho/godotenv"

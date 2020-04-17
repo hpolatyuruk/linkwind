@@ -1,12 +1,12 @@
 package controllers
 
 import (
+	"linkwind/app/data"
+	"linkwind/app/models"
+	"linkwind/app/shared"
+	"linkwind/app/templates"
 	"net/http"
 	"strings"
-	"turkdev/data"
-	"turkdev/models"
-	"turkdev/shared"
-	"turkdev/templates"
 )
 
 /*UserProfileViewModel represents the data which is needed on sigin UI.*/

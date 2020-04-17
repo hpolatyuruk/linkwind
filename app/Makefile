@@ -4,7 +4,7 @@ ASMFLAGS=-asmflags=-trimpath=$GOPATH
 build:
 	$(eval file := $(FILE))
 	$(eval variables := $(shell cat ${file}))
-	$(eval combinedflags := $(foreach v,$(variables),-X turkdev/src/data.$(v)))
+	$(eval combinedflags := $(foreach v,$(variables),-X linkwind/src/data.$(v)))
 	$(eval LDFLAGS=-ldflags "$(combinedflags)")
 ifeq ($(FILE), .env.dev)
 	go build $(LDFLAGS) $(GCFLAGS) $(ASMFLAGS) -o main.exe

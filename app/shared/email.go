@@ -10,13 +10,13 @@ import (
 func SetInviteMailBody(to, userName, memo, inviteCode string) string {
 	content := ""
 	content += "<p>Merhaba: " + to + "</p>"
-	content += "<p>" + userName + " adlı kullanıcı sizi TurkDev'e davet etti.</p>"
+	content += "<p>" + userName + " adlı kullanıcı sizi LinkWind'e davet etti.</p>"
 	if memo != "" {
 		content += "<p><i>Mesaj: " + memo + "</i></p>"
 	}
 
-	content += "<p>TurkDev'e katılmak için aşağıdaki linke tıklayarak hesap oluşturabilirsiniz.</p>"
-	content += "<p>https://turkdev.com/davet/" + inviteCode + "</p>"
+	content += "<p>LinkWind'e katılmak için aşağıdaki linke tıklayarak hesap oluşturabilirsiniz.</p>"
+	content += "<p>https://linkwind.co/davet/" + inviteCode + "</p>"
 
 	return content
 }
@@ -28,7 +28,7 @@ func SendInvitemail(mailAddress, memo, inviteCode, userName string) error {
 	from := "our smtp mail adrress"
 	to := mailAddress
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	subject := "Subject: " + "TurkDev'e katılmaya davet edildiniz\n"
+	subject := "Subject: " + "LinkWind'e katılmaya davet edildiniz\n"
 
 	body := SetInviteMailBody(to, userName, memo, inviteCodeGenerator())
 	msg := []byte(subject + mime + "\n" + body)

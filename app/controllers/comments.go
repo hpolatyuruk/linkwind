@@ -3,15 +3,15 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"linkwind/app/data"
+	"linkwind/app/enums"
+	"linkwind/app/models"
+	"linkwind/app/shared"
+	"linkwind/app/templates"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
-	"turkdev/data"
-	"turkdev/enums"
-	"turkdev/models"
-	"turkdev/shared"
-	"turkdev/templates"
 
 	"github.com/getsentry/sentry-go"
 )
