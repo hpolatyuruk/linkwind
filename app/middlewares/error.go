@@ -13,7 +13,7 @@ func Error(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
 		err := f(w, r)
 		if err != nil {
 			sentry.CaptureException(err)
-			byteValue, err := shared.ReadFile("src/templates/errors/500.html")
+			byteValue, err := shared.ReadFile("templates/errors/500.html")
 			if err != nil {
 				http.Error(w, "Unexpected error!", http.StatusInternalServerError)
 			}

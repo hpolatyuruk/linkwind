@@ -14,13 +14,13 @@ func NotFound(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc
 			err := f(w, r)
 			if err != nil {
 				sentry.CaptureException(err)
-				renderFile(w, "src/templates/errors/500.html", http.StatusInternalServerError)
+				renderFile(w, "templates/errors/500.html", http.StatusInternalServerError)
 			}
 		} else if r.URL.Path == "/robots.txt" {
 			w.Header().Set("Content-Type", "text/plain")
 			w.Write([]byte("User-agent: *\nDisallow: /"))
 		} else {
-			renderFile(w, "src/templates/errors/404.html", http.StatusNotFound)
+			renderFile(w, "templates/errors/404.html", http.StatusNotFound)
 		}
 	}
 }
