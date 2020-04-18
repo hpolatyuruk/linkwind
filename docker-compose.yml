@@ -49,6 +49,21 @@ services:
       - '5050:80'
     restart: unless-stopped
 
+  web:
+    container_name: linkwind_web
+    env_file:
+      - .env
+    build:
+      context: .
+      args:
+        app_env: ${APP_ENV}
+      dockerfile: web_dockerfile
+    ports:
+      - 80:80
+    restart: on-failure
+    depends_on:
+      - db
+
 volumes:
   app:
   pgdata:
