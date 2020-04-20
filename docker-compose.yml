@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: db_dockerfile
     ports:
-      - '5432:5432'
+      - ${DB_PORT}:${DB_PORT}
     env_file:
       - .env
     environment:
@@ -46,7 +46,7 @@ services:
     depends_on:
       - db
     ports:
-      - '5050:80'
+      - ${PG_ADMIN_PORT}:${PG_ADMIN_PORT}
     restart: unless-stopped
 
   web:
@@ -59,7 +59,7 @@ services:
         app_env: ${APP_ENV}
       dockerfile: web_dockerfile
     ports:
-      - 80:80
+      - ${WEB_SITE_PORT}:${WEB_SITE_PORT}
     restart: on-failure
     depends_on:
       - db
