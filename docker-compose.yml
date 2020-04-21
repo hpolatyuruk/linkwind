@@ -5,9 +5,10 @@ services:
     container_name: linkwind_db
     build:
       context: .
-      dockerfile: db_dockerfile
+      dockerfile: db.prod.dockerfile
     ports:
-      - ${DB_PORT}:${DB_PORT}
+      #- ${DB_PORT}:${DB_PORT}
+      - 5433:5432
     env_file:
       - .env
     environment:
@@ -26,7 +27,7 @@ services:
       context: .
       args:
         app_env: ${APP_ENV}
-      dockerfile: app_dockerfile
+      dockerfile: app.prod.dockerfile
     ports:
       - ${APP_PORT}:${APP_PORT}
     restart: on-failure
@@ -57,7 +58,7 @@ services:
       context: .
       args:
         app_env: ${APP_ENV}
-      dockerfile: web_dockerfile
+      dockerfile: web.prod.dockerfile
     ports:
       - ${WEB_SITE_PORT}:${WEB_SITE_PORT}
     restart: on-failure

@@ -15,10 +15,10 @@ import (
 )
 
 func init() {
-	envFileName := ".env.dev"
+	envFileName := "../.env.dev"
 	env := os.Getenv("APP_ENV")
 	if env == "development" {
-		envFileName = ".env.dev"
+		envFileName = "../.env.dev"
 	}
 	if env == "production" {
 		envFileName = ".env"
@@ -28,7 +28,7 @@ func init() {
 		log.Fatalf("Error loading .env file. Error: %v", err)
 	}
 
-	fmt.Printf("App is initialized in %s mode", env)
+	fmt.Println(fmt.Sprintf("App is initialized in %s mode", env))
 
 	err = sentry.Init(sentry.ClientOptions{
 		// Either set your DSN here or set the SENTRY_DSN environment variable.
@@ -55,6 +55,7 @@ func main() {
 		sentry.CaptureException(err)
 		panic(err)
 	}
+	fmt.Println(fmt.Sprintf("Application is work on port %d", port))
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
