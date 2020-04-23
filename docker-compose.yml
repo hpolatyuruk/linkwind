@@ -1,5 +1,33 @@
 version: '3'
 services:
+  nginx-proxy:
+    restart: always
+    image: jwilder/nginx-proxy
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - '/etc/nginx:/etc/nginx/vhost.d'
+      - '/usr/share/nginx/html:/usr/share/nginx/html'
+      - 'certs:/etc/nginx/certs:ro'
+      - '/var/run/docker.sock:/tmp/docker.sock:ro'
+    labels:
+      - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy=true
+    networks:
+      - default
+      - nginx-proxy
+
+  nginx-letsencrypt:
+    restart: always
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    depends_on:
+      - nginx-proxy
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+      - 'certs:/etc/nginx/certs:rw'
+      - '/etc/nginx:/etc/nginx/vhost.d'
+      - '/usr/share/nginx/html:/usr/share/nginx/html'
+
   db:
     image: postgres:latest
     container_name: linkwind_db
@@ -7,8 +35,7 @@ services:
       context: .
       dockerfile: db.prod.dockerfile
     ports:
-      #- ${DB_PORT}:${DB_PORT}
-      - 5433:5432
+      - ${DB_PORT}:${DB_PORT}
     env_file:
       - .env
     environment:
@@ -28,13 +55,20 @@ services:
       args:
         app_env: ${APP_ENV}
       dockerfile: app.prod.dockerfile
-    ports:
-      - ${APP_PORT}:${APP_PORT}
+    environment:
+      - VIRTUAL_HOST=app.linkwind.co
+      - VIRTUAL_PORT=${APP_PORT}
+      - LETSENCRYPT_HOST=app.linkwind.co
+    #ports:
+    #  - ${APP_PORT}:${APP_PORT}
     restart: on-failure
     volumes:
       - app:/go/src/linkwind/app
     depends_on:
       - db
+    networks:
+      - default
+      - nginx-proxy
 
   pgadmin:
     container_name: linkwind_pg
@@ -59,8 +93,11 @@ services:
       args:
         app_env: ${APP_ENV}
       dockerfile: web.prod.dockerfile
-    ports:
-      - ${WEB_SITE_PORT}:${WEB_SITE_PORT}
+    environment:
+      - VIRTUAL_HOST=linkwind.co
+      - LETSENCRYPT_HOST=linkwind.co
+    #ports:
+    #  - ${WEB_SITE_PORT}:${WEB_SITE_PORT}
     restart: on-failure
     depends_on:
       - db
@@ -68,3 +105,9 @@ services:
 volumes:
   app:
   pgdata:
+  certs:
+
+networks:
+  nginx-proxy:
+    external:
+      name: nginx-proxy
