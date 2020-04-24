@@ -1,4 +1,4 @@
-FROM jwilder/nginx-proxy
+FROM nginx:alpine
 COPY ./website /usr/share/nginx/html
 
 #uncomment this when we have configuration
