@@ -13,6 +13,6 @@ COPY ./website /usr/share/nginx/html
 # Expose port 80 to the outside world
 EXPOSE 80
 
-ENTRYPOINT ["nginx"] --port 80
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
 # ENTRYPOINT ["nginx","-g","daemon off;"] --port 80
 #CMD ["nginx","-g","daemon off;"]
