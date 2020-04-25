@@ -8,22 +8,22 @@ CREATE OR REPLACE FUNCTION public.calculatestorypenalty(
     LANGUAGE 'plpgsql'
 
     COST 100
-    VOLATILE 
-    
+    IMMUTABLE 
 AS $BODY$declare
-	penalty integer := 40;
-	i integer := 0;
+    penalty integer := 40;
+    i integer := -1;
 begin 
-	loop
-		exit when penalty = i;
-		i := i+1;
-		if (commentCount = i) then
-		return penalty-i;
-		end if;
-	end loop;
-	
-	return 0;
+    loop
+        exit when penalty = i;
+				i := i+1;
+        if (commentCount = i) then
+        return penalty-i;
+        end if;
+    end loop;
+    return 1;
+
 end ;
+
 $BODY$;
 
 ALTER FUNCTION public.calculatestorypenalty(integer)
@@ -31,44 +31,44 @@ ALTER FUNCTION public.calculatestorypenalty(integer)
 
 
 
--- FUNCTION: public.calculatestoryrank(integer, timestamp with time zone, integer, integer)
+-- FUNCTION: public.calculatestoryrank(stories)
 
--- DROP FUNCTION public.calculatestoryrank(integer, timestamp with time zone, integer, integer);
+-- DROP FUNCTION public.calculatestoryrank(stories);
 
 CREATE OR REPLACE FUNCTION public.calculatestoryrank(
-	penalty integer,
-	submittedon timestamp with time zone,
-	upvotes integer,
-	downvotes integer)
+	stories)
     RETURNS double precision
     LANGUAGE 'plpgsql'
 
     COST 100
-    VOLATILE 
-    
+    IMMUTABLE 
 AS $BODY$declare
-	score float;
-	timeNow timestamp;
-	votes integer;
-	up integer;
-	down float;
-	timeDiff integer;
+
+    timeNow timestamp;
+
+    votes integer;
+
+    up integer;
+
+    down float;
+
+    timeDiff integer;
+
 begin 
-	votes := upvotes- downvotes;
-	if (votes <= 0) then
-		votes := 1;
-		end if;
-	up :=  POWER((votes-1),0.8);
-	
-	timeNow := NOW();
-	timeDiff :=  EXTRACT(EPOCH 
-						 FROM (timeNow::timestamp - 
-							   submittedon::timestamp));
-	down := POWER(timeDiff+2,1.8);
-	score := (up/down)*penalty;
-	return score;
+    votes := $1.upvotes- $1.downvotes;
+    if (votes <= 0) then
+        votes := 1;
+        end if;
+    up :=  POWER((votes),0.8);
+    timeNow := NOW();
+    timeDiff :=  EXTRACT(EPOCH 
+                         FROM (timeNow::timestamp - 
+                               $1.submittedon::timestamp));
+    down := POWER(timeDiff+1,0.1);
+    return (up/down)*calculatestorypenalty($1.commentcount);
 end ;
+
 $BODY$;
 
-ALTER FUNCTION public.calculatestoryrank(integer, timestamp with time zone, integer, integer)
+ALTER FUNCTION public.calculatestoryrank(stories)
     OWNER TO postgres;

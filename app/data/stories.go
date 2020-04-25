@@ -12,17 +12,18 @@ import (
 
 /*Story represents the story which contains shared article or link info*/
 type Story struct {
-	ID           int
-	URL          string
-	Title        string
-	Text         string
-	Tags         []string
-	UpVotes      int
-	DownVotes    int
-	CommentCount int
-	UserID       int
-	UserName     string
-	SubmittedOn  time.Time
+	ID                 int
+	URL                string
+	Title              string
+	Text               string
+	Tags               []string
+	UpVotes            int
+	DownVotes          int
+	CommentCount       int
+	UserID             int
+	UserName           string
+	SubmittedOn        time.Time
+	CalculateStoryRank float64
 }
 
 /*StoryError represents any error related to story*/
@@ -73,7 +74,7 @@ func GetStories(customerID, pageNumber, pageRowCount int) (*[]Story, error) {
 	}
 	defer db.Close()
 	// TODO(Huseyin): Sort it by point algorithim when sedat finishes it
-	sql := "SELECT stories.*, users.UserName FROM stories INNER JOIN users ON users.id = stories.userid WHERE users.customerid = $1 LIMIT $2 OFFSET $3"
+	sql := "SELECT stories.*, users.UserName,stories.calculatestoryrank FROM stories INNER JOIN users ON users.id = stories.userid WHERE users.customerid = $1 ORDER BY stories.calculatestoryrank DESC LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, customerID, pageRowCount, (pageNumber-1)*pageRowCount)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
@@ -271,7 +272,7 @@ func GetRecentStories(customerID, pageNumber, pageRowCount int) (*[]Story, error
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot get stories. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
 	}
-	stories, err := MapSQLRowsToStories(rows)
+	stories, err := MapSQLRowsToRecentStories(rows)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot read rows. PageNumber: %d, PageRowCount: %d", pageNumber, pageRowCount), err}
 	}

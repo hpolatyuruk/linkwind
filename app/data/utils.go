@@ -145,6 +145,36 @@ func MapSQLRowToStory(rows *sql.Row) (story *Story, err error) {
 func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
 	_stories := []Story{}
 	var username string
+	var rank float64
+	for rows.Next() {
+		var story Story
+		err = rows.Scan(
+			&story.ID,
+			&story.URL,
+			&story.Title,
+			&story.Text,
+			&story.UpVotes,
+			&story.CommentCount,
+			&story.UserID,
+			&story.SubmittedOn,
+			pq.Array(&story.Tags),
+			&story.DownVotes,
+			&username,
+			&rank)
+		if err != nil {
+			return nil, &DBError{fmt.Sprintf("Cannot read rows"), err}
+		}
+		story.UserName = username
+		story.CalculateStoryRank = rank
+		_stories = append(_stories, story)
+	}
+	return &_stories, nil
+}
+
+/*MapSQLRowsToRecentStories creates a recent story struct array by sql rows*/
+func MapSQLRowsToRecentStories(rows *sql.Rows) (stories *[]Story, err error) {
+	_stories := []Story{}
+	var username string
 	for rows.Next() {
 		var story Story
 		err = rows.Scan(
@@ -166,7 +196,6 @@ func MapSQLRowsToStories(rows *sql.Rows) (stories *[]Story, err error) {
 		_stories = append(_stories, story)
 	}
 	return &_stories, nil
-
 }
 
 /*MapSQLRowsToComments creates a comment struct array by sql rows*/
