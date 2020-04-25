@@ -31,9 +31,10 @@ COPY --from=builder /go/src/linkwind/app/public ./public
 COPY --from=builder /go/src/linkwind/app/data/sql_scripts ./sql_scripts
 
 # Expose port to the outside world
-EXPOSE 8080
+EXPOSE 80
+ENTRYPOINT ./main
 
-CMD ["./main"];
+#CMD ["./main"];
 
 # if dev setting will use pilu/fresh for code reloading via docker-compose volume sharing with local machine
 # if production setting will build binary
