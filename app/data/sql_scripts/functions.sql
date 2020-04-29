@@ -72,3 +72,13 @@ $BODY$;
 
 ALTER FUNCTION public.calculatestoryrank(stories)
     OWNER TO postgres;
+
+
+-- Index: calculatestoryrank_idx
+
+-- DROP INDEX public.calculatestoryrank_idx;
+
+CREATE INDEX calculatestoryrank_idx
+    ON public.stories USING btree
+    (calculatestoryrank(stories.*) DESC NULLS FIRST)
+    TABLESPACE pg_default;
