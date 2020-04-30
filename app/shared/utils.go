@@ -1,7 +1,10 @@
 package shared
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math"
 	"math/rand"
@@ -13,6 +16,9 @@ import (
 	"unicode"
 
 	"golang.org/x/net/html"
+	"golang.org/x/net/html/charset"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/transform"
 )
 
 const (
@@ -72,14 +78,21 @@ func IsPasswordValid(password string) bool {
 }
 
 /*FetchURL send request to url that given as parameter and fetch title from HTML code.*/
-func FetchURL(url string) (string, error) {
+func FetchURL(url string) (title string, err error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("Error occured when get url response. Error: %v", err)
 	}
 	defer resp.Body.Close()
 
-	doc, err := html.Parse(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("response status code: %d", resp.StatusCode)
+		return
+	}
+
+	r, _, _, err := convertHTMLToUTF8(resp.Body)
+
+	doc, err := html.Parse(r)
 	if err != nil {
 		return "", fmt.Errorf("Fail to parse html. Error: %v", err)
 	}
@@ -88,8 +101,54 @@ func FetchURL(url string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("Cannot parse title")
 	}
-
+	fmt.Println(title)
 	return title, nil
+}
+
+/*
+For more info: https://siongui.github.io/2018/10/27/auto-detect-and-convert-html-encoding-to-utf8-in-go/
+*/
+func convertHTMLToUTF8(body io.Reader) (r io.Reader, name string, certain bool, err error) {
+	b, err := ioutil.ReadAll(body)
+	if err != nil {
+		return
+	}
+	e, name, certain, err := determineEncodingFromReader(bytes.NewReader(b))
+	if err != nil {
+		return
+	}
+
+	r = transform.NewReader(bytes.NewReader(b), e.NewDecoder())
+	return
+}
+
+func determineEncodingFromReader(r io.Reader) (e encoding.Encoding, name string, certain bool, err error) {
+	b, err := bufio.NewReader(r).Peek(1024)
+	if err != nil {
+		return
+	}
+
+	e, name, certain = charset.DetermineEncoding(b, "")
+	return
+}
+
+func traverse(n *html.Node) (string, bool) {
+	if isTitleElement(n) {
+		return n.FirstChild.Data, true
+	}
+
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		result, ok := traverse(c)
+		if ok {
+			return result, ok
+		}
+	}
+
+	return "", false
+}
+
+func isTitleElement(n *html.Node) bool {
+	return n.Type == html.ElementNode && n.Data == "title"
 }
 
 /*ReadFile reads file content from given path.*/
@@ -116,25 +175,6 @@ func setCookie(w http.ResponseWriter, userNameOrEmail, password string) {
 		Expires: expire,
 	}
 	http.SetCookie(w, &cookie)
-}
-
-func isTitleElement(n *html.Node) bool {
-	return n.Type == html.ElementNode && n.Data == "title"
-}
-
-func traverse(n *html.Node) (string, bool) {
-	if isTitleElement(n) {
-		return n.FirstChild.Data, true
-	}
-
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		result, ok := traverse(c)
-		if ok {
-			return result, ok
-		}
-	}
-
-	return "", false
 }
 
 /*DateToString converts date to user friendly string. eg: 15 days ago*/
