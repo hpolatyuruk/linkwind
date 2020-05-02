@@ -115,7 +115,7 @@ func GetComments(storyID int) (comments *[]Comment, err error) {
 		return nil, &DBError{fmt.Sprintf("DB connection error. StoryID: %d.", storyID), err}
 	}
 	defer db.Close()
-	// TODO(Huseyin): Order by special algorithm when Sedat finishes it
+
 	sql := "SELECT comments.*, users.username FROM comments INNER JOIN users ON users.id = comments.userid WHERE storyid = $1"
 	rows, err := db.Query(sql, storyID)
 	if err != nil {
@@ -294,7 +294,7 @@ func GetUserCommentsNotPaging(userID int) (comments *[]Comment, err error) {
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d.", userID), err}
 	}
 	defer db.Close()
-	// TODO(Huseyin): Order by special algorithm when Sedat finishes it
+
 	sql := "SELECT * FROM public.comments WHERE userid = $1"
 	rows, err := db.Query(sql, userID)
 	if err != nil {

@@ -292,7 +292,12 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 		return err
 	}
 
-	err = shared.SendInvitemail(model.EmailAddress, model.Memo, inviteCode, user.UserName)
+	domain, err := data.GetCustomerDomainByUserName(model.SignedInUser.UserName)
+	if err != nil {
+		return err
+	}
+
+	err = shared.SendInvitemail(model.EmailAddress, model.Memo, inviteCode, user.UserName, domain)
 	if err != nil {
 		return err
 	}
