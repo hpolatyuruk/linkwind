@@ -211,10 +211,11 @@ func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	user := setUserByModel(model, addedCustomer)
-	err = data.CreateUser(&user)
+	userID, err := data.CreateUser(&user)
 	if err != nil {
 		return err
 	}
+	user.ID = *userID
 
 	// Declare the expiration time of the token
 	// here, we have kept it as 5 minutes

@@ -15,11 +15,8 @@ import (
 )
 
 func init() {
-	envFileName := "../.env.dev"
+	envFileName := ".env.dev"
 	env := os.Getenv("APP_ENV")
-	if env == "development" {
-		envFileName = "../.env.dev"
-	}
 	if env == "production" {
 		envFileName = ".env"
 	}

@@ -41,20 +41,21 @@ func (err *UserError) Error() string {
 }
 
 /*CreateUser creates a user*/
-func CreateUser(user *User) (err error) {
+func CreateUser(user *User) (*int, error) {
 	db, err := connectToDB()
 	if err != nil {
-		return &UserError{"Cannot connect to db", user, err}
+		return nil, &UserError{"Cannot connect to db", user, err}
 	}
 	defer db.Close()
 	sql := "INSERT INTO users (username, fullname, email, registeredon," + "password, website, about, invitecode, karma, customerid) " +
-		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
+		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id"
 
 	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return &UserError{"Cannot encrypt user password", user, err}
+		return nil, &UserError{"Cannot encrypt user password", user, err}
 	}
-	_, err = db.Exec(
+	var lastInsertedID int
+	err = db.QueryRow(
 		sql,
 		user.UserName,
 		user.FullName,
@@ -65,11 +66,12 @@ func CreateUser(user *User) (err error) {
 		user.About,
 		user.InviteCode,
 		user.Karma,
-		user.CustomerID)
+		user.CustomerID).Scan(&lastInsertedID)
 	if err != nil {
-		return &UserError{"Cannot insert user to the database!", user, err}
+		return nil, &UserError{"Cannot insert user to the database!", user, err}
 	}
-	return nil
+	userID := int(lastInsertedID)
+	return &userID, nil
 }
 
 /*ChangePassword changes user password associated with provided user id*/

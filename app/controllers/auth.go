@@ -362,10 +362,11 @@ func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 	user.RegisteredOn = time.Now()
 	user.CustomerID = inviterUser.CustomerID
 	user.InviteCode = model.InviteCode
-	err = data.CreateUser(&user)
+	userID, err := data.CreateUser(&user)
 	if err != nil {
 		return err
 	}
+	user.ID = *userID
 	err = data.MarkInviteCodeAsUsed(model.InviteCode)
 	if err != nil {
 		return err
