@@ -73,7 +73,7 @@ func GetStories(customerID, pageNumber, pageRowCount int) (*[]Story, error) {
 		return nil, err
 	}
 	defer db.Close()
-	// TODO(Huseyin): Sort it by point algorithim when sedat finishes it
+
 	sql := "SELECT stories.*, users.UserName,stories.calculatestoryrank FROM stories INNER JOIN users ON users.id = stories.userid WHERE users.customerid = $1 ORDER BY stories.calculatestoryrank DESC LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, customerID, pageRowCount, (pageNumber-1)*pageRowCount)
 	if err != nil {
