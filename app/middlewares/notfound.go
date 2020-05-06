@@ -7,24 +7,6 @@ import (
 	"github.com/getsentry/sentry-go"
 )
 
-/*NotFound is a middleware which handeles not found page for given handler.*/
-func NotFound(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
-			err := f(w, r)
-			if err != nil {
-				sentry.CaptureException(err)
-				renderFile(w, "templates/errors/500.html", http.StatusInternalServerError)
-			}
-		} else if r.URL.Path == "/robots.txt" {
-			w.Header().Set("Content-Type", "text/plain")
-			w.Write([]byte("User-agent: *\nDisallow: /"))
-		} else {
-			renderFile(w, "templates/errors/404.html", http.StatusNotFound)
-		}
-	}
-}
-
 /*NotFoundMiddleWare is a middleware which handeles not found page for given handler.*/
 func NotFoundMiddleWare() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
