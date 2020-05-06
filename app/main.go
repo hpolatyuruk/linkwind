@@ -42,10 +42,8 @@ func init() {
 }
 
 func main() {
-	registerHandlers()
-
-	staticFileServer := http.FileServer(http.Dir("public/"))
-	http.Handle("/public/", http.StripPrefix("/public/", staticFileServer))
+	router := http.NewServeMux()
+	configuredRouter := configureRouter(router)
 
 	port, err := strconv.Atoi(os.Getenv("APP_PORT"))
 	if err != nil {
@@ -53,149 +51,88 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(fmt.Sprintf("Application is work on port %d", port))
-	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	// Start our HTTP server
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), configuredRouter); err != nil {
+		sentry.CaptureException(err)
+		os.Exit(1)
+	}
 }
 
-func registerHandlers() {
+func configureRouter(router *http.ServeMux) http.Handler {
 
-	http.HandleFunc(
-		"/users/profile",
-		middlewares.Middleware(
-			middlewares.Error(controllers.UserProfileHandler),
-			middlewares.Auth))
+	profilePath := "/users/profile"
+	changePasswordPath := "/change-password"
+	profileEditPath := "/profile-edit"
+	userInvitePath := "/users/invite"
+	adminPath := "/admin"
+	storyVotePath := "/stories/vote"
+	storyVoteRemovePath := "/stories/remove/vote"
+	storySavePath := "/stories/save"
+	storyUnsavePath := "/stories/unsave"
+	submitStoryPath := "/submit"
+	addCommentPath := "/comments/add"
+	voteCommentPath := "/comments/vote"
+	removeCommentVotePath := "/comments/remove/vote"
+	replyCommentPath := "/comments/reply"
+	userSavedStoryPath := "/users/stories/saved"
+	userSubmittedStoryPath := "/users/stories/submitted"
+	userUpvotedStoryPath := "/users/stories/upvoted"
 
-	http.HandleFunc(
-		"/signup",
-		middlewares.Error(controllers.SignUpHandler))
+	authorizedPaths := []string{
+		profilePath,
+		changePasswordPath,
+		profileEditPath,
+		userInvitePath,
+		adminPath,
+		storyVotePath,
+		storyVoteRemovePath,
+		storySavePath,
+		storyUnsavePath,
+		submitStoryPath,
+		addCommentPath,
+		voteCommentPath,
+		removeCommentVotePath,
+		replyCommentPath,
+		userSavedStoryPath,
+		userSubmittedStoryPath,
+		userUpvotedStoryPath,
+	}
 
-	http.HandleFunc(
-		"/signin",
-		middlewares.Error(controllers.SignInHandler))
+	staticFileServer := http.FileServer(http.Dir("public/"))
+	router.Handle("/public/", http.StripPrefix("/public/", staticFileServer))
 
-	http.HandleFunc(
-		"/signout",
-		middlewares.Error(controllers.SignOutHandler))
+	router.HandleFunc("/", controllers.StoriesHandler)
+	router.HandleFunc("/recent", controllers.RecentStoriesHandler)
+	router.HandleFunc("/signup", controllers.SignUpHandler)
+	router.HandleFunc("/signin", controllers.SignInHandler)
+	router.HandleFunc("/signout", controllers.SignOutHandler)
+	router.HandleFunc("/reset-password", controllers.ResetPasswordHandler)
+	router.HandleFunc("/set-new-password", controllers.SetNewPasswordHandler)
+	router.HandleFunc("/stories/detail", controllers.StoryDetailHandler)
+	router.HandleFunc("/invitecodes/generate", controllers.GenerateInviteCodeHandler)
+	router.HandleFunc(profilePath, controllers.UserProfileHandler)
+	router.HandleFunc(changePasswordPath, controllers.ChangePasswordHandler)
+	router.HandleFunc(profileEditPath, controllers.UserProfileHandler)
+	router.HandleFunc(userInvitePath, controllers.InviteUserHandler)
+	router.HandleFunc(adminPath, controllers.AdminHandler)
+	router.HandleFunc(storyVotePath, controllers.VoteStoryHandler)
+	router.HandleFunc(storyVoteRemovePath, controllers.RemoveStoryVoteHandler)
+	router.HandleFunc(storySavePath, controllers.SaveStoryHandler)
+	router.HandleFunc(storyUnsavePath, controllers.UnSaveStoryHandler)
+	router.HandleFunc(submitStoryPath, controllers.SubmitStoryHandler)
+	router.HandleFunc(addCommentPath, controllers.AddCommentHandler)
+	router.HandleFunc(voteCommentPath, controllers.VoteCommentHandler)
+	router.HandleFunc(removeCommentVotePath, controllers.RemoveCommentVoteHandler)
+	router.HandleFunc(replyCommentPath, controllers.ReplyToCommentHandler)
+	router.HandleFunc(userSavedStoryPath, controllers.UserSavedStoriesHandler)
+	router.HandleFunc(userSubmittedStoryPath, controllers.UserSubmittedStoriesHandler)
+	router.HandleFunc(userUpvotedStoryPath, controllers.UserUpvotedStoriesHandler)
 
-	http.HandleFunc(
-		"/",
-		middlewares.NotFound(controllers.StoriesHandler))
+	errorMiddleware := middlewares.ErrorMiddleWare()
+	errorHandledRouter := errorMiddleware(router)
 
-	http.HandleFunc(
-		"/recent",
-		middlewares.Error(controllers.RecentStoriesHandler))
+	authMiddleware := middlewares.AuthMiddleWare(authorizedPaths)
+	authHandledRouter := authMiddleware(errorHandledRouter)
 
-	http.HandleFunc(
-		"/stories/detail",
-		middlewares.Error(controllers.StoryDetailHandler))
-
-	http.HandleFunc(
-		"/stories/vote",
-		middlewares.Middleware(
-			controllers.VoteStoryHandler,
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/stories/remove/vote",
-		middlewares.Middleware(
-			controllers.RemoveStoryVoteHandler,
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/stories/save",
-		middlewares.Middleware(
-			controllers.SaveStoryHandler,
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/stories/unsave",
-		middlewares.Middleware(
-			controllers.UnSaveStoryHandler,
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/submit",
-		middlewares.Middleware(
-			middlewares.Error(controllers.SubmitStoryHandler),
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/comments/add",
-		middlewares.Middleware(
-			middlewares.Error(controllers.AddCommentHandler),
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/comments/vote",
-		middlewares.Middleware(
-			controllers.VoteCommentHandler,
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/comments/remove/vote",
-		middlewares.Middleware(
-			controllers.RemoveCommentVoteHandler,
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/comments/reply",
-		middlewares.Middleware(
-			controllers.ReplyToCommentHandler,
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/users/stories/saved",
-		middlewares.Middleware(
-			middlewares.Error(controllers.UserSavedStoriesHandler),
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/users/stories/submitted",
-		middlewares.Middleware(
-			middlewares.Error(controllers.UserSubmittedStoriesHandler), middlewares.Auth))
-
-	http.HandleFunc(
-		"/users/stories/upvoted",
-		middlewares.Middleware(
-			middlewares.Error(controllers.UserUpvotedStoriesHandler),
-			middlewares.Auth))
-
-	http.Handle(
-		"/reset-password",
-		middlewares.Error(controllers.ResetPasswordHandler))
-
-	http.HandleFunc(
-		"/set-new-password",
-		middlewares.Error(controllers.SetNewPasswordHandler))
-
-	http.HandleFunc(
-		"/change-password",
-		middlewares.Middleware(
-			middlewares.Error(controllers.ChangePasswordHandler),
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/profile-edit",
-		middlewares.Middleware(
-			middlewares.Error(controllers.UserProfileHandler),
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/invitecodes/generate",
-		middlewares.Error(controllers.GenerateInviteCodeHandler))
-
-	http.HandleFunc(
-		"/customer-signup",
-		middlewares.Error(controllers.CustomerSignUpHandler))
-
-	http.HandleFunc(
-		"/users/invite",
-		middlewares.Middleware(
-			middlewares.Error(controllers.InviteUserHandler),
-			middlewares.Auth))
-
-	http.HandleFunc(
-		"/admin",
-		middlewares.Middleware(
-			middlewares.Error(controllers.AdminHandler),
-			middlewares.Auth))
+	return authHandledRouter
 }

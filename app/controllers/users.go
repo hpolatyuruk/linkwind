@@ -36,19 +36,19 @@ func (model *UserProfileViewModel) Validate() bool {
 }
 
 /*UserProfileHandler handles showing user profile detail*/
-func UserProfileHandler(w http.ResponseWriter, r *http.Request) error {
+func UserProfileHandler(w http.ResponseWriter, r *http.Request) {
 	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
-		return handleUserProfileGET(w, r, user)
+		handleUserProfileGET(w, r, user)
 	case "POST":
-		return handleUserProfilePOST(w, r, user)
+		handleUserProfilePOST(w, r, user)
 	default:
-		return handleUserProfileGET(w, r, user)
+		handleUserProfileGET(w, r, user)
 	}
 }
 
-func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) error {
+func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) {
 	model := &UserProfileViewModel{
 		SignedInUser: &models.SignedInUserViewModel{
 			UserName:   userClaims.UserName,
@@ -68,26 +68,24 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *sh
 
 	user, err := data.GetUserByUserName(userName)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if user == nil {
 		err := templates.RenderFile(w, "errors/404.html", nil)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
 	}
 
 	isAdmin, err := data.IsUserAdmin(user.ID)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	setUserToModel(user, model, isAdmin)
 	err = templates.RenderInLayout(w, renderFilePath, model)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
 func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) error {

@@ -231,19 +231,19 @@ func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 }
 
 /*InviteUserHandler handles user invite operations*/
-func InviteUserHandler(w http.ResponseWriter, r *http.Request) error {
+func InviteUserHandler(w http.ResponseWriter, r *http.Request) {
 	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
-		return handleInviteUserGET(w, r, user)
+		handleInviteUserGET(w, r, user)
 	case "POST":
-		return handleInviteUserPOST(w, r, user)
+		handleInviteUserPOST(w, r, user)
 	default:
-		return handleInviteUserGET(w, r, user)
+		handleInviteUserGET(w, r, user)
 	}
 }
 
-func handleInviteUserGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+func handleInviteUserGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
 	err := templates.RenderInLayout(
 		w,
 		"invite.html",
@@ -257,12 +257,11 @@ func handleInviteUserGET(w http.ResponseWriter, r *http.Request, user *shared.Si
 		},
 	)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
-func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
 	model := &InviteUserViewModel{
 		EmailAddress: r.FormValue("email"),
 		Memo:         r.FormValue("memo"),
@@ -277,100 +276,98 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 	inviteHTMLPath := "invite.html"
 	isValid, err := model.Validate(model.EmailAddress)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if !isValid {
 		err := templates.RenderInLayout(w, inviteHTMLPath, model)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
+		return
 	}
 
 	inviteCode, err := data.CreateInviteCode(user.ID, model.EmailAddress)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	domain, err := data.GetCustomerDomainByUserName(model.SignedInUser.UserName)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	err = shared.SendInvitemail(model.EmailAddress, model.Memo, inviteCode, user.UserName, domain)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	model.SuccessMessage = "Inivitation mail successfully sent to " + model.EmailAddress
 	err = templates.RenderInLayout(w, inviteHTMLPath, model)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
 /*AdminHandler handles admin operations*/
-func AdminHandler(w http.ResponseWriter, r *http.Request) error {
+func AdminHandler(w http.ResponseWriter, r *http.Request) {
 	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
-		return handleAdminGET(w, r, user)
+		handleAdminGET(w, r, user)
 	case "POST":
-		return handleAdminPOST(w, r, user)
+		handleAdminPOST(w, r, user)
 	default:
-		return handleAdminGET(w, r, user)
+		handleAdminGET(w, r, user)
 	}
 }
 
-func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
 	isAdmin, err := data.IsUserAdmin(user.ID)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	if !isAdmin {
 		err = templates.RenderFile(w, "errors/500.html", nil)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
+		return
 	}
 
 	customer, err := data.GetCustomerByID(user.CustomerID)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	model, err := setCustomerAdminViewModel(customer, user)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	if model.LogoImageAsBase64 != "" {
 		imageasB64, err := decodeLogoImageToBase64(customer.LogoImage)
 		if err != nil {
-			return err
+			panic(err)
 		}
 		model.LogoImageAsBase64 = imageasB64
 	}
 
 	err = templates.RenderInLayout(w, "admin.html", model)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
-func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
 	file, err := getImageFile(r)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	defer file.Close()
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	model := &CustomerAdminViewModel{
 		Name:              r.FormValue("name"),
@@ -382,28 +379,28 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 	if model.Validate() == false {
 		err := templates.RenderInLayout(w, adminHTMLPath, model)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
+		return
 	}
 
 	customer, err := data.GetCustomerByID(user.CustomerID)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	if customer.Name != model.Name {
 		exists, err := data.ExistsCustomerByName(model.Name)
 		if err != nil {
-			return err
+			panic(err)
 		}
 		if exists {
 			model.Errors["Name"] = "This name is already taken"
 			err := templates.RenderInLayout(w, adminHTMLPath, model)
 			if err != nil {
-				return err
+				panic(err)
 			}
-			return nil
+			return
 		}
 
 	}
@@ -412,15 +409,15 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 		if customer.Domain != model.Domain {
 			exists, err := data.ExistsCustomerByDomain(model.Domain)
 			if err != nil {
-				return err
+				panic(err)
 			}
 			if exists {
 				model.Errors["Domain"] = "This domain is already taken"
 				err := templates.RenderInLayout(w, adminHTMLPath, model)
 				if err != nil {
-					return err
+					panic(err)
 				}
-				return nil
+				return
 			}
 		}
 	}
@@ -428,15 +425,14 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 	setUpdatedCustomerByModel(model, customer)
 	err = data.UpdateCustomer(customer)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	model.SuccessMessage = "Account updated successfuly"
 	err = templates.RenderInLayout(w, adminHTMLPath, model)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
 func setCustomerByModel(model *CustomerSignUpViewModel) data.Customer {

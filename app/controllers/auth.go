@@ -152,39 +152,37 @@ func (model *ChangePasswordViewModel) Validate() bool {
 }
 
 /*SignInHandler handles user signin operations.*/
-func SignInHandler(w http.ResponseWriter, r *http.Request) error {
+func SignInHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
 		isAuthenticated, _, err := shared.IsAuthenticated(r)
 		if err != nil {
-			return err
+			panic(err)
 		}
 		if isAuthenticated {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return nil
 		}
-		return handleSignInGET(w, r)
+		handleSignInGET(w, r)
 	case "POST":
-		return handleSignInPOST(w, r)
+		handleSignInPOST(w, r)
 	default:
-		return handleSignInGET(w, r)
+		handleSignInGET(w, r)
 	}
 }
 
-func handleSignInGET(w http.ResponseWriter, r *http.Request) error {
+func handleSignInGET(w http.ResponseWriter, r *http.Request) {
 	err := templates.RenderFile(
 		w,
 		"layouts/users/signin.html",
 		SignInViewModel{},
 	)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
-func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
+func handleSignInPOST(w http.ResponseWriter, r *http.Request) {
 	model := &SignInViewModel{
 		EmailOrUserName: r.FormValue("emailOrUserName"),
 		Password:        r.FormValue("password"),
@@ -192,9 +190,9 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
 	if model.Validate() == false {
 		err := templates.RenderFile(w, "/layouts/users/signin.html", model)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
+		return
 	}
 	var err error
 	var user *data.User
@@ -210,15 +208,15 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
 		model.EmailOrUserName,
 		model.Password)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if user == nil {
 		model.Errors["General"] = "User does not exist!"
 		err = templates.RenderFile(w, "/layouts/users/signin.html", model)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
+		return
 	}
 	// Declare the expiration time of the token
 	// here, we have kept it as 5 minutes
@@ -226,11 +224,10 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) error {
 
 	token, err := shared.GenerateAuthToken(*user, expirationTime)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	shared.SetAuthCookie(w, token, expirationTime)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-	return nil
 }
 
 type findUser func(userNameOrEmail, password string) (*data.User, error)
@@ -252,51 +249,49 @@ func checkUser(fnExistsUser existsUser, fnFindUser findUser, userNameOrEmail, pa
 }
 
 /*SignUpHandler handles user signup operations*/
-func SignUpHandler(w http.ResponseWriter, r *http.Request) error {
+func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		return handleSignUpGET(w, r)
+		handleSignUpGET(w, r)
 	case "POST":
-		return handleSignUpPOST(w, r)
+		handleSignUpPOST(w, r)
 	default:
-		return handleSignUpGET(w, r)
+		handleSignUpGET(w, r)
 	}
 }
 
-func handleSignUpGET(w http.ResponseWriter, r *http.Request) error {
+func handleSignUpGET(w http.ResponseWriter, r *http.Request) {
 	// Only invited users can create an account
 	inviteCode := r.URL.Query().Get("invitecode")
 	if strings.TrimSpace(inviteCode) == "" {
 		http.Error(w, "Missing invite code!", http.StatusBadRequest)
-		return nil
+		return
 	}
 	exists, err := data.ExistsInviteCode(inviteCode)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if exists == false {
 		http.Error(w, "Invite code could not be found!", http.StatusBadRequest)
-		return nil
+		panic(nil)
 	}
 	used, err := data.IsInviteCodeUsed(inviteCode)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if used {
 		http.Error(w, "The invite code is already used!", http.StatusBadRequest)
-		return nil
 	}
 	templates.RenderFile(
 		w,
 		"layouts/users/signup.html",
 		SignUpViewModel{InviteCode: inviteCode},
 	)
-	return nil
 }
 
-func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
+func handleSignUpPOST(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		return err
+		panic(err)
 	}
 	signUpHTMLPath := "layouts/users/signup.html"
 	model := &SignUpViewModel{
@@ -307,52 +302,52 @@ func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 	}
 	if model.Validate() == false {
 		templates.RenderFile(w, signUpHTMLPath, model)
-		return nil
+		return
 	}
 	if strings.TrimSpace(model.InviteCode) == "" {
 		model.Errors["General"] = "Missing invite code!"
 		templates.RenderFile(w, signUpHTMLPath, model)
-		return nil
+		return
 	}
 	invitedCodeInfo, err := data.GetInviteCodeInfoByCode(model.InviteCode)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if invitedCodeInfo == nil {
 		model.Errors["General"] = "Invite code could not be found. Please make sure that you have a valid invite code."
 		templates.RenderFile(w, signUpHTMLPath, model)
-		return nil
+		return
 	}
 	if invitedCodeInfo.Used {
 		model.Errors["General"] = "The invite code is already used!"
-		return nil
+		return
 	}
 	exists, err := data.ExistsUserByUserName(model.UserName)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if exists {
 		model.Errors["UserName"] = "User name is already taken!"
 		templates.RenderFile(w, signUpHTMLPath, model)
-		return nil
+		return
 	}
 	exists, err = data.ExistsUserByEmail(model.Email)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if exists {
 		model.Errors["Email"] = "The user associated with this email already exists!"
 		templates.RenderFile(w, signUpHTMLPath, model)
-		return nil
+		return
 	}
 	inviterUser, err := data.GetUserByID(invitedCodeInfo.InviterUserID)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if inviterUser == nil {
 		model.Errors["General"] = "The inviter user could not be found!"
 		templates.RenderFile(w, signUpHTMLPath, model)
-		return nil
+		return
 	}
 	var user data.User
 	user.UserName = model.UserName
@@ -364,12 +359,12 @@ func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 	user.InviteCode = model.InviteCode
 	userID, err := data.CreateUser(&user)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	user.ID = *userID
 	err = data.MarkInviteCodeAsUsed(model.InviteCode)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	// Declare the expiration time of the token
 	// here, we have kept it as 5 minutes
@@ -377,45 +372,42 @@ func handleSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 
 	token, err := shared.GenerateAuthToken(user, expirationTime)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	shared.SetAuthCookie(w, token, expirationTime)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-	return nil
 }
 
 /*SignOutHandler handles user singout operations.*/
-func SignOutHandler(w http.ResponseWriter, r *http.Request) error {
+func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 	shared.SetAuthCookie(w, "", time.Now())
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-	return nil
 }
 
 /*ResetPasswordHandler handles user  reset password operations*/
-func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) error {
+func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		return handleResetPasswordGET(w, r)
+		handleResetPasswordGET(w, r)
 	case "POST":
-		return handleResetPasswordPOST(w, r)
+		handleResetPasswordPOST(w, r)
 	default:
-		return handleResetPasswordGET(w, r)
+		handleResetPasswordGET(w, r)
 	}
 }
 
-func handleResetPasswordGET(w http.ResponseWriter, r *http.Request) error {
+func handleResetPasswordGET(w http.ResponseWriter, r *http.Request) {
 	err := templates.RenderFile(
 		w,
 		"layouts/users/reset-password.html",
 		ResetPasswordViewModel{},
 	)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
-func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
+func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) {
 	model := &ResetPasswordViewModel{
 		EmailOrUserName: r.FormValue("emailOrUserName"),
 	}
@@ -423,9 +415,9 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 	if model.Validate() == false {
 		err := templates.RenderFile(w, "layouts/users/reset-password.html", model)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
+		return
 	}
 
 	var exists bool
@@ -439,9 +431,9 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 			model.Errors["General"] = "User does not exist!"
 			err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
 			if err != nil {
-				return err
+				panic(err)
 			}
-			return nil
+			return
 		}
 		email = model.EmailOrUserName
 		userName, err = data.GetUserNameByEmail(model.EmailOrUserName)
@@ -451,14 +443,14 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 			model.Errors["General"] = "User does not exist!"
 			err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
 			if err != nil {
-				return err
+				panic(err)
 			}
-			return nil
+			return
 		}
 		userName = model.EmailOrUserName
 	}
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	user, err = data.GetUserByUserName(userName)
@@ -466,50 +458,49 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 
 	domain, err := data.GetCustomerDomainByUserName(userName)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	token := shared.GenerateResetPasswordToken()
 	err = shared.SendResetPasswordMail(email, userName, domain, token)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	data.SaveResetPasswordToken(token, user.ID)
 	model.SuccessMessage = "Password recovery message sent. If you don't see it, you might want to check your spam folder."
 	err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
 /*SetNewPasswordHandler handles set new password operations*/
-func SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) error {
+func SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		return handleSetNewPasswordGET(w, r)
+		handleSetNewPasswordGET(w, r)
 	case "POST":
-		return handleSetNewPasswordPOST(w, r)
+		handleSetNewPasswordPOST(w, r)
 	default:
-		return handleSetNewPasswordGET(w, r)
+		handleSetNewPasswordGET(w, r)
 	}
 }
 
-func handleSetNewPasswordGET(w http.ResponseWriter, r *http.Request) error {
+func handleSetNewPasswordGET(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	if strings.TrimSpace(token) == "" {
 		http.Error(w, "Missing Token! ", http.StatusBadRequest)
-		return nil
+		return
 	}
 
 	user, err := data.GetUserByResetPasswordToken(token)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if user == nil {
 		http.Error(w, "Token is not valid! ", http.StatusBadRequest)
-		return nil
+		return
 	}
 	err = templates.RenderFile(
 		w,
@@ -517,9 +508,8 @@ func handleSetNewPasswordGET(w http.ResponseWriter, r *http.Request) error {
 		SetNewPasswordViewModel{},
 	)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
 func handleSetNewPasswordPOST(w http.ResponseWriter, r *http.Request) error {
@@ -565,34 +555,33 @@ func handleSetNewPasswordPOST(w http.ResponseWriter, r *http.Request) error {
 }
 
 /*ChangePasswordHandler handles change password operations*/
-func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) error {
+func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
 	_, claims, err := shared.IsAuthenticated(r)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	switch r.Method {
 	case "GET":
-		return handleChangePasswordGET(w, r)
+		handleChangePasswordGET(w, r)
 	case "POST":
-		return handleChangePasswordPOST(w, r, claims.ID)
+		handleChangePasswordPOST(w, r, claims.ID)
 	default:
-		return handleChangePasswordGET(w, r)
+		handleChangePasswordGET(w, r)
 	}
 }
 
-func handleChangePasswordGET(w http.ResponseWriter, r *http.Request) error {
+func handleChangePasswordGET(w http.ResponseWriter, r *http.Request) {
 	err := templates.RenderFile(
 		w,
 		"layouts/users/change-password.html",
 		ChangePasswordViewModel{},
 	)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
-func handleChangePasswordPOST(w http.ResponseWriter, r *http.Request, userID int) error {
+func handleChangePasswordPOST(w http.ResponseWriter, r *http.Request, userID int) {
 	model := &ChangePasswordViewModel{
 		CurrentPassword: r.FormValue("currentPassword"),
 		NewPassword:     r.FormValue("newPassword"),
@@ -602,9 +591,9 @@ func handleChangePasswordPOST(w http.ResponseWriter, r *http.Request, userID int
 	if model.Validate() == false {
 		err := templates.RenderFile(w, "layouts/users/change-password.html", model)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
+		return
 	}
 
 	matched, err := data.ConfirmPasswordMatch(userID, model.CurrentPassword)
@@ -612,33 +601,31 @@ func handleChangePasswordPOST(w http.ResponseWriter, r *http.Request, userID int
 		model.Errors["General"] = "User does not exist!"
 		err = templates.RenderFile(w, "layouts/users/change-password.html", model)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
+		return
 	}
 	err = data.ChangePassword(userID, model.NewPassword)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	model.SuccessMessage = "Password successfuly changed"
 	err = templates.RenderFile(w, "layouts/users/change-password.html", model)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
 /*GenerateInviteCodeHandler generate the invite code to invite an user to join the system*/
-func GenerateInviteCodeHandler(w http.ResponseWriter, r *http.Request) error {
+func GenerateInviteCodeHandler(w http.ResponseWriter, r *http.Request) {
 	inviterUserID, _ := strconv.Atoi(r.URL.Query().Get("userid"))
 	invitedEmail := r.URL.Query().Get("invitedemail")
 	inviteCode, err := data.CreateInviteCode(inviterUserID, invitedEmail)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	w.WriteHeader(200)
 	w.Header().Add("Content-Type", "text/plain")
 	w.Write([]byte(inviteCode))
-	return nil
 }

@@ -31,10 +31,10 @@ type ReplyModel struct {
 }
 
 /*AddCommentHandler adds comment to the story. */
-func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
+func AddCommentHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		http.Error(w, "Only POST method is supported.", http.StatusMethodNotAllowed)
-		return nil
+		return
 	}
 	signedInUser := shared.GetUser(r)
 	commentText := r.FormValue("comment")
@@ -43,12 +43,12 @@ func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
 	if strings.TrimSpace(commentText) == "" ||
 		strings.TrimSpace(strStoryID) == "" {
 		http.Redirect(w, r, storyURL, http.StatusSeeOther)
-		return nil
+		return
 	}
 	storyID, err := strconv.Atoi(strStoryID)
 	if err != nil {
 		sentry.CaptureException(err)
-		return err
+		panic(err)
 	}
 	comment := &data.Comment{
 		StoryID:     storyID,
@@ -64,10 +64,9 @@ func AddCommentHandler(w http.ResponseWriter, r *http.Request) error {
 	_, err = data.WriteComment(comment)
 	if err != nil {
 		sentry.CaptureException(err)
-		return err
+		panic(err)
 	}
 	http.Redirect(w, r, storyURL, http.StatusSeeOther)
-	return nil
 }
 
 /*ReplyToCommentHandler write a reply to comment.*/

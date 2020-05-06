@@ -74,21 +74,21 @@ func (model *StorySubmitModel) Validate() bool {
 }
 
 /*StoriesHandler handles showing the popular published stories*/
-func StoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	return renderStoriesPage("Stories", data.GetStories, w, r)
+func StoriesHandler(w http.ResponseWriter, r *http.Request) {
+	renderStoriesPage("Stories", data.GetStories, w, r)
 }
 
 /*RecentStoriesHandler handles showing recently published stories*/
-func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) error {
-	return renderStoriesPage("Recent Stories", data.GetRecentStories, w, r)
+func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) {
+	renderStoriesPage("Recent Stories", data.GetRecentStories, w, r)
 }
 
-func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.ResponseWriter, r *http.Request) error {
+func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.ResponseWriter, r *http.Request) {
 	var model = &models.StoryPageViewModel{Title: title}
 	var customerID int = 1 // TODO: get actual customer id from registered customer website
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if isAuthenticated {
 		customerID = user.CustomerID
@@ -98,22 +98,21 @@ func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.Respon
 	var page int = getPage(r)
 	stories, err := fnGetStories(customerID, page, DefaultPageSize)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	storiesCount, err := data.GetCustomerStoriesCount(customerID)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	pagingModel, err := setPagingViewModel(customerID, page, storiesCount)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	model.Page = pagingModel
 	if stories != nil && len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
 	templates.RenderInLayout(w, "stories.html", model)
-	return nil
 }
 
 func setPagingViewModel(customerID, currentPage, storiesCount int) (*models.Paging, error) {
@@ -135,12 +134,12 @@ func calcualteTotalPageCount(storiesCount int) int {
 }
 
 /*UserSavedStoriesHandler handles showing the saved stories of a user*/
-func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
+func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	var model = &models.StoryPageViewModel{Title: "Saved Stories"}
 
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	if isAuthenticated {
@@ -151,15 +150,15 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	var page int = getPage(r)
 	stories, err := data.GetUserSavedStories(user.ID, page, DefaultPageSize)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	storiesCount, err := data.GetUserSavedStoriesCount(user.ID)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	pagingModel, err := setPagingViewModel(user.CustomerID, page, storiesCount)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	model.Page = pagingModel
 	if stories == nil || len(*stories) > 0 {
@@ -167,18 +166,17 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	err = templates.RenderInLayout(w, "stories.html", model)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
 /*UserSubmittedStoriesHandler handles user's submitted stories*/
-func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
+func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	var model = &models.StoryPageViewModel{Title: "Submitted Stories"}
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if isAuthenticated {
 		model.IsAuthenticated = isAuthenticated
@@ -187,15 +185,15 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	var page int = getPage(r)
 	stories, err := data.GetUserSubmittedStories(user.ID, page, DefaultPageSize)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	storiesCount, err := data.GetUserSubmittedStoriesCount(user.ID)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	pagingModel, err := setPagingViewModel(user.CustomerID, page, storiesCount)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	model.Page = pagingModel
 	if stories == nil || len(*stories) > 0 {
@@ -203,20 +201,19 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	err = templates.RenderInLayout(w, "stories.html", model)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
 /*UserUpvotedStoriesHandler handles showing the upvoted stories by user*/
-func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
+func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	var model = &models.StoryPageViewModel{Title: "Upvoted Stories"}
 
 	var userID int = -1
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if isAuthenticated {
 		userID = user.ID
@@ -226,15 +223,15 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	var page int = getPage(r)
 	stories, err := data.GetUserUpvotedStories(userID, page, DefaultPageSize)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	storiesCount, err := data.GetUserUpvotedStoriesCount(user.ID)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	pagingModel, err := setPagingViewModel(user.CustomerID, page, storiesCount)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	model.Page = pagingModel
 	if stories == nil || len(*stories) > 0 {
@@ -242,25 +239,24 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	err = templates.RenderInLayout(w, "stories.html", model)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
 /*SubmitStoryHandler handles to submit a new story*/
-func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) error {
+func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) {
 	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
-		return handlesSubmitGET(w, r, user)
+		handlesSubmitGET(w, r, user)
 	case "POST":
-		return handleSubmitPOST(w, r, user)
+		handleSubmitPOST(w, r, user)
 	default:
-		return handlesSubmitGET(w, r, user)
+		handlesSubmitGET(w, r, user)
 	}
 }
 
-func handlesSubmitGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+func handlesSubmitGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
 	model := &StorySubmitModel{
 		SignedInUser: &models.SignedInUserViewModel{
 			UserName:   user.UserName,
@@ -269,14 +265,12 @@ func handlesSubmitGET(w http.ResponseWriter, r *http.Request, user *shared.Signe
 			Email:      user.Email,
 		},
 	}
-
 	templates.RenderInLayout(w, "submit.html", model)
-	return nil
 }
 
-func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) error {
+func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
 	if err := r.ParseForm(); err != nil {
-		return err
+		panic(err)
 	}
 
 	model := &StorySubmitModel{
@@ -292,7 +286,7 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.Signe
 	}
 	if model.Validate() == false {
 		templates.RenderInLayout(w, "submit.html", model)
-		return nil
+		return
 	}
 	if strings.TrimSpace(model.URL) != "" &&
 		strings.TrimSpace(model.Title) == "" {
@@ -300,7 +294,7 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.Signe
 		if err != nil {
 			model.Errors["URL"] = "Something went wrong while fetching URL. Please make sure that you entered a valid URL."
 			templates.RenderInLayout(w, "submit.html", model)
-			return nil
+			return
 		}
 		model.Title = fetchedTitle
 	}
@@ -315,44 +309,43 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.Signe
 
 	err := data.CreateStory(&story)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-	return nil
 }
 
 /*StoryDetailHandler handles showing comments by giving story id*/
-func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
+func StoryDetailHandler(w http.ResponseWriter, r *http.Request) {
 	strStoryID := r.URL.Query().Get("id")
 	if len(strStoryID) == 0 {
 		err := templates.RenderFile(w, "errors/404.html", nil)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
+		return
 	}
 	storyID, err := strconv.Atoi(strStoryID)
 	if err != nil {
-		return fmt.Errorf("Cannot convert string StoryID to int. Original err : %v", err)
+		panic(fmt.Errorf("Cannot convert string StoryID to int. Original err : %v", err))
 	}
 	story, err := data.GetStoryByID(storyID)
 	if err != nil {
-		return fmt.Errorf("Cannot get story from db (StoryID : %d). Original err : %v", storyID, err)
+		panic(fmt.Errorf("Cannot get story from db (StoryID : %d). Original err : %v", storyID, err))
 	}
 	if story == nil {
 		err = templates.RenderFile(w, "errors/404.html", nil)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
+		return
 	}
 	comments, err := data.GetRootCommentsByStoryID(storyID)
 	if err != nil {
-		return fmt.Errorf("Cannot get comments from db (StoryID : %d). Original err : %v", storyID, err)
+		panic(fmt.Errorf("Cannot get comments from db (StoryID : %d). Original err : %v", storyID, err))
 	}
 	isAuth, signedInUserClaims, err := shared.IsAuthenticated(r)
 	if err != nil {
-		return fmt.Errorf("An error occured when run IsAuthenticated func in StoryDetailHandler")
+		panic(fmt.Errorf("An error occured when run IsAuthenticated func in StoryDetailHandler"))
 	}
 	model := &models.StoryDetailPageViewModel{
 		Title: story.Title,
@@ -364,7 +357,6 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) error {
 	model.Story = mapStoryToStoryViewModel(story, model.SignedInUser)
 	model.Comments = mapCommentsToViewModelsWithChildren(comments, model.SignedInUser, storyID)
 	templates.RenderInLayout(w, "detail.html", model)
-	return nil
 }
 
 /*VoteStoryHandler runs when click to upvote and downvote story button. If not voted before by user, votes that story*/
