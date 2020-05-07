@@ -14,6 +14,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type RouteData struct {
+	Path         string
+	Handler      http.HandlerFunc
+	IsAuthorized bool
+}
+
 func init() {
 	envFileName := ".env.dev"
 	env := os.Getenv("APP_ENV")
@@ -60,79 +66,59 @@ func main() {
 
 func configureRouter(router *http.ServeMux) http.Handler {
 
-	profilePath := "/users/profile"
-	changePasswordPath := "/change-password"
-	profileEditPath := "/profile-edit"
-	userInvitePath := "/users/invite"
-	adminPath := "/admin"
-	storyVotePath := "/stories/vote"
-	storyVoteRemovePath := "/stories/remove/vote"
-	storySavePath := "/stories/save"
-	storyUnsavePath := "/stories/unsave"
-	submitStoryPath := "/submit"
-	addCommentPath := "/comments/add"
-	voteCommentPath := "/comments/vote"
-	removeCommentVotePath := "/comments/remove/vote"
-	replyCommentPath := "/comments/reply"
-	userSavedStoryPath := "/users/stories/saved"
-	userSubmittedStoryPath := "/users/stories/submitted"
-	userUpvotedStoryPath := "/users/stories/upvoted"
-
-	authorizedPaths := []string{
-		profilePath,
-		changePasswordPath,
-		profileEditPath,
-		userInvitePath,
-		adminPath,
-		storyVotePath,
-		storyVoteRemovePath,
-		storySavePath,
-		storyUnsavePath,
-		submitStoryPath,
-		addCommentPath,
-		voteCommentPath,
-		removeCommentVotePath,
-		replyCommentPath,
-		userSavedStoryPath,
-		userSubmittedStoryPath,
-		userUpvotedStoryPath,
-	}
-
 	staticFileServer := http.FileServer(http.Dir("public/"))
 	router.Handle("/public/", http.StripPrefix("/public/", staticFileServer))
 
-	router.HandleFunc("/", controllers.StoriesHandler)
-	router.HandleFunc("/recent", controllers.RecentStoriesHandler)
-	router.HandleFunc("/signup", controllers.SignUpHandler)
-	router.HandleFunc("/signin", controllers.SignInHandler)
-	router.HandleFunc("/signout", controllers.SignOutHandler)
-	router.HandleFunc("/reset-password", controllers.ResetPasswordHandler)
-	router.HandleFunc("/set-new-password", controllers.SetNewPasswordHandler)
-	router.HandleFunc("/stories/detail", controllers.StoryDetailHandler)
-	router.HandleFunc("/invitecodes/generate", controllers.GenerateInviteCodeHandler)
-	router.HandleFunc(profilePath, controllers.UserProfileHandler)
-	router.HandleFunc(changePasswordPath, controllers.ChangePasswordHandler)
-	router.HandleFunc(profileEditPath, controllers.UserProfileHandler)
-	router.HandleFunc(userInvitePath, controllers.InviteUserHandler)
-	router.HandleFunc(adminPath, controllers.AdminHandler)
-	router.HandleFunc(storyVotePath, controllers.VoteStoryHandler)
-	router.HandleFunc(storyVoteRemovePath, controllers.RemoveStoryVoteHandler)
-	router.HandleFunc(storySavePath, controllers.SaveStoryHandler)
-	router.HandleFunc(storyUnsavePath, controllers.UnSaveStoryHandler)
-	router.HandleFunc(submitStoryPath, controllers.SubmitStoryHandler)
-	router.HandleFunc(addCommentPath, controllers.AddCommentHandler)
-	router.HandleFunc(voteCommentPath, controllers.VoteCommentHandler)
-	router.HandleFunc(removeCommentVotePath, controllers.RemoveCommentVoteHandler)
-	router.HandleFunc(replyCommentPath, controllers.ReplyToCommentHandler)
-	router.HandleFunc(userSavedStoryPath, controllers.UserSavedStoriesHandler)
-	router.HandleFunc(userSubmittedStoryPath, controllers.UserSubmittedStoriesHandler)
-	router.HandleFunc(userUpvotedStoryPath, controllers.UserUpvotedStoriesHandler)
+	routes := []RouteData{
+		{"/", controllers.StoriesHandler, false},
+		{"/recent", controllers.RecentStoriesHandler, false},
+		{"/signup", controllers.SignUpHandler, false},
+		{"/signin", controllers.SignInHandler, false},
+		{"/signout", controllers.SignOutHandler, false},
+		{"/reset-password", controllers.ResetPasswordHandler, false},
+		{"/set-new-password", controllers.SetNewPasswordHandler, false},
+		{"/stories/detail", controllers.StoryDetailHandler, false},
+		{"/invitecodes/generate", controllers.GenerateInviteCodeHandler, false},
+		{"/users/profile", controllers.UserProfileHandler, true},
+		{"/change-password", controllers.ChangePasswordHandler, true},
+		{"/profile-edit", controllers.UserProfileHandler, true},
+		{"/users/invite", controllers.InviteUserHandler, true},
+		{"/admin", controllers.AdminHandler, true},
+		{"/stories/vote", controllers.VoteStoryHandler, true},
+		{"/stories/remove/vote", controllers.RemoveStoryVoteHandler, true},
+		{"/stories/save", controllers.SaveStoryHandler, true},
+		{"/stories/unsave", controllers.UnSaveStoryHandler, true},
+		{"/submit", controllers.SubmitStoryHandler, true},
+		{"/comments/add", controllers.AddCommentHandler, true},
+		{"/comments/vote", controllers.VoteCommentHandler, true},
+		{"/comments/remove/vote", controllers.RemoveCommentVoteHandler, true},
+		{"/comments/reply", controllers.ReplyToCommentHandler, true},
+		{"/users/stories/saved", controllers.UserSavedStoriesHandler, true},
+		{"/users/stories/submitted", controllers.UserSubmittedStoriesHandler, true},
+		{"/users/stories/upvoted", controllers.UserUpvotedStoriesHandler, true},
+	}
+
+	var authorizedPaths = []string{}
+	var allPaths = []string{}
+
+	for _, route := range routes {
+
+		allPaths = append(allPaths, route.Path)
+		router.HandleFunc(route.Path, route.Handler)
+
+		if route.IsAuthorized {
+			authorizedPaths = append(authorizedPaths, route.Path)
+		}
+	}
 
 	errorMiddleware := middlewares.ErrorMiddleWare()
 	errorHandledRouter := errorMiddleware(router)
 
+	notFoundMiddleware := middlewares.NotFoundMiddleWare(allPaths)
+	notFoundHandlerRouter := notFoundMiddleware(errorHandledRouter)
+
 	authMiddleware := middlewares.AuthMiddleWare(authorizedPaths)
-	authHandledRouter := authMiddleware(errorHandledRouter)
+	authHandledRouter := authMiddleware(notFoundHandlerRouter)
 
 	return authHandledRouter
 }
