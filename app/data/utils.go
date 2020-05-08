@@ -89,6 +89,9 @@ func MapSQLRowToCustomer(row *sql.Row) (customer *Customer, err error) {
 		&domain,
 		&_customer.LogoImage)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, &DBError{fmt.Sprintf("Cannot map sql row to customer struct"), err}
 	}
 	if domain.Valid {

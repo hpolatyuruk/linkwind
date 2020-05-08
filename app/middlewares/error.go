@@ -9,8 +9,8 @@ import (
 	"github.com/getsentry/sentry-go"
 )
 
-/*ErrorMiddleWare is a middleware which handles errors for fiven http handlers.*/
-func ErrorMiddleWare() func(http.Handler) http.Handler {
+/*ErrorMiddleware is a middleware which handles errors for fiven http handlers.*/
+func ErrorMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			defer func() {

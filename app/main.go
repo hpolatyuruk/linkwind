@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"linkwind/app/controllers"
 	"linkwind/app/middlewares"
+	"linkwind/app/shared"
 	"log"
 	"net/http"
 	"os"
@@ -66,9 +67,6 @@ func main() {
 
 func configureRouter(router *http.ServeMux) http.Handler {
 
-	staticFileServer := http.FileServer(http.Dir("public/"))
-	router.Handle("/public/", http.StripPrefix("/public/", staticFileServer))
-
 	routes := []RouteData{
 		{"/", controllers.StoriesHandler, false},
 		{"/recent", controllers.RecentStoriesHandler, false},
@@ -98,6 +96,9 @@ func configureRouter(router *http.ServeMux) http.Handler {
 		{"/users/stories/upvoted", controllers.UserUpvotedStoriesHandler, true},
 	}
 
+	staticFileServer := http.FileServer(http.Dir("public/"))
+	router.Handle(shared.StaticFolderPath, http.StripPrefix(shared.StaticFolderPath, staticFileServer))
+
 	var authorizedPaths = []string{}
 	var allPaths = []string{}
 
@@ -111,14 +112,17 @@ func configureRouter(router *http.ServeMux) http.Handler {
 		}
 	}
 
-	errorMiddleware := middlewares.ErrorMiddleWare()
-	errorHandledRouter := errorMiddleware(router)
-
-	notFoundMiddleware := middlewares.NotFoundMiddleWare(allPaths)
-	notFoundHandlerRouter := notFoundMiddleware(errorHandledRouter)
+	notFoundMiddleware := middlewares.NotFoundMiddleware(allPaths)
+	notFoundHandledRouter := notFoundMiddleware(router)
 
 	authMiddleware := middlewares.AuthMiddleWare(authorizedPaths)
-	authHandledRouter := authMiddleware(notFoundHandlerRouter)
+	authHandledRouter := authMiddleware(notFoundHandledRouter)
 
-	return authHandledRouter
+	customerMiddleware := middlewares.CustomerMiddleware()
+	customerHandledRouter := customerMiddleware(authHandledRouter)
+
+	errorMiddleware := middlewares.ErrorMiddleware()
+	errorHandledRouter := errorMiddleware(customerHandledRouter)
+
+	return errorHandledRouter
 }

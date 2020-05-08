@@ -84,34 +84,41 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.ResponseWriter, r *http.Request) {
+
 	var model = &models.StoryPageViewModel{Title: title}
-	var customerID int = 1 // TODO: get actual customer id from registered customer website
+	var customerID int = r.Context().Value(shared.CustomerIDContextKey).(int)
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
 		panic(err)
 	}
+
 	if isAuthenticated {
 		customerID = user.CustomerID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = mapUserClaimsToSignedUserViewModel(user)
 	}
+
 	var page int = getPage(r)
 	stories, err := fnGetStories(customerID, page, DefaultPageSize)
 	if err != nil {
 		panic(err)
 	}
+
 	storiesCount, err := data.GetCustomerStoriesCount(customerID)
 	if err != nil {
 		panic(err)
 	}
+
 	pagingModel, err := setPagingViewModel(customerID, page, storiesCount)
 	if err != nil {
 		panic(err)
 	}
+
 	model.Page = pagingModel
 	if stories != nil && len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
+
 	templates.RenderInLayout(w, "stories.html", model)
 }
 

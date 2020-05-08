@@ -152,8 +152,8 @@ func GetCustomerByName(name string) (customer *Customer, err error) {
 		return nil, err
 	}
 	defer db.Close()
-	sql := "SELECT id, name, email, registeredon, domain, imglogo FROM customers WHERE name = $1"
-	row := db.QueryRow(sql, name)
+	query := "SELECT id, name, email, registeredon, domain, imglogo FROM customers WHERE name = $1"
+	row := db.QueryRow(query, name)
 	customer, err = MapSQLRowToCustomer(row)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot read customer by name from db. Name: %s", name), err}
