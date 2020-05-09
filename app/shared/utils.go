@@ -15,6 +15,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/getsentry/sentry-go"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/charset"
 	"golang.org/x/text/encoding"
@@ -237,4 +238,15 @@ func StringWithCharset(length int) string {
 		b[i] = Charset[SeededRand.Intn(len(Charset))]
 	}
 	return string(b)
+}
+
+/*ReturnNotFoundTemplate writes 404 not found html template to given response*/
+func ReturnNotFoundTemplate(w http.ResponseWriter) {
+	byteValue, err := ReadFile("templates/errors/404.html")
+	if err != nil {
+		sentry.CaptureException(err)
+		http.Error(w, "Unexpected error!", http.StatusInternalServerError)
+	}
+	w.WriteHeader(http.StatusNotFound)
+	w.Write(byteValue)
 }

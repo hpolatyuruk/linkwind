@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/pkg/errors"
 )
 
@@ -51,7 +50,7 @@ func CustomerMiddleware() func(http.Handler) http.Handler {
 						panic(err)
 					}
 					if customer == nil {
-						notFound(w, "templates/errors/404.html", http.StatusNotFound)
+						shared.ReturnNotFoundTemplate(w)
 						return
 					}
 					customerID = customer.ID
@@ -106,14 +105,4 @@ func getIPFromRequest(req *http.Request) (net.IP, error) {
 		return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
 	}
 	return userIP, nil
-}
-
-func notFound(w http.ResponseWriter, path string, statusCode int) {
-	byteValue, err := shared.ReadFile(path)
-	if err != nil {
-		sentry.CaptureException(err)
-		http.Error(w, "Unexpected error!", http.StatusInternalServerError)
-	}
-	w.WriteHeader(statusCode)
-	w.Write(byteValue)
 }

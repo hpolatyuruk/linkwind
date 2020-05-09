@@ -112,14 +112,14 @@ func configureRouter(router *http.ServeMux) http.Handler {
 		}
 	}
 
-	notFoundMiddleware := middlewares.NotFoundMiddleware(allPaths)
-	notFoundHandledRouter := notFoundMiddleware(router)
-
 	authMiddleware := middlewares.AuthMiddleWare(authorizedPaths)
-	authHandledRouter := authMiddleware(notFoundHandledRouter)
+	authHandledRouter := authMiddleware(router)
+
+	notFoundMiddleware := middlewares.NotFoundMiddleware(allPaths)
+	notFoundHandledRouter := notFoundMiddleware(authHandledRouter)
 
 	customerMiddleware := middlewares.CustomerMiddleware()
-	customerHandledRouter := customerMiddleware(authHandledRouter)
+	customerHandledRouter := customerMiddleware(notFoundHandledRouter)
 
 	errorMiddleware := middlewares.ErrorMiddleware()
 	errorHandledRouter := errorMiddleware(customerHandledRouter)
