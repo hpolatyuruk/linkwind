@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-
-	"github.com/pkg/errors"
 )
 
 var customers map[string]int = map[string]int{}
@@ -79,7 +77,7 @@ func existsInCache(name string) (bool, int) {
 func parseCustomerName(host string) string {
 	index := strings.Index(host, ".")
 	if index < 0 {
-		panic(errors.New(fmt.Sprintf("Unexpected host format %s", host)))
+		panic(fmt.Errorf("Unexpected host format %s", host))
 	}
 	return host[0:index]
 }
