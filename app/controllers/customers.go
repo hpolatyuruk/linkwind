@@ -122,98 +122,97 @@ func (model *CustomerAdminViewModel) Validate() bool {
 }
 
 /*CustomerSignUpHandler handles customer signup operations*/
-func CustomerSignUpHandler(w http.ResponseWriter, r *http.Request) error {
+func CustomerSignUpHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		return handleCustomerSignUpGET(w, r)
+		handleCustomerSignUpGET(w, r)
 	case "POST":
-		return handleCustomerSignUpPOST(w, r)
+		handleCustomerSignUpPOST(w, r)
 	default:
-		return handleCustomerSignUpGET(w, r)
+		handleCustomerSignUpGET(w, r)
 	}
 }
 
-func handleCustomerSignUpGET(w http.ResponseWriter, r *http.Request) error {
+func handleCustomerSignUpGET(w http.ResponseWriter, r *http.Request) {
 	err := templates.RenderFile(
 		w,
 		"layouts/customers/signup.html",
 		CustomerSignUpViewModel{},
 	)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
-func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) error {
+func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) {
 	model, err := setCustomerSignUpViewModel(r)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	signUpHTMLPath := "layouts/customers/signup.html"
 	if model.Validate() == false {
 		err := templates.RenderFile(w, signUpHTMLPath, model)
 		if err != nil {
-			return err
+			panic(err)
 		}
-		return nil
+		return
 	}
 	exists, err := data.ExistsCustomerByName(model.Name)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if exists {
 		model.Errors["Name"] = "Name is already taken!"
 		templates.RenderFile(w, signUpHTMLPath, model)
-		return nil
+		return
 	}
 
 	exists, err = data.ExistsCustomerByEmail(model.Email)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if exists {
 		model.Errors["Email"] = "The user associated with this email already exists!"
 		templates.RenderFile(w, signUpHTMLPath, model)
-		return nil
+		return
 	}
 
 	exists, err = data.ExistsUserByUserName(model.UserName)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if exists {
 		model.Errors["UserName"] = "User name is already taken!"
 		templates.RenderFile(w, signUpHTMLPath, model)
-		return nil
+		return
 	}
 
 	exists, err = data.ExistsUserByEmail(model.Email)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if exists {
 		model.Errors["Email"] = "The user associated with this email already exists!"
 		templates.RenderFile(w, signUpHTMLPath, model)
-		return nil
+		return
 	}
 
 	customer := setCustomerByModel(model)
 	err = data.CreateCustomer(&customer)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	addedCustomer, err := data.GetCustomerByName(model.Name)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	user := setUserByModel(model, addedCustomer)
 	userID, err := data.CreateUser(&user)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	user.ID = *userID
 
@@ -223,11 +222,10 @@ func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) error {
 
 	token, err := shared.GenerateAuthToken(user, expirationTime)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	shared.SetAuthCookie(w, token, expirationTime)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-	return nil
 }
 
 /*InviteUserHandler handles user invite operations*/
