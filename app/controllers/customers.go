@@ -225,7 +225,7 @@ func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	shared.SetAuthCookie(w, token, expirationTime)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("https://%s.linkwind.co", model.Name), http.StatusSeeOther)
 }
 
 /*InviteUserHandler handles user invite operations*/
