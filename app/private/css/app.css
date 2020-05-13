@@ -80,4 +80,6 @@ div.voters .downvoter.downvoter_stub {
 @tailwind components;
 /* purgecss end ignore */
 
+/* Start purging... */
 @tailwind utilities;
+/* Stop purging. */
