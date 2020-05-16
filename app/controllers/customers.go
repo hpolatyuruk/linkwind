@@ -118,6 +118,17 @@ func (model *CustomerAdminViewModel) Validate() bool {
 			model.Errors["Name"] = "Name cannot contain spaces"
 		}
 	}
+
+	if model.LogoImageAsBase64 != "" {
+		decodingLogo, err := base64.StdEncoding.DecodeString(model.LogoImageAsBase64)
+		if err != nil {
+			panic(err)
+		}
+		width, height := getImageSize(decodingLogo)
+		if width > 64 || height > 64 {
+			model.Errors["LogoImageAsBase64"] = "Image file size should be 64*64"
+		}
+	}
 	return len(model.Errors) == 0
 }
 
@@ -342,14 +353,6 @@ func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedI
 		panic(err)
 	}
 
-	if model.LogoImageAsBase64 != "" {
-		imageasB64, err := decodeLogoImageToBase64(customer.LogoImage)
-		if err != nil {
-			panic(err)
-		}
-		model.LogoImageAsBase64 = imageasB64
-	}
-
 	err = templates.RenderInLayout(w, "admin.html", model)
 	if err != nil {
 		panic(err)
@@ -357,34 +360,36 @@ func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedI
 }
 
 func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
-	file, err := getImageFile(r)
+	customer, err := data.GetCustomerByID(user.CustomerID)
 	if err != nil {
 		panic(err)
 	}
 
-	defer file.Close()
-	fileBytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		panic(err)
-	}
 	model := &CustomerAdminViewModel{
 		Name:              r.FormValue("name"),
 		Domain:            r.FormValue("domain"),
-		LogoImageAsBase64: base64.StdEncoding.EncodeToString(fileBytes),
+		LogoImageAsBase64: getImage(customer, r),
 	}
 
 	adminHTMLPath := "admin.html"
 	if model.Validate() == false {
+		model.Domain = customer.Domain
+		model.Name = customer.Name
+
+		if customer.LogoImage != nil {
+			imageasB64, err := decodeLogoImageToBase64(customer.LogoImage)
+			if err != nil {
+				panic(err)
+			}
+			model.LogoImageAsBase64 = imageasB64
+		}
+
 		err := templates.RenderInLayout(w, adminHTMLPath, model)
 		if err != nil {
 			panic(err)
 		}
-		return
-	}
 
-	customer, err := data.GetCustomerByID(user.CustomerID)
-	if err != nil {
-		panic(err)
+		return
 	}
 
 	if customer.Name != model.Name {
@@ -468,7 +473,14 @@ func setCustomerSignUpViewModel(r *http.Request) (*CustomerSignUpViewModel, erro
 func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUserClaims) (*CustomerAdminViewModel, error) {
 	var model CustomerAdminViewModel
 	model.Domain = customer.Domain
-	model.LogoImageAsBase64 = base64.StdEncoding.EncodeToString(customer.LogoImage)
+	if customer.LogoImage != nil {
+		imageasB64, err := decodeLogoImageToBase64(customer.LogoImage)
+		if err != nil {
+			return nil, err
+		}
+		model.LogoImageAsBase64 = imageasB64
+	}
+
 	model.Name = customer.Name
 
 	var s models.SignedInUserViewModel
@@ -486,15 +498,16 @@ func setUpdatedCustomerByModel(model *CustomerAdminViewModel, customer *data.Cus
 	if model.LogoImageAsBase64 == "" {
 		return
 	}
+
 	customer.LogoImage = []byte(model.LogoImageAsBase64)
 }
 
 func getImageFile(r *http.Request) (multipart.File, error) {
 	file, _, err := r.FormFile("logo")
-	if err != nil {
+	if err != nil && err != http.ErrMissingFile {
 		return file, err
 	}
-	return file, err
+	return file, nil
 }
 
 func decodeLogoImageToBase64(logoImage []byte) (string, error) {
@@ -510,4 +523,41 @@ func decodeLogoImageToBase64(logoImage []byte) (string, error) {
 	}
 	return base64.StdEncoding.EncodeToString(buffer.Bytes()), err
 
+}
+
+func getImage(customer *data.Customer, r *http.Request) string {
+	var logoImageAsBase64 string
+	file, err := getImageFile(r)
+	if err != nil {
+		panic(err)
+	}
+
+	if file != nil {
+		fileBytes, err := ioutil.ReadAll(file)
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+		logoImageAsBase64 = base64.StdEncoding.EncodeToString(fileBytes)
+	} else {
+		if customer.LogoImage != nil {
+			imageasB64, err := decodeLogoImageToBase64(customer.LogoImage)
+			if err != nil {
+				panic(err)
+			}
+			logoImageAsBase64 = imageasB64
+		}
+	}
+	return logoImageAsBase64
+}
+
+func getImageSize(file []byte) (width int, height int) {
+	r := bytes.NewReader(file)
+	im, _, err := image.DecodeConfig(r)
+	if err != nil {
+		panic(err)
+	}
+	width = im.Width
+	height = im.Height
+	return width, height
 }
