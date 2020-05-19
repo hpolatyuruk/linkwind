@@ -34,6 +34,13 @@ func CustomerMiddleware() func(http.Handler) http.Handler {
 			//
 
 			if customerName == "app" {
+
+				path := strings.ToLower(r.URL.Path)
+
+				if isStaticPath(path) == false && path != "/customer-signup" {
+					shared.ReturnNotFoundTemplate(w)
+					return
+				}
 				nexWithContext(next, w, r, customerID)
 				return
 			}
@@ -103,4 +110,8 @@ func getIPFromRequest(req *http.Request) (net.IP, error) {
 		return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
 	}
 	return userIP, nil
+}
+
+func isStaticPath(path string) bool {
+	return strings.Index(path, shared.StaticFolderPath) > -1
 }

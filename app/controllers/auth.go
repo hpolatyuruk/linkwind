@@ -210,7 +210,14 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	if user == nil {
+
+	var customerID int = r.Context().Value(shared.CustomerIDContextKey).(int)
+
+	//
+	// In case user exists but customer id from context (coming from subdomain) and user's customer id are different, it means that user wants to login to someone else's platform. We don't allow this to happen
+	//
+
+	if user == nil || customerID != user.CustomerID {
 		model.Errors["General"] = "User does not exist!"
 		err = templates.RenderFile(w, "/layouts/users/signin.html", model)
 		if err != nil {
@@ -218,6 +225,7 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
 	// Declare the expiration time of the token
 	// here, we have kept it as 5 minutes
 	expirationTime := time.Now().Add(authExpirationMinutes * time.Minute)
