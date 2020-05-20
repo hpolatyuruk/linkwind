@@ -31,8 +31,8 @@ const (
 var SeededRand = rand.New(
 	rand.NewSource(time.Now().UnixNano()))
 
-/*IsEmailAdrressValid takes mail address, if address is valid return true.*/
-func IsEmailAdrressValid(email string) bool {
+/*IsEmailAdressValid takes mail address, if address is valid return true.*/
+func IsEmailAdressValid(email string) bool {
 	Re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 	return Re.MatchString(email)
 }

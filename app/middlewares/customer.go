@@ -11,87 +11,128 @@ import (
 	"sync"
 )
 
-var customers map[string]int = map[string]int{}
+/*CustomerCtx respresents the customer object in the request context*/
+type CustomerCtx struct {
+	ID       int
+	Platform string
+	Logo     []byte
+}
 
-type CustomersOBJ struct {
-	ID           int
-	PlatformName string
-	Logo         []byte
+var mutex = &sync.Mutex{}
+var customers map[string]*CustomerCtx = map[string]*CustomerCtx{}
+
+var defaultCustometCtx = &CustomerCtx{
+	ID:       shared.DefaultCustomerID,
+	Platform: shared.DefaultCustomerName,
+	Logo:     []byte(""), // TODO: set default logo here
 }
 
 /*CustomerMiddleware sets requested customer info to request context*/
 func CustomerMiddleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			var exists bool = false
-			var mutex = &sync.Mutex{}
-			var customerName string
-			var customerID int = shared.DefaultCustomerID
 
-			var customersOBJ CustomersOBJ
-			customersOBJ.ID = customerID
-			customersOBJ.PlatformName = "app"
+	return func(next http.Handler) http.Handler {
+
+		fn := func(w http.ResponseWriter, r *http.Request) {
 
 			if isLocalHost(r) {
-				nexWithContext(next, w, r, customersOBJ)
+				nexWithContext(next, w, r, defaultCustometCtx)
 				return
 			}
-			customerName = parseCustomerName(r.Host)
-
-			//
-			// app is our default domain.
-			// so we don't return not fund if it is app
-			//
-
-			if customerName == "app" {
-
-				path := strings.ToLower(r.URL.Path)
-
-				if isStaticPath(path) == false && path != "/customer-signup" {
-					shared.ReturnNotFoundTemplate(w)
-					return
-				}
-				nexWithContext(next, w, r, customersOBJ)
+			if isCustomDomain(r.Host) {
+				handleCustomDomains(next, w, r)
 				return
 			}
-
-			exists, customerID = existsInCache(customerName)
-			if exists == false {
-				mutex.Lock()
-				exists, customerID = existsInCache(customerName)
-				if exists == false {
-					customer, err := data.GetCustomerByName(customerName)
-					if err != nil {
-						panic(err)
-					}
-					if customer == nil {
-						shared.ReturnNotFoundTemplate(w)
-						return
-					}
-					customerID = customer.ID
-					customers[customer.Name] = customerID
-					customersOBJ.ID = customerID
-					customersOBJ.Logo = customer.LogoImage
-					customersOBJ.PlatformName = customerName
-				}
-				mutex.Unlock()
-			}
-			nexWithContext(next, w, r, customersOBJ)
+			handleSubDomains(next, w, r)
 		}
 		return http.HandlerFunc(fn)
 	}
 }
 
-func nexWithContext(next http.Handler, w http.ResponseWriter, r *http.Request, customersOBJ CustomersOBJ) {
+func handleCustomDomains(next http.Handler, w http.ResponseWriter, r *http.Request) {
+
+	domain := r.Host
+	exists, customerCtx := existsInCache(domain)
+
+	if exists == false {
+		mutex.Lock()
+		defer mutex.Unlock()
+		exists, customerCtx = existsInCache(domain)
+		if exists == false {
+			customer, err := data.GetCustomerByDomain(domain)
+			if err != nil {
+				panic(err)
+			}
+			if customer == nil {
+				shared.ReturnNotFoundTemplate(w)
+				return
+			}
+			customerCtx = &CustomerCtx{
+				ID:       customer.ID,
+				Platform: customer.Name,
+				Logo:     customer.LogoImage,
+			}
+			customers[customer.Name] = customerCtx
+		}
+
+	}
+	nexWithContext(next, w, r, customerCtx)
+}
+
+func handleSubDomains(next http.Handler, w http.ResponseWriter, r *http.Request) {
+
+	custName := parseCustomerName(r.Host)
+
+	//
+	// app is our default sub domain.
+	// so we don't return not found if it is app
+	//
+
+	if custName == "app" {
+		path := strings.ToLower(r.URL.Path)
+
+		if isStaticPath(path) == false && path != "/customer-signup" {
+			shared.ReturnNotFoundTemplate(w)
+			return
+		}
+		nexWithContext(next, w, r, defaultCustometCtx)
+		return
+	}
+
+	exists, customerCtx := existsInCache(custName)
+	if exists == false {
+		mutex.Lock()
+		defer mutex.Unlock()
+		exists, customerCtx = existsInCache(custName)
+		if exists == false {
+			customer, err := data.GetCustomerByName(custName)
+			if err != nil {
+				panic(err)
+			}
+			if customer == nil {
+				shared.ReturnNotFoundTemplate(w)
+				return
+			}
+			customerCtx = &CustomerCtx{
+				ID:       customer.ID,
+				Logo:     customer.LogoImage,
+				Platform: customer.Name,
+			}
+			customers[customer.Name] = customerCtx
+		}
+	}
+	nexWithContext(next, w, r, customerCtx)
+}
+
+func nexWithContext(next http.Handler, w http.ResponseWriter, r *http.Request, customersOBJ *CustomerCtx) {
 	ctx := context.WithValue(r.Context(), shared.CustomerContextKey, customersOBJ)
 	next.ServeHTTP(w, r.WithContext(ctx))
 }
 
-func existsInCache(name string) (bool, int) {
-	if id, ok := customers[name]; ok {
-		return ok, id
+func existsInCache(custNameOrDomain string) (bool, *CustomerCtx) {
+	if customer, ok := customers[custNameOrDomain]; ok {
+		return ok, customer
 	}
-	return false, 0
+	return false, nil
 }
 
 func parseCustomerName(host string) string {
@@ -100,16 +141,6 @@ func parseCustomerName(host string) string {
 		panic(fmt.Errorf("Unexpected host format %s", host))
 	}
 	return host[0:index]
-}
-
-func isLocalHost(r *http.Request) bool {
-	ipAddress, err := getIPFromRequest(r)
-	if err != nil {
-		panic(err)
-	}
-	return ipAddress.String() == "127.0.0.1" ||
-		ipAddress.String() == "::1" ||
-		ipAddress.String() == "localhost"
 }
 
 func getIPFromRequest(req *http.Request) (net.IP, error) {
@@ -125,6 +156,20 @@ func getIPFromRequest(req *http.Request) (net.IP, error) {
 	return userIP, nil
 }
 
+func isLocalHost(r *http.Request) bool {
+	ipAddress, err := getIPFromRequest(r)
+	if err != nil {
+		panic(err)
+	}
+	return ipAddress.String() == "127.0.0.1" ||
+		ipAddress.String() == "::1" ||
+		ipAddress.String() == "localhost"
+}
+
 func isStaticPath(path string) bool {
 	return strings.Index(path, shared.StaticFolderPath) > -1
+}
+
+func isCustomDomain(host string) bool {
+	return strings.Index(strings.ToLower(host), "linkwind.co") == -1
 }

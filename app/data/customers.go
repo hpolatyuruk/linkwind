@@ -177,6 +177,22 @@ func GetCustomerByID(id int) (customer *Customer, err error) {
 	return customer, nil
 }
 
+/*GetCustomerByDomain gets customer associated with domain from database*/
+func GetCustomerByDomain(domain string) (customer *Customer, err error) {
+	db, err := connectToDB()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+	query := "SELECT id, name, email, registeredon, domain, imglogo FROM customers WHERE domain = $1"
+	row := db.QueryRow(query, domain)
+	customer, err = MapSQLRowToCustomer(row)
+	if err != nil {
+		return nil, &DBError{fmt.Sprintf("Cannot read customer by domain from db. Name: %s", domain), err}
+	}
+	return customer, nil
+}
+
 func nullCustomerDomain(domain string) sql.NullString {
 	if domain == "" {
 		return sql.NullString{}

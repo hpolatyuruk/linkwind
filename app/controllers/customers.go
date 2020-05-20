@@ -68,7 +68,7 @@ func (model *CustomerSignUpViewModel) Validate() bool {
 	if strings.TrimSpace(model.Email) == "" {
 		model.Errors["Email"] = "Email is required!"
 	} else {
-		if shared.IsEmailAdrressValid(model.Email) == false {
+		if shared.IsEmailAdressValid(model.Email) == false {
 			model.Errors["Email"] = "Please enter a valid email address!"
 		}
 	}
@@ -89,7 +89,7 @@ func (model *InviteUserViewModel) Validate(email string) (bool, error) {
 	if strings.TrimSpace(model.EmailAddress) == "" {
 		model.Errors["Email"] = "Email is required!"
 	} else {
-		if shared.IsEmailAdrressValid(model.EmailAddress) == false {
+		if shared.IsEmailAdressValid(model.EmailAddress) == false {
 			model.Errors["Email"] = "Please enter a valid email address!"
 		}
 	}

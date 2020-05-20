@@ -86,30 +86,29 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) {
 
 func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.ResponseWriter, r *http.Request) {
 	var model = &models.StoryPageViewModel{Title: title}
-	customerOBJ := r.Context().Value(shared.CustomerContextKey).(middlewares.CustomersOBJ)
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
 		panic(err)
 	}
 
 	if isAuthenticated {
-		customerOBJ.ID = user.CustomerID
 		model.IsAuthenticated = isAuthenticated
 		model.SignedInUser = mapUserClaimsToSignedUserViewModel(user)
 	}
 
 	var page int = getPage(r)
-	stories, err := fnGetStories(customerOBJ.ID, page, DefaultPageSize)
+	stories, err := fnGetStories(customerCtx.ID, page, DefaultPageSize)
 	if err != nil {
 		panic(err)
 	}
 
-	storiesCount, err := data.GetCustomerStoriesCount(customerOBJ.ID)
+	storiesCount, err := data.GetCustomerStoriesCount(customerCtx.ID)
 	if err != nil {
 		panic(err)
 	}
 
-	pagingModel, err := setPagingViewModel(customerOBJ.ID, page, storiesCount)
+	pagingModel, err := setPagingViewModel(customerCtx.ID, page, storiesCount)
 	if err != nil {
 		panic(err)
 	}

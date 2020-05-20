@@ -29,7 +29,7 @@ func (model *UserProfileViewModel) Validate() bool {
 	if strings.TrimSpace(model.Email) == "" {
 		model.Errors["Email"] = "Email is required!"
 	}
-	if !shared.IsEmailAdrressValid(model.Email) {
+	if !shared.IsEmailAdressValid(model.Email) {
 		model.Errors["General"] = "E-mail address is not valid!"
 	}
 	return len(model.Errors) == 0

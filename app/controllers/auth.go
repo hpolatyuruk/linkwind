@@ -84,7 +84,7 @@ func (model *SignUpViewModel) Validate() bool {
 	if strings.TrimSpace(model.Email) == "" {
 		model.Errors["Email"] = "Email is required!"
 	} else {
-		if shared.IsEmailAdrressValid(model.Email) == false {
+		if shared.IsEmailAdressValid(model.Email) == false {
 			model.Errors["Email"] = "Please enter a valid email address!"
 		}
 	}
@@ -200,7 +200,7 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) {
 	var fnExistsUser existsUser = data.ExistsUserByUserName
 	var fnFindUser findUser = data.FindUserByUserNameAndPassword
 
-	if shared.IsEmailAdrressValid(model.EmailOrUserName) {
+	if shared.IsEmailAdressValid(model.EmailOrUserName) {
 		fnExistsUser = data.ExistsUserByEmail
 		fnFindUser = data.FindUserByEmailAndPassword
 	}
@@ -212,13 +212,13 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	customerOBJ := r.Context().Value(shared.CustomerContextKey).(middlewares.CustomersOBJ)
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 
 	//
 	// In case user exists but customer id from context (coming from subdomain) and user's customer id are different, it means that user wants to login to someone else's platform. We don't allow this to happen
 	//
 
-	if user == nil || customerOBJ.ID != user.CustomerID {
+	if user == nil || customerCtx.ID != user.CustomerID {
 		model.Errors["General"] = "User does not exist!"
 		err = templates.RenderFile(w, "/layouts/users/signin.html", model)
 		if err != nil {
@@ -434,7 +434,7 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) {
 	var email string
 	var userName string
 	var user *data.User
-	if shared.IsEmailAdrressValid(model.EmailOrUserName) {
+	if shared.IsEmailAdressValid(model.EmailOrUserName) {
 		exists, err = data.ExistsUserByEmail(model.EmailOrUserName)
 		if !exists {
 			model.Errors["General"] = "User does not exist!"
