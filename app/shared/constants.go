@@ -8,7 +8,7 @@ const (
 	// DefaultCustomerID represents the default identifier of customer
 	DefaultCustomerID int = 1
 	// CustomerIDContextKey represents the key to get customer id from request context
-	CustomerIDContextKey key = "CustomerID" // default
+	CustomerContextKey key = "CustomerID" // default
 
 	// StaticFolderPath represents the folder that contains static files
 	StaticFolderPath = "/public/"

@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"linkwind/app/data"
+	"linkwind/app/middlewares"
 	"linkwind/app/shared"
 	"linkwind/app/templates"
 	"net/http"
@@ -211,13 +212,13 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	var customerID int = r.Context().Value(shared.CustomerIDContextKey).(int)
+	customerOBJ := r.Context().Value(shared.CustomerContextKey).(middlewares.CustomersOBJ)
 
 	//
 	// In case user exists but customer id from context (coming from subdomain) and user's customer id are different, it means that user wants to login to someone else's platform. We don't allow this to happen
 	//
 
-	if user == nil || customerID != user.CustomerID {
+	if user == nil || customerOBJ.ID != user.CustomerID {
 		model.Errors["General"] = "User does not exist!"
 		err = templates.RenderFile(w, "/layouts/users/signin.html", model)
 		if err != nil {

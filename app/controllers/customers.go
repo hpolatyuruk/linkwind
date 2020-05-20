@@ -472,8 +472,11 @@ func setCustomerSignUpViewModel(r *http.Request) (*CustomerSignUpViewModel, erro
 
 func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUserClaims) (*CustomerAdminViewModel, error) {
 	var model CustomerAdminViewModel
-	model.Domain = customer.Domain
-	if customer.LogoImage != nil {
+	if customer.Domain != "" {
+		model.Domain = customer.Domain
+	}
+
+	if len(customer.LogoImage) != 0 {
 		imageasB64, err := decodeLogoImageToBase64(customer.LogoImage)
 		if err != nil {
 			return nil, err
@@ -540,7 +543,7 @@ func getImage(customer *data.Customer, r *http.Request) string {
 		defer file.Close()
 		logoImageAsBase64 = base64.StdEncoding.EncodeToString(fileBytes)
 	} else {
-		if customer.LogoImage != nil {
+		if len(customer.LogoImage) != 0 {
 			imageasB64, err := decodeLogoImageToBase64(customer.LogoImage)
 			if err != nil {
 				panic(err)

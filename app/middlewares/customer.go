@@ -13,6 +13,12 @@ import (
 
 var customers map[string]int = map[string]int{}
 
+type CustomersOBJ struct {
+	ID           int
+	PlatformName string
+	Logo         []byte
+}
+
 /*CustomerMiddleware sets requested customer info to request context*/
 func CustomerMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -22,8 +28,12 @@ func CustomerMiddleware() func(http.Handler) http.Handler {
 			var customerName string
 			var customerID int = shared.DefaultCustomerID
 
+			var customersOBJ CustomersOBJ
+			customersOBJ.ID = customerID
+			customersOBJ.PlatformName = "app"
+
 			if isLocalHost(r) {
-				nexWithContext(next, w, r, customerID)
+				nexWithContext(next, w, r, customersOBJ)
 				return
 			}
 			customerName = parseCustomerName(r.Host)
@@ -41,7 +51,7 @@ func CustomerMiddleware() func(http.Handler) http.Handler {
 					shared.ReturnNotFoundTemplate(w)
 					return
 				}
-				nexWithContext(next, w, r, customerID)
+				nexWithContext(next, w, r, customersOBJ)
 				return
 			}
 
@@ -60,17 +70,20 @@ func CustomerMiddleware() func(http.Handler) http.Handler {
 					}
 					customerID = customer.ID
 					customers[customer.Name] = customerID
+					customersOBJ.ID = customerID
+					customersOBJ.Logo = customer.LogoImage
+					customersOBJ.PlatformName = customerName
 				}
 				mutex.Unlock()
 			}
-			nexWithContext(next, w, r, customerID)
+			nexWithContext(next, w, r, customersOBJ)
 		}
 		return http.HandlerFunc(fn)
 	}
 }
 
-func nexWithContext(next http.Handler, w http.ResponseWriter, r *http.Request, customerID int) {
-	ctx := context.WithValue(r.Context(), shared.CustomerIDContextKey, customerID)
+func nexWithContext(next http.Handler, w http.ResponseWriter, r *http.Request, customersOBJ CustomersOBJ) {
+	ctx := context.WithValue(r.Context(), shared.CustomerContextKey, customersOBJ)
 	next.ServeHTTP(w, r.WithContext(ctx))
 }
 

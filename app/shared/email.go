@@ -43,8 +43,8 @@ func SendInvitemail(mailAddress, memo, inviteCode, userName, domain string) erro
 
 /*SendResetPasswordMail send to mail for reset password with resetPassword token*/
 func SendResetPasswordMail(email, userName, domain, token string) error {
-	pass := "...."
-	from := "our smtp mail addres"
+	pass := "..."
+	from := "our smtp mail"
 	to := email
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	subject := "Subject: " + "[" + domain + "] Reset Your Password\n"
