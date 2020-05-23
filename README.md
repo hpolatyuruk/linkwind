@@ -34,7 +34,7 @@ Here is an example platform created using LinkWind.
 
 ![alt text](https://www.linkwind.co/images/product.png 'LinkWind Demo')
 
-## Authors
+## Developers
 
 ### Huseyin Polat Yuruk
 
