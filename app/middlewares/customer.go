@@ -90,7 +90,9 @@ func handleSubDomains(next http.Handler, w http.ResponseWriter, r *http.Request)
 	if custName == "app" {
 		path := strings.ToLower(r.URL.Path)
 
-		if isStaticPath(path) == false && path != "/customer-signup" {
+		if isStaticPath(path) == false &&
+			path != "/customer-signup" &&
+			path != "/exists-custom-domain" {
 			shared.ReturnNotFoundTemplate(w)
 			return
 		}
