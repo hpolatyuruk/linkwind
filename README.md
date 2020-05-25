@@ -8,6 +8,7 @@
 <p align="center">
     <img alt="GitHub issues" src="https://img.shields.io/github/issues/hpolatyuruk/linkwind">
     <img alt="License" src="https://img.shields.io/github/license/hpolatyuruk/linkwind">
+    <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/hpolatyuruk/linkwind">
 </p>
 
 ---
