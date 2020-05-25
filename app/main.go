@@ -76,6 +76,7 @@ func configureRouter(router *http.ServeMux) http.Handler {
 		{"/reset-password", controllers.ResetPasswordHandler, false},
 		{"/set-new-password", controllers.SetNewPasswordHandler, false},
 		{"/stories/detail", controllers.StoryDetailHandler, false},
+		{"/exists-custom-domain", controllers.ExistsCustomDomain, false},
 		{"/customer-signup", controllers.CustomerSignUpHandler, false},
 		{"/invitecodes/generate", controllers.GenerateInviteCodeHandler, false},
 		{"/users/profile", controllers.UserProfileHandler, true},

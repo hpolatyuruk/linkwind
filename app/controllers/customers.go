@@ -132,6 +132,26 @@ func (model *CustomerAdminViewModel) Validate() bool {
 	return len(model.Errors) == 0
 }
 
+/*ExistsCustomDomain checks wheter provided custom domain from url query exists or not. If it exists returns 200, othwesise 404*/
+func ExistsCustomDomain(w http.ResponseWriter, r *http.Request) {
+
+	domain := r.URL.Query().Get("domain")
+	if domain == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Domain cannot be empty."))
+		return
+	}
+	exists, err := data.ExistsCustomerByDomain(domain)
+	if err != nil {
+		panic(err)
+	}
+	if exists == false {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 /*CustomerSignUpHandler handles customer signup operations*/
 func CustomerSignUpHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
