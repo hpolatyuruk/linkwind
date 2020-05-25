@@ -1,4 +1,4 @@
-<p style="text-align:center;font-size:20px">LinkWind</p>
+# Linkwind
 
 <p align="center">
     <img alt="golang" src="https://forthebadge.com/images/badges/made-with-go.svg">
@@ -7,6 +7,7 @@
 
 <p align="center">
     <img alt="GitHub issues" src="https://img.shields.io/github/issues/hpolatyuruk/linkwind">
+    <img alt="License" src="    https://img.shields.io/github/license/hpolatyuruk/linkwind">
 </p>
 
 ---
@@ -15,7 +16,7 @@ Linkwind is an open source simple link aggregation and discussion platform for c
 You can create your account [here](https://app.linkwind.co/customer-signup) or see a workind demo [here](https://demo.linkwind.co/).
 
 ## Features
----
+
 ### Link and news sharing
 
 Users can share useful and interesting links within your community and start a discussion.
@@ -45,7 +46,7 @@ Here is an example platform created using LinkWind.
 ![alt text](https://www.linkwind.co/images/product.png 'LinkWind Demo')
 
 ## Developers
----
+
 ### Huseyin Polat Yuruk
 
 - [Website](https://huseyinpolatyuruk.com/)
