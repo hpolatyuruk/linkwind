@@ -7,7 +7,7 @@
 
 <p align="center">
     <img alt="GitHub issues" src="https://img.shields.io/github/issues/hpolatyuruk/linkwind">
-    <img alt="License" src="    https://img.shields.io/github/license/hpolatyuruk/linkwind">
+    <img alt="License" src="https://img.shields.io/github/license/hpolatyuruk/linkwind">
 </p>
 
 ---
