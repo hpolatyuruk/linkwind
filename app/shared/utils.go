@@ -3,7 +3,10 @@ package shared
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"fmt"
+	"image"
+	"image/jpeg"
 	"io"
 	"io/ioutil"
 	"math"
@@ -12,6 +15,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 	"unicode"
 
@@ -249,4 +253,20 @@ func ReturnNotFoundTemplate(w http.ResponseWriter) {
 	}
 	w.WriteHeader(http.StatusNotFound)
 	w.Write(byteValue)
+}
+
+/*DecodeLogoImageToBase64 convert byte array to string for logo image*/
+func DecodeLogoImageToBase64(logoImage []byte) (string, error) {
+	var img image.Image
+	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(string(logoImage)))
+	img, _, err := image.Decode(reader)
+	if err != nil {
+		return "", err
+	}
+	buffer := new(bytes.Buffer)
+	if err := jpeg.Encode(buffer, img, nil); err != nil {
+		sentry.CaptureException(err)
+	}
+	return base64.StdEncoding.EncodeToString(buffer.Bytes()), err
+
 }

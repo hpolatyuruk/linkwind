@@ -24,6 +24,7 @@ type StoryPageViewModel struct {
 	SignedInUser    *SignedInUserViewModel
 	Stories         []StoryViewModel
 	Page            *Paging
+	Layout          *LayoutViewModel
 }
 
 type StoryViewModel struct {
@@ -67,4 +68,10 @@ type StoryDetailPageViewModel struct {
 	Comments        *[]CommentViewModel
 	SignedInUser    *SignedInUserViewModel
 	IsAuthenticated bool
+	Layout          *LayoutViewModel
+}
+
+type LayoutViewModel struct {
+	Platform string
+	Logo     string
 }

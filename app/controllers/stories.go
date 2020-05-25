@@ -47,6 +47,7 @@ type StorySubmitModel struct {
 	Text         string
 	Errors       map[string]string
 	SignedInUser *models.SignedInUserViewModel
+	Layout       *models.LayoutViewModel
 }
 
 /*JSONResponse respresents the json response.*/
@@ -87,6 +88,11 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) {
 func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.ResponseWriter, r *http.Request) {
 	var model = &models.StoryPageViewModel{Title: title}
 	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
+	layout := &models.LayoutViewModel{
+		Platform: customerCtx.Platform,
+		Logo:     customerCtx.Logo,
+	}
+	model.Layout = layout
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
 		panic(err)
@@ -140,7 +146,13 @@ func calcualteTotalPageCount(storiesCount int) int {
 
 /*UserSavedStoriesHandler handles showing the saved stories of a user*/
 func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) {
-	var model = &models.StoryPageViewModel{Title: "Saved Stories"}
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
+	var model = &models.StoryPageViewModel{
+		Title: "Saved Stories",
+		Layout: &models.LayoutViewModel{
+			Platform: customerCtx.Platform,
+			Logo:     customerCtx.Logo,
+		}}
 
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 	if err != nil {
@@ -177,7 +189,13 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 
 /*UserSubmittedStoriesHandler handles user's submitted stories*/
 func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) {
-	var model = &models.StoryPageViewModel{Title: "Submitted Stories"}
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
+	var model = &models.StoryPageViewModel{
+		Title: "Submitted Stories",
+		Layout: &models.LayoutViewModel{
+			Platform: customerCtx.Platform,
+			Logo:     customerCtx.Logo,
+		}}
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
 
 	if err != nil {
@@ -212,7 +230,13 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 
 /*UserUpvotedStoriesHandler handles showing the upvoted stories by user*/
 func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) {
-	var model = &models.StoryPageViewModel{Title: "Upvoted Stories"}
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
+	var model = &models.StoryPageViewModel{
+		Title: "Upvoted Stories",
+		Layout: &models.LayoutViewModel{
+			Platform: customerCtx.Platform,
+			Logo:     customerCtx.Logo,
+		}}
 
 	var userID int = -1
 	isAuthenticated, user, err := shared.IsAuthenticated(r)
@@ -262,12 +286,17 @@ func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlesSubmitGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	model := &StorySubmitModel{
 		SignedInUser: &models.SignedInUserViewModel{
 			UserName:   user.UserName,
 			UserID:     user.ID,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		},
+		Layout: &models.LayoutViewModel{
+			Platform: customerCtx.Platform,
+			Logo:     customerCtx.Logo,
 		},
 	}
 	templates.RenderInLayout(w, "submit.html", model)
@@ -278,6 +307,7 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.Signe
 		panic(err)
 	}
 
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	model := &StorySubmitModel{
 		URL:   r.FormValue("url"),
 		Title: r.FormValue("title"),
@@ -287,6 +317,10 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.Signe
 			UserID:     user.ID,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		},
+		Layout: &models.LayoutViewModel{
+			Platform: customerCtx.Platform,
+			Logo:     customerCtx.Logo,
 		},
 	}
 	if model.Validate() == false {
@@ -352,8 +386,13 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(fmt.Errorf("An error occured when run IsAuthenticated func in StoryDetailHandler"))
 	}
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	model := &models.StoryDetailPageViewModel{
 		Title: story.Title,
+		Layout: &models.LayoutViewModel{
+			Platform: customerCtx.Platform,
+			Logo:     customerCtx.Logo,
+		},
 	}
 	if isAuth {
 		model.IsAuthenticated = true

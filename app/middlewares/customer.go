@@ -15,7 +15,7 @@ import (
 type CustomerCtx struct {
 	ID       int
 	Platform string
-	Logo     []byte
+	Logo     string
 }
 
 var mutex = &sync.Mutex{}
@@ -24,7 +24,7 @@ var customers map[string]*CustomerCtx = map[string]*CustomerCtx{}
 var defaultCustometCtx = &CustomerCtx{
 	ID:       shared.DefaultCustomerID,
 	Platform: shared.DefaultCustomerName,
-	Logo:     []byte(""), // TODO: set default logo here
+	Logo:     "", // TODO: set default logo here
 }
 
 /*CustomerMiddleware sets requested customer info to request context*/
@@ -66,10 +66,16 @@ func handleCustomDomains(next http.Handler, w http.ResponseWriter, r *http.Reque
 				shared.ReturnNotFoundTemplate(w)
 				return
 			}
+
+			imageasB64, err := shared.DecodeLogoImageToBase64(customer.LogoImage)
+			if err != nil {
+				panic(err)
+			}
+
 			customerCtx = &CustomerCtx{
 				ID:       customer.ID,
 				Platform: customer.Name,
-				Logo:     customer.LogoImage,
+				Logo:     imageasB64,
 			}
 			customers[customer.Name] = customerCtx
 		}
@@ -112,9 +118,15 @@ func handleSubDomains(next http.Handler, w http.ResponseWriter, r *http.Request)
 				shared.ReturnNotFoundTemplate(w)
 				return
 			}
+
+			imageasB64, err := shared.DecodeLogoImageToBase64(customer.LogoImage)
+			if err != nil {
+				panic(err)
+			}
+
 			customerCtx = &CustomerCtx{
 				ID:       customer.ID,
-				Logo:     customer.LogoImage,
+				Logo:     imageasB64,
 				Platform: customer.Name,
 			}
 			customers[customer.Name] = customerCtx

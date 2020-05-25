@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"linkwind/app/data"
+	"linkwind/app/middlewares"
 	"linkwind/app/models"
 	"linkwind/app/shared"
 	"linkwind/app/templates"
@@ -21,6 +22,7 @@ type UserProfileViewModel struct {
 	SuccessMessage string
 	SignedInUser   *models.SignedInUserViewModel
 	IsAdmin        bool
+	Layout         *models.LayoutViewModel
 }
 
 /*Validate validates the UserProfileViewModel*/
@@ -49,12 +51,17 @@ func UserProfileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) {
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	model := &UserProfileViewModel{
 		SignedInUser: &models.SignedInUserViewModel{
 			UserName:   userClaims.UserName,
 			UserID:     userClaims.ID,
 			CustomerID: userClaims.CustomerID,
 			Email:      userClaims.Email,
+		},
+		Layout: &models.LayoutViewModel{
+			Platform: customerCtx.Platform,
+			Logo:     customerCtx.Logo,
 		},
 	}
 	renderFilePath := "readonly-profile.html"
@@ -89,6 +96,7 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *sh
 }
 
 func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) error {
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	model := &UserProfileViewModel{
 		FullName: r.FormValue("fullName"),
 		Email:    r.FormValue("email"),
@@ -98,6 +106,10 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 			UserID:     userClaims.ID,
 			CustomerID: userClaims.CustomerID,
 			Email:      userClaims.Email,
+		},
+		Layout: &models.LayoutViewModel{
+			Platform: customerCtx.Platform,
+			Logo:     customerCtx.Logo,
 		},
 	}
 

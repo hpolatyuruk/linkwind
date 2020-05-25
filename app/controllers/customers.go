@@ -5,9 +5,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"image"
-	"image/jpeg"
 	"io/ioutil"
 	"linkwind/app/data"
+	"linkwind/app/middlewares"
 	"linkwind/app/models"
 	"linkwind/app/shared"
 	"linkwind/app/templates"
@@ -15,8 +15,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/getsentry/sentry-go"
 )
 
 const (
@@ -39,6 +37,7 @@ type InviteUserViewModel struct {
 	Memo           string
 	SignedInUser   *models.SignedInUserViewModel
 	Errors         map[string]string
+	Layout         *models.LayoutViewModel
 }
 
 /*CustomerAdminViewModel represents the data which is needed on sigin UI.*/
@@ -49,6 +48,7 @@ type CustomerAdminViewModel struct {
 	Errors            map[string]string
 	SuccessMessage    string
 	SignedInUser      *models.SignedInUserViewModel
+	Layout            *models.LayoutViewModel
 }
 
 /*Validate validates the CustomerSignUpViewModel*/
@@ -125,8 +125,8 @@ func (model *CustomerAdminViewModel) Validate() bool {
 			panic(err)
 		}
 		width, height := getImageSize(decodingLogo)
-		if width > 64 || height > 64 {
-			model.Errors["LogoImageAsBase64"] = "Image file size should be 64*64"
+		if width > 30 || height > 30 {
+			model.Errors["LogoImageAsBase64"] = "Image file size should be 57*57"
 		}
 	}
 	return len(model.Errors) == 0
@@ -253,6 +253,7 @@ func InviteUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleInviteUserGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	err := templates.RenderInLayout(
 		w,
 		"invite.html",
@@ -263,6 +264,10 @@ func handleInviteUserGET(w http.ResponseWriter, r *http.Request, user *shared.Si
 				CustomerID: user.CustomerID,
 				Email:      user.Email,
 			},
+			Layout: &models.LayoutViewModel{
+				Platform: customerCtx.Platform,
+				Logo:     customerCtx.Logo,
+			},
 		},
 	)
 	if err != nil {
@@ -271,6 +276,7 @@ func handleInviteUserGET(w http.ResponseWriter, r *http.Request, user *shared.Si
 }
 
 func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	model := &InviteUserViewModel{
 		EmailAddress: r.FormValue("email"),
 		Memo:         r.FormValue("memo"),
@@ -279,6 +285,10 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 			UserID:     user.ID,
 			CustomerID: user.CustomerID,
 			Email:      user.Email,
+		},
+		Layout: &models.LayoutViewModel{
+			Platform: customerCtx.Platform,
+			Logo:     customerCtx.Logo,
 		},
 	}
 
@@ -305,7 +315,15 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 		panic(err)
 	}
 
-	err = shared.SendInvitemail(model.EmailAddress, model.Memo, inviteCode, user.UserName, domain)
+	m := shared.InviteMailQuery{
+		Domain:     domain,
+		InviteCode: inviteCode,
+		Email:      model.EmailAddress,
+		UserName:   model.SignedInUser.UserName,
+		Memo:       model.Memo,
+		Platform:   model.Layout.Platform,
+	}
+	err = shared.SendInvitemail(m)
 	if err != nil {
 		panic(err)
 	}
@@ -377,11 +395,16 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 		model.Name = customer.Name
 
 		if customer.LogoImage != nil {
-			imageasB64, err := decodeLogoImageToBase64(customer.LogoImage)
+			imageasB64, err := shared.DecodeLogoImageToBase64(customer.LogoImage)
 			if err != nil {
 				panic(err)
 			}
 			model.LogoImageAsBase64 = imageasB64
+			layout := &models.LayoutViewModel{
+				Platform: model.Name,
+				Logo:     model.LogoImageAsBase64,
+			}
+			model.Layout = layout
 		}
 
 		err := templates.RenderInLayout(w, adminHTMLPath, model)
@@ -392,6 +415,11 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 		return
 	}
 
+	layout := &models.LayoutViewModel{
+		Platform: model.Name,
+		Logo:     model.LogoImageAsBase64,
+	}
+	model.Layout = layout
 	if customer.Name != model.Name {
 		exists, err := data.ExistsCustomerByName(model.Name)
 		if err != nil {
@@ -477,7 +505,7 @@ func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUse
 	}
 
 	if len(customer.LogoImage) != 0 {
-		imageasB64, err := decodeLogoImageToBase64(customer.LogoImage)
+		imageasB64, err := shared.DecodeLogoImageToBase64(customer.LogoImage)
 		if err != nil {
 			return nil, err
 		}
@@ -492,6 +520,11 @@ func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUse
 	s.UserID = user.ID
 	s.UserName = user.UserName
 	model.SignedInUser = &s
+
+	var layout models.LayoutViewModel
+	layout.Logo = model.LogoImageAsBase64
+	layout.Platform = model.Name
+	model.Layout = &layout
 	return &model, nil
 }
 
@@ -513,21 +546,6 @@ func getImageFile(r *http.Request) (multipart.File, error) {
 	return file, nil
 }
 
-func decodeLogoImageToBase64(logoImage []byte) (string, error) {
-	var img image.Image
-	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(string(logoImage)))
-	img, _, err := image.Decode(reader)
-	if err != nil {
-		return "", err
-	}
-	buffer := new(bytes.Buffer)
-	if err := jpeg.Encode(buffer, img, nil); err != nil {
-		sentry.CaptureException(err)
-	}
-	return base64.StdEncoding.EncodeToString(buffer.Bytes()), err
-
-}
-
 func getImage(customer *data.Customer, r *http.Request) string {
 	var logoImageAsBase64 string
 	file, err := getImageFile(r)
@@ -544,7 +562,7 @@ func getImage(customer *data.Customer, r *http.Request) string {
 		logoImageAsBase64 = base64.StdEncoding.EncodeToString(fileBytes)
 	} else {
 		if len(customer.LogoImage) != 0 {
-			imageasB64, err := decodeLogoImageToBase64(customer.LogoImage)
+			imageasB64, err := shared.DecodeLogoImageToBase64(customer.LogoImage)
 			if err != nil {
 				panic(err)
 			}

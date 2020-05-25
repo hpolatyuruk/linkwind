@@ -471,7 +471,17 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token := shared.GenerateResetPasswordToken()
-	err = shared.SendResetPasswordMail(email, userName, domain, token)
+
+	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
+
+	query := shared.ResetPasswordMailQuery{
+		Email:    email,
+		UserName: userName,
+		Domain:   domain,
+		Platform: customerCtx.Platform,
+		Token:    token,
+	}
+	err = shared.SendResetPasswordMail(query)
 	if err != nil {
 		panic(err)
 	}

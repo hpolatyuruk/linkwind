@@ -18,10 +18,12 @@
         <div class="float-left">
           <ul class="flex">
             <li class="mr-6">
-              <a class="text-gray-600 hover:text-gray-800" href="/">Logo</a>
+              <a href="/">
+                <img src="data:image/jpg;base64,{{.Layout.Logo}}" title="{{.Layout.Platform}}">
+              </a>
             </li>
             <li class="mr-6">
-              <a class="text-gray-600 hover:text-gray-800" href="/">Name</a>
+              <a class="text-gray-600 hover:text-gray-800" href="/">{{.Layout.Platform}}</a>
 
             </li>
             <li class="mr-6">
