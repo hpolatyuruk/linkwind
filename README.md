@@ -1,11 +1,21 @@
-# LinkWind
+<p style="text-align:center;font-size:20px">LinkWind</p>
 
+<p align="center">
+    <img alt="golang" src="https://forthebadge.com/images/badges/made-with-go.svg">
+</p>
+
+
+<p align="center">
+    <img alt="GitHub issues" src="https://img.shields.io/github/issues/hpolatyuruk/linkwind">
+</p>
+
+---
 Linkwind is an open source simple link aggregation and discussion platform for communities & teams. It allows you to create your own customized news sharing platform so you and anyone in your community can share interesting links, ask for advice about anything and collect feedback.
 
 You can create your account [here](https://app.linkwind.co/customer-signup) or see a workind demo [here](https://demo.linkwind.co/).
 
 ## Features
-
+---
 ### Link and news sharing
 
 Users can share useful and interesting links within your community and start a discussion.
@@ -35,7 +45,7 @@ Here is an example platform created using LinkWind.
 ![alt text](https://www.linkwind.co/images/product.png 'LinkWind Demo')
 
 ## Developers
-
+---
 ### Huseyin Polat Yuruk
 
 - [Website](https://huseyinpolatyuruk.com/)
