@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"net/smtp"
+	"os"
 )
 
 type InviteMailQuery struct {
@@ -44,8 +45,8 @@ func SetInviteMailBody(m InviteMailQuery, platformName string) string {
 
 /*SendInvitemail send mail for invite to join*/
 func SendInvitemail(m InviteMailQuery) error {
-	pass := "Sedat.1242"
-	from := "sedata38@gmail.com"
+	pass := os.Getenv("MAIL_PASSWORD")
+	from := "www.linkwind.co@gmail.com"
 	to := m.Email
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
@@ -71,8 +72,8 @@ func SendInvitemail(m InviteMailQuery) error {
 
 /*SendResetPasswordMail send to mail for reset password with resetPassword token*/
 func SendResetPasswordMail(r ResetPasswordMailQuery) error {
-	pass := "Sedat.1242"
-	from := "sedata38@gmail.com"
+	pass := os.Getenv("MAIL_PASSWORD")
+	from := "www.linkwind.co@gmail.com"
 	to := r.Email
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
