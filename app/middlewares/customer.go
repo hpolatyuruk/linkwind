@@ -67,7 +67,7 @@ func handleCustomDomains(next http.Handler, w http.ResponseWriter, r *http.Reque
 				return
 			}
 
-			imageasB64, err := shared.DecodeLogoImageToBase64(customer.LogoImage)
+			imageasB64, err := shared.EncodeLogoImageToBase64(customer.LogoImage)
 			if err != nil {
 				panic(err)
 			}
@@ -121,7 +121,7 @@ func handleSubDomains(next http.Handler, w http.ResponseWriter, r *http.Request)
 				return
 			}
 
-			imageasB64, err := shared.DecodeLogoImageToBase64(customer.LogoImage)
+			imageasB64, err := shared.EncodeLogoImageToBase64(customer.LogoImage)
 			if err != nil {
 				panic(err)
 			}

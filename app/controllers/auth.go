@@ -474,7 +474,7 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) {
 
 	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 
-	query := shared.ResetPasswordMailQuery{
+	query := shared.ResetPasswordMailInfo{
 		Email:    email,
 		UserName: userName,
 		Domain:   domain,

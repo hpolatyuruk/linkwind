@@ -6,7 +6,8 @@ import (
 	"os"
 )
 
-type InviteMailQuery struct {
+/*InviteMailInfo represents InviteMail parameters*/
+type InviteMailInfo struct {
 	Domain     string
 	InviteCode string
 	Email      string
@@ -15,7 +16,8 @@ type InviteMailQuery struct {
 	Platform   string
 }
 
-type ResetPasswordMailQuery struct {
+/*ResetPasswordMailInfo represents ResetPasswordMail parameters*/
+type ResetPasswordMailInfo struct {
 	Email    string
 	UserName string
 	Domain   string
@@ -24,7 +26,7 @@ type ResetPasswordMailQuery struct {
 }
 
 /*SetInviteMailBody combine parameters and return body for UserInviteMail*/
-func SetInviteMailBody(m InviteMailQuery, platformName string) string {
+func SetInviteMailBody(m InviteMailInfo, platformName string) string {
 	content := ""
 	content += "<p>Hello: " + m.Email + "</p>"
 	content += "<p>" + m.UserName + " invited you to " + platformName + ".</p>"
@@ -43,8 +45,8 @@ func SetInviteMailBody(m InviteMailQuery, platformName string) string {
 	return content
 }
 
-/*SendInvitemail send mail for invite to join*/
-func SendInvitemail(m InviteMailQuery) error {
+/*SendEmailInvitation send mail for invite to join*/
+func SendEmailInvitation(m InviteMailInfo) error {
 	pass := os.Getenv("MAIL_PASSWORD")
 	from := "www.linkwind.co@gmail.com"
 	to := m.Email
@@ -71,7 +73,7 @@ func SendInvitemail(m InviteMailQuery) error {
 }
 
 /*SendResetPasswordMail send to mail for reset password with resetPassword token*/
-func SendResetPasswordMail(r ResetPasswordMailQuery) error {
+func SendResetPasswordMail(r ResetPasswordMailInfo) error {
 	pass := os.Getenv("MAIL_PASSWORD")
 	from := "www.linkwind.co@gmail.com"
 	to := r.Email
@@ -97,7 +99,7 @@ func SendResetPasswordMail(r ResetPasswordMailQuery) error {
 	return nil
 }
 
-func setResetPasswordMailBody(r ResetPasswordMailQuery, platformName string) string {
+func setResetPasswordMailBody(r ResetPasswordMailInfo, platformName string) string {
 	content := ""
 	fontColour := "blue"
 	content += "<p>Hello </><font color=" + fontColour + ">" + r.UserName + "</font>"

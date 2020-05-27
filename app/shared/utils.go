@@ -255,8 +255,8 @@ func ReturnNotFoundTemplate(w http.ResponseWriter) {
 	w.Write(byteValue)
 }
 
-/*DecodeLogoImageToBase64 convert byte array to string for logo image*/
-func DecodeLogoImageToBase64(logoImage []byte) (string, error) {
+/*EncodeLogoImageToBase64 convert byte array to string for logo image*/
+func EncodeLogoImageToBase64(logoImage []byte) (string, error) {
 	var img image.Image
 	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(string(logoImage)))
 	img, _, err := image.Decode(reader)

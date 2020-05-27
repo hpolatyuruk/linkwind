@@ -19,6 +19,8 @@ import (
 
 const (
 	maxPlatformNameLength = 25
+	maxImageWidth         = 30
+	maxImageLength        = 30
 )
 
 /*CustomerSignUpViewModel represents the data which is needed on sigin UI.*/
@@ -125,7 +127,7 @@ func (model *CustomerAdminViewModel) Validate() bool {
 			panic(err)
 		}
 		width, height := getImageSize(decodingLogo)
-		if width > 30 || height > 30 {
+		if width > maxImageWidth || height > maxImageLength {
 			model.Errors["LogoImageAsBase64"] = "Image file size should be 57*57"
 		}
 	}
@@ -335,7 +337,7 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 		panic(err)
 	}
 
-	m := shared.InviteMailQuery{
+	m := shared.InviteMailInfo{
 		Domain:     domain,
 		InviteCode: inviteCode,
 		Email:      model.EmailAddress,
@@ -343,7 +345,7 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 		Memo:       model.Memo,
 		Platform:   model.Layout.Platform,
 	}
-	err = shared.SendInvitemail(m)
+	err = shared.SendEmailInvitation(m)
 	if err != nil {
 		panic(err)
 	}
@@ -415,7 +417,7 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 		model.Name = customer.Name
 
 		if customer.LogoImage != nil {
-			imageasB64, err := shared.DecodeLogoImageToBase64(customer.LogoImage)
+			imageasB64, err := shared.EncodeLogoImageToBase64(customer.LogoImage)
 			if err != nil {
 				panic(err)
 			}
@@ -525,7 +527,7 @@ func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUse
 	}
 
 	if len(customer.LogoImage) != 0 {
-		imageasB64, err := shared.DecodeLogoImageToBase64(customer.LogoImage)
+		imageasB64, err := shared.EncodeLogoImageToBase64(customer.LogoImage)
 		if err != nil {
 			return nil, err
 		}
@@ -582,7 +584,7 @@ func getImage(customer *data.Customer, r *http.Request) string {
 		logoImageAsBase64 = base64.StdEncoding.EncodeToString(fileBytes)
 	} else {
 		if len(customer.LogoImage) != 0 {
-			imageasB64, err := shared.DecodeLogoImageToBase64(customer.LogoImage)
+			imageasB64, err := shared.EncodeLogoImageToBase64(customer.LogoImage)
 			if err != nil {
 				panic(err)
 			}
