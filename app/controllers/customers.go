@@ -128,7 +128,9 @@ func (model *CustomerAdminViewModel) Validate() bool {
 		}
 		width, height := getImageSize(decodingLogo)
 		if width > maxImageWidth || height > maxImageLength {
-			model.Errors["LogoImageAsBase64"] = "Image file size should be 57*57"
+			model.Errors["LogoImageAsBase64"] =
+				fmt.Sprintf("Image file size should be %d*%d",
+					maxImageWidth, maxImageLength)
 		}
 	}
 	return len(model.Errors) == 0
