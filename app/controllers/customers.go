@@ -3,6 +3,7 @@ package controllers
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"image"
 	"io/ioutil"
@@ -126,7 +127,13 @@ func (model *CustomerAdminViewModel) Validate() bool {
 		if err != nil {
 			panic(err)
 		}
-		width, height := getImageSize(decodingLogo)
+
+		width, height, format, errImg := getImageInfos(decodingLogo)
+		err = checkImageValid(errImg, format)
+		if err != nil {
+			model.Errors["LogoImageAsBase64"] = err.Error()
+		}
+
 		if width > maxImageWidth || height > maxImageLength {
 			model.Errors["LogoImageAsBase64"] =
 				fmt.Sprintf("Image file size should be %d*%d",
@@ -596,13 +603,26 @@ func getImage(customer *data.Customer, r *http.Request) string {
 	return logoImageAsBase64
 }
 
-func getImageSize(file []byte) (width int, height int) {
+func getImageInfos(file []byte) (int, int, string, error) {
 	r := bytes.NewReader(file)
-	im, _, err := image.DecodeConfig(r)
+	im, format, err := image.DecodeConfig(r)
 	if err != nil {
-		panic(err)
+		return 0, 0, "", err
 	}
-	width = im.Width
-	height = im.Height
-	return width, height
+
+	return im.Width, im.Height, format, nil
+}
+
+func checkImageValid(err error, format string) error {
+	if err != nil {
+		if err.Error() == "image: unknown format" {
+			return errors.New("Image format should be jpg")
+		}
+		panic(err)
+
+	}
+	if format != "jpeg" {
+		return errors.New("Image format should be jpg")
+	}
+	return nil
 }
