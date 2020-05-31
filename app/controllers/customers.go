@@ -414,17 +414,24 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 		panic(err)
 	}
 
+	adminHTMLPath := "admin.html"
 	model := &CustomerAdminViewModel{
 		Name:              r.FormValue("name"),
 		Domain:            r.FormValue("domain"),
 		LogoImageAsBase64: getImage(customer, r),
+		Layout: &models.LayoutViewModel{
+			Platform: customer.Name,
+			Logo:     "",
+		},
+		SignedInUser: &models.SignedInUserViewModel{
+			UserName:   user.UserName,
+			UserID:     user.ID,
+			CustomerID: user.CustomerID,
+			Email:      user.Email,
+		},
 	}
 
-	adminHTMLPath := "admin.html"
 	if model.Validate() == false {
-		model.Domain = customer.Domain
-		model.Name = customer.Name
-
 		if customer.LogoImage != nil {
 			imageasB64, err := shared.EncodeLogoImageToBase64(customer.LogoImage)
 			if err != nil {
@@ -437,12 +444,10 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 			}
 			model.Layout = layout
 		}
-
 		err := templates.RenderInLayout(w, adminHTMLPath, model)
 		if err != nil {
 			panic(err)
 		}
-
 		return
 	}
 
@@ -619,7 +624,6 @@ func checkImageValid(err error, format string) error {
 			return errors.New("Image format should be jpg")
 		}
 		panic(err)
-
 	}
 	if format != "jpeg" {
 		return errors.New("Image format should be jpg")
