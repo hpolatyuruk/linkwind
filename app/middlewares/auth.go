@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"context"
 	"linkwind/app/shared"
 	"net/http"
 )
@@ -10,6 +11,8 @@ func AuthMiddleWare(authorizedPaths []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 
+			isAuthenticated, user, err := shared.IsAuthenticated(r)
+			ctx := context.WithValue(r.Context(), shared.UserContextKey, user)
 			isPathAuthorized := false
 
 			for _, path := range authorizedPaths {
@@ -19,7 +22,6 @@ func AuthMiddleWare(authorizedPaths []string) func(http.Handler) http.Handler {
 			}
 
 			if isPathAuthorized {
-				isAuthenticated, _, err := shared.IsAuthenticated(r)
 				if err != nil {
 					panic(err)
 				}
@@ -28,7 +30,7 @@ func AuthMiddleWare(authorizedPaths []string) func(http.Handler) http.Handler {
 					return
 				}
 			}
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 		return http.HandlerFunc(fn)
 	}

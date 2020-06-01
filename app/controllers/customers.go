@@ -1,14 +1,12 @@
 package controllers
 
 import (
-	"bytes"
+	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
-	"image"
 	"io/ioutil"
+	cache "linkwind/app/caching"
 	"linkwind/app/data"
-	"linkwind/app/middlewares"
 	"linkwind/app/models"
 	"linkwind/app/shared"
 	"linkwind/app/templates"
@@ -18,12 +16,6 @@ import (
 	"time"
 )
 
-const (
-	maxPlatformNameLength = 25
-	maxImageWidth         = 30
-	maxImageLength        = 30
-)
-
 /*CustomerSignUpViewModel represents the data which is needed on sigin UI.*/
 type CustomerSignUpViewModel struct {
 	Name     string
@@ -31,27 +23,6 @@ type CustomerSignUpViewModel struct {
 	UserName string
 	Password string
 	Errors   map[string]string
-}
-
-/*InviteUserViewModel represents the data which is needed on sigin UI.*/
-type InviteUserViewModel struct {
-	EmailAddress   string
-	SuccessMessage string
-	Memo           string
-	SignedInUser   *models.SignedInUserViewModel
-	Errors         map[string]string
-	Layout         *models.LayoutViewModel
-}
-
-/*CustomerAdminViewModel represents the data which is needed on sigin UI.*/
-type CustomerAdminViewModel struct {
-	Name              string
-	Domain            string
-	LogoImageAsBase64 string
-	Errors            map[string]string
-	SuccessMessage    string
-	SignedInUser      *models.SignedInUserViewModel
-	Layout            *models.LayoutViewModel
 }
 
 /*Validate validates the CustomerSignUpViewModel*/
@@ -80,64 +51,6 @@ func (model *CustomerSignUpViewModel) Validate() bool {
 	} else {
 		if shared.IsPasswordValid(model.Password) == false {
 			model.Errors["Password"] = "The password is not valid. A password should contan at least 1 uppercase, 1 lowercase, 1 digit, one of #$+=!*@& special characters and have a length of at least of 8."
-		}
-	}
-	return len(model.Errors) == 0
-}
-
-/*Validate validates the InviteUserViewModel*/
-func (model *InviteUserViewModel) Validate(email string) (bool, error) {
-	model.Errors = make(map[string]string)
-
-	if strings.TrimSpace(model.EmailAddress) == "" {
-		model.Errors["Email"] = "Email is required!"
-	} else {
-		if shared.IsEmailAdressValid(model.EmailAddress) == false {
-			model.Errors["Email"] = "Please enter a valid email address!"
-		}
-	}
-
-	exists, err := data.ExistsUserByEmail(email)
-	if err != nil {
-		return false, err
-	}
-	if exists {
-		model.Errors["Email"] = "This email address is already in use!"
-	}
-	return len(model.Errors) == 0, nil
-}
-
-/*Validate validates the InviteUserViewModel*/
-func (model *CustomerAdminViewModel) Validate() bool {
-	model.Errors = make(map[string]string)
-
-	if strings.TrimSpace(model.Name) == "" {
-		model.Errors["Name"] = "Name is required!"
-	} else {
-		if len(model.Name) > maxPlatformNameLength {
-			model.Errors["Name"] = "Name cannot be longer than 25 characters"
-		}
-		if strings.Contains(model.Name, " ") {
-			model.Errors["Name"] = "Name cannot contain spaces"
-		}
-	}
-
-	if model.LogoImageAsBase64 != "" {
-		decodingLogo, err := base64.StdEncoding.DecodeString(model.LogoImageAsBase64)
-		if err != nil {
-			panic(err)
-		}
-
-		width, height, format, errImg := getImageInfos(decodingLogo)
-		err = checkImageValid(errImg, format)
-		if err != nil {
-			model.Errors["LogoImageAsBase64"] = err.Error()
-		}
-
-		if width > maxImageWidth || height > maxImageLength {
-			model.Errors["LogoImageAsBase64"] =
-				fmt.Sprintf("Image file size should be %d*%d",
-					maxImageWidth, maxImageLength)
 		}
 	}
 	return len(model.Errors) == 0
@@ -272,55 +185,32 @@ func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) {
 
 /*InviteUserHandler handles user invite operations*/
 func InviteUserHandler(w http.ResponseWriter, r *http.Request) {
-	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
-		handleInviteUserGET(w, r, user)
+		handleInviteUserGET(w, r)
 	case "POST":
-		handleInviteUserPOST(w, r, user)
+		handleInviteUserPOST(w, r)
 	default:
-		handleInviteUserGET(w, r, user)
+		handleInviteUserGET(w, r)
 	}
 }
 
-func handleInviteUserGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
+func handleInviteUserGET(w http.ResponseWriter, r *http.Request) {
 	err := templates.RenderInLayout(
 		w,
+		r,
 		"invite.html",
-		InviteUserViewModel{
-			SignedInUser: &models.SignedInUserViewModel{
-				UserName:   user.UserName,
-				UserID:     user.ID,
-				CustomerID: user.CustomerID,
-				Email:      user.Email,
-			},
-			Layout: &models.LayoutViewModel{
-				Platform: customerCtx.Platform,
-				Logo:     customerCtx.Logo,
-			},
-		},
+		&models.InviteUserViewModel{},
 	)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
-	model := &InviteUserViewModel{
+func handleInviteUserPOST(w http.ResponseWriter, r *http.Request) {
+	model := &models.InviteUserViewModel{
 		EmailAddress: r.FormValue("email"),
 		Memo:         r.FormValue("memo"),
-		SignedInUser: &models.SignedInUserViewModel{
-			UserName:   user.UserName,
-			UserID:     user.ID,
-			CustomerID: user.CustomerID,
-			Email:      user.Email,
-		},
-		Layout: &models.LayoutViewModel{
-			Platform: customerCtx.Platform,
-			Logo:     customerCtx.Logo,
-		},
 	}
 
 	inviteHTMLPath := "invite.html"
@@ -329,19 +219,21 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 		panic(err)
 	}
 	if !isValid {
-		err := templates.RenderInLayout(w, inviteHTMLPath, model)
+		err := templates.RenderInLayout(w, r, inviteHTMLPath, model)
 		if err != nil {
 			panic(err)
 		}
 		return
 	}
 
+	user := shared.GetUserFromContext(r)
+
 	inviteCode, err := data.CreateInviteCode(user.ID, model.EmailAddress)
 	if err != nil {
 		panic(err)
 	}
 
-	domain, err := data.GetCustomerDomainByUserName(model.SignedInUser.UserName)
+	domain, err := data.GetCustomerDomainByUserName(user.UserName)
 	if err != nil {
 		panic(err)
 	}
@@ -350,7 +242,7 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 		Domain:     domain,
 		InviteCode: inviteCode,
 		Email:      model.EmailAddress,
-		UserName:   model.SignedInUser.UserName,
+		UserName:   user.UserName,
 		Memo:       model.Memo,
 		Platform:   model.Layout.Platform,
 	}
@@ -359,7 +251,7 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 		panic(err)
 	}
 	model.SuccessMessage = "Inivitation mail successfully sent to " + model.EmailAddress
-	err = templates.RenderInLayout(w, inviteHTMLPath, model)
+	err = templates.RenderInLayout(w, r, inviteHTMLPath, model)
 	if err != nil {
 		panic(err)
 	}
@@ -367,18 +259,19 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request, user *shared.S
 
 /*AdminHandler handles admin operations*/
 func AdminHandler(w http.ResponseWriter, r *http.Request) {
-	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
-		handleAdminGET(w, r, user)
+		handleAdminGET(w, r)
 	case "POST":
-		handleAdminPOST(w, r, user)
+		handleAdminPOST(w, r)
 	default:
-		handleAdminGET(w, r, user)
+		handleAdminGET(w, r)
 	}
 }
 
-func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
+func handleAdminGET(w http.ResponseWriter, r *http.Request) {
+
+	user := shared.GetUserFromContext(r)
 	isAdmin, err := data.IsUserAdmin(user.ID)
 	if err != nil {
 		panic(err)
@@ -402,33 +295,26 @@ func handleAdminGET(w http.ResponseWriter, r *http.Request, user *shared.SignedI
 		panic(err)
 	}
 
-	err = templates.RenderInLayout(w, "admin.html", model)
+	err = templates.RenderInLayout(w, r, "admin.html", model)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
+func handleAdminPOST(w http.ResponseWriter, r *http.Request) {
+
+	user := shared.GetUserFromContext(r)
+
 	customer, err := data.GetCustomerByID(user.CustomerID)
 	if err != nil {
 		panic(err)
 	}
 
 	adminHTMLPath := "admin.html"
-	model := &CustomerAdminViewModel{
+	model := &models.CustomerAdminViewModel{
 		Name:              r.FormValue("name"),
 		Domain:            r.FormValue("domain"),
 		LogoImageAsBase64: getImage(customer, r),
-		Layout: &models.LayoutViewModel{
-			Platform: customer.Name,
-			Logo:     "",
-		},
-		SignedInUser: &models.SignedInUserViewModel{
-			UserName:   user.UserName,
-			UserID:     user.ID,
-			CustomerID: user.CustomerID,
-			Email:      user.Email,
-		},
 	}
 
 	if model.Validate() == false {
@@ -444,18 +330,13 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 			}
 			model.Layout = layout
 		}
-		err := templates.RenderInLayout(w, adminHTMLPath, model)
+		err := templates.RenderInLayout(w, r, adminHTMLPath, model)
 		if err != nil {
 			panic(err)
 		}
 		return
 	}
 
-	layout := &models.LayoutViewModel{
-		Platform: model.Name,
-		Logo:     model.LogoImageAsBase64,
-	}
-	model.Layout = layout
 	if customer.Name != model.Name {
 		exists, err := data.ExistsCustomerByName(model.Name)
 		if err != nil {
@@ -463,7 +344,7 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 		}
 		if exists {
 			model.Errors["Name"] = "This name is already taken"
-			err := templates.RenderInLayout(w, adminHTMLPath, model)
+			err := templates.RenderInLayout(w, r, adminHTMLPath, model)
 			if err != nil {
 				panic(err)
 			}
@@ -480,7 +361,7 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 			}
 			if exists {
 				model.Errors["Domain"] = "This domain is already taken"
-				err := templates.RenderInLayout(w, adminHTMLPath, model)
+				err := templates.RenderInLayout(w, r, adminHTMLPath, model)
 				if err != nil {
 					panic(err)
 				}
@@ -495,8 +376,23 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request, user *shared.Signed
 		panic(err)
 	}
 
+	//
+	// We keep customer objects in cache and request context with name and domain keys. Since customer got updated we clear cache in order to get updated data
+	//
+
+	customerCtx := &cache.CustomerCtx{
+		ID:       customer.ID,
+		Platform: customer.Name,
+		Logo:     model.LogoImageAsBase64,
+	}
+
+	ctx := context.WithValue(r.Context(), shared.CustomerContextKey, customerCtx)
+
+	cache.SetCustomer(customer.Name, customerCtx)
+	cache.SetCustomer(customer.Domain, customerCtx)
+
 	model.SuccessMessage = "Account updated successfuly"
-	err = templates.RenderInLayout(w, adminHTMLPath, model)
+	err = templates.RenderInLayout(w, r.WithContext(ctx), adminHTMLPath, model)
 	if err != nil {
 		panic(err)
 	}
@@ -534,8 +430,8 @@ func setCustomerSignUpViewModel(r *http.Request) (*CustomerSignUpViewModel, erro
 	return &model, nil
 }
 
-func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUserClaims) (*CustomerAdminViewModel, error) {
-	var model CustomerAdminViewModel
+func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUserClaims) (*models.CustomerAdminViewModel, error) {
+	var model models.CustomerAdminViewModel
 	if customer.Domain != "" {
 		model.Domain = customer.Domain
 	}
@@ -549,22 +445,10 @@ func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUse
 	}
 
 	model.Name = customer.Name
-
-	var s models.SignedInUserViewModel
-	s.CustomerID = customer.ID
-	s.Email = customer.Email
-	s.UserID = user.ID
-	s.UserName = user.UserName
-	model.SignedInUser = &s
-
-	var layout models.LayoutViewModel
-	layout.Logo = model.LogoImageAsBase64
-	layout.Platform = model.Name
-	model.Layout = &layout
 	return &model, nil
 }
 
-func setUpdatedCustomerByModel(model *CustomerAdminViewModel, customer *data.Customer) {
+func setUpdatedCustomerByModel(model *models.CustomerAdminViewModel, customer *data.Customer) {
 	customer.Name = model.Name
 	customer.Domain = model.Domain
 	if model.LogoImageAsBase64 == "" {
@@ -606,27 +490,4 @@ func getImage(customer *data.Customer, r *http.Request) string {
 		}
 	}
 	return logoImageAsBase64
-}
-
-func getImageInfos(file []byte) (int, int, string, error) {
-	r := bytes.NewReader(file)
-	im, format, err := image.DecodeConfig(r)
-	if err != nil {
-		return 0, 0, "", err
-	}
-
-	return im.Width, im.Height, format, nil
-}
-
-func checkImageValid(err error, format string) error {
-	if err != nil {
-		if err.Error() == "image: unknown format" {
-			return errors.New("Image format should be jpg")
-		}
-		panic(err)
-	}
-	if format != "jpeg" {
-		return errors.New("Image format should be jpg")
-	}
-	return nil
 }

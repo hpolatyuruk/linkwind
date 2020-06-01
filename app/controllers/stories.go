@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"linkwind/app/data"
 	"linkwind/app/enums"
-	"linkwind/app/middlewares"
 	"linkwind/app/models"
 	"linkwind/app/shared"
 	"linkwind/app/templates"
@@ -40,40 +39,12 @@ type StorySaveModel struct {
 	UserID  int
 }
 
-/*StorySubmitModel represents the data to submit a story.*/
-type StorySubmitModel struct {
-	URL          string
-	Title        string
-	Text         string
-	Errors       map[string]string
-	SignedInUser *models.SignedInUserViewModel
-	Layout       *models.LayoutViewModel
-}
-
 /*JSONResponse respresents the json response.*/
 type JSONResponse struct {
 	Result string
 }
 
 type getStoriesPaged func(customerID, pageNo, storyCountPerPage int) (*[]data.Story, error)
-
-/*Validate validates the StorySubmitModel*/
-func (model *StorySubmitModel) Validate() bool {
-	model.Errors = make(map[string]string)
-	if strings.TrimSpace(model.URL) == "" &&
-		strings.TrimSpace(model.Text) == "" &&
-		strings.TrimSpace(model.Text) == "" {
-		model.Errors["General"] = "Please enter a url or title/text."
-		return false
-	}
-	if strings.TrimSpace(model.URL) == "" &&
-		strings.TrimSpace(model.Text) != "" &&
-		strings.TrimSpace(model.Title) == "" {
-		model.Errors["Title"] = "Please enter a title."
-		return false
-	}
-	return true
-}
 
 /*StoriesHandler handles showing the popular published stories*/
 func StoriesHandler(w http.ResponseWriter, r *http.Request) {
@@ -87,21 +58,7 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) {
 
 func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.ResponseWriter, r *http.Request) {
 	var model = &models.StoryPageViewModel{Title: title}
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
-	layout := &models.LayoutViewModel{
-		Platform: customerCtx.Platform,
-		Logo:     customerCtx.Logo,
-	}
-	model.Layout = layout
-	isAuthenticated, user, err := shared.IsAuthenticated(r)
-	if err != nil {
-		panic(err)
-	}
-
-	if isAuthenticated {
-		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = mapUserClaimsToSignedUserViewModel(user)
-	}
+	customerCtx := shared.GetCustomerFromContext(r)
 
 	var page int = getPage(r)
 	stories, err := fnGetStories(customerCtx.ID, page, DefaultPageSize)
@@ -123,7 +80,7 @@ func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.Respon
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
 
-	templates.RenderInLayout(w, "stories.html", model)
+	templates.RenderInLayout(w, r, "stories.html", model)
 }
 
 func setPagingViewModel(customerID, currentPage, storiesCount int) (*models.Paging, error) {
@@ -146,23 +103,10 @@ func calcualteTotalPageCount(storiesCount int) int {
 
 /*UserSavedStoriesHandler handles showing the saved stories of a user*/
 func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) {
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	var model = &models.StoryPageViewModel{
-		Title: "Saved Stories",
-		Layout: &models.LayoutViewModel{
-			Platform: customerCtx.Platform,
-			Logo:     customerCtx.Logo,
-		}}
+		Title: "Saved Stories"}
 
-	isAuthenticated, user, err := shared.IsAuthenticated(r)
-	if err != nil {
-		panic(err)
-	}
-
-	if isAuthenticated {
-		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = mapUserClaimsToSignedUserViewModel(user)
-	}
+	user := shared.GetUserFromContext(r)
 
 	var page int = getPage(r)
 	stories, err := data.GetUserSavedStories(user.ID, page, DefaultPageSize)
@@ -181,7 +125,7 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	if stories == nil || len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
-	err = templates.RenderInLayout(w, "stories.html", model)
+	err = templates.RenderInLayout(w, r, "stories.html", model)
 	if err != nil {
 		panic(err)
 	}
@@ -189,22 +133,12 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 
 /*UserSubmittedStoriesHandler handles user's submitted stories*/
 func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) {
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	var model = &models.StoryPageViewModel{
 		Title: "Submitted Stories",
-		Layout: &models.LayoutViewModel{
-			Platform: customerCtx.Platform,
-			Logo:     customerCtx.Logo,
-		}}
-	isAuthenticated, user, err := shared.IsAuthenticated(r)
+	}
 
-	if err != nil {
-		panic(err)
-	}
-	if isAuthenticated {
-		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = mapUserClaimsToSignedUserViewModel(user)
-	}
+	user := shared.GetUserFromContext(r)
+
 	var page int = getPage(r)
 	stories, err := data.GetUserSubmittedStories(user.ID, page, DefaultPageSize)
 	if err != nil {
@@ -222,7 +156,7 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	if stories == nil || len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
-	err = templates.RenderInLayout(w, "stories.html", model)
+	err = templates.RenderInLayout(w, r, "stories.html", model)
 	if err != nil {
 		panic(err)
 	}
@@ -230,27 +164,14 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 
 /*UserUpvotedStoriesHandler handles showing the upvoted stories by user*/
 func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) {
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	var model = &models.StoryPageViewModel{
 		Title: "Upvoted Stories",
-		Layout: &models.LayoutViewModel{
-			Platform: customerCtx.Platform,
-			Logo:     customerCtx.Logo,
-		}}
-
-	var userID int = -1
-	isAuthenticated, user, err := shared.IsAuthenticated(r)
-
-	if err != nil {
-		panic(err)
 	}
-	if isAuthenticated {
-		userID = user.ID
-		model.IsAuthenticated = isAuthenticated
-		model.SignedInUser = mapUserClaimsToSignedUserViewModel(user)
-	}
+
+	user := shared.GetUserFromContext(r)
+
 	var page int = getPage(r)
-	stories, err := data.GetUserUpvotedStories(userID, page, DefaultPageSize)
+	stories, err := data.GetUserUpvotedStories(user.ID, page, DefaultPageSize)
 	if err != nil {
 		panic(err)
 	}
@@ -266,7 +187,7 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	if stories == nil || len(*stories) > 0 {
 		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
 	}
-	err = templates.RenderInLayout(w, "stories.html", model)
+	err = templates.RenderInLayout(w, r, "stories.html", model)
 	if err != nil {
 		panic(err)
 	}
@@ -274,57 +195,32 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 
 /*SubmitStoryHandler handles to submit a new story*/
 func SubmitStoryHandler(w http.ResponseWriter, r *http.Request) {
-	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
-		handlesSubmitGET(w, r, user)
+		handlesSubmitGET(w, r)
 	case "POST":
-		handleSubmitPOST(w, r, user)
+		handleSubmitPOST(w, r)
 	default:
-		handlesSubmitGET(w, r, user)
+		handlesSubmitGET(w, r)
 	}
 }
 
-func handlesSubmitGET(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
-	model := &StorySubmitModel{
-		SignedInUser: &models.SignedInUserViewModel{
-			UserName:   user.UserName,
-			UserID:     user.ID,
-			CustomerID: user.CustomerID,
-			Email:      user.Email,
-		},
-		Layout: &models.LayoutViewModel{
-			Platform: customerCtx.Platform,
-			Logo:     customerCtx.Logo,
-		},
-	}
-	templates.RenderInLayout(w, "submit.html", model)
+func handlesSubmitGET(w http.ResponseWriter, r *http.Request) {
+	model := &models.StorySubmitModel{}
+	templates.RenderInLayout(w, r, "submit.html", model)
 }
 
-func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.SignedInUserClaims) {
+func handleSubmitPOST(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		panic(err)
 	}
-
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
-	model := &StorySubmitModel{
+	model := &models.StorySubmitModel{
 		URL:   r.FormValue("url"),
 		Title: r.FormValue("title"),
 		Text:  r.FormValue("text"),
-		SignedInUser: &models.SignedInUserViewModel{
-			UserName:   user.UserName,
-			UserID:     user.ID,
-			CustomerID: user.CustomerID,
-			Email:      user.Email,
-		},
-		Layout: &models.LayoutViewModel{
-			Platform: customerCtx.Platform,
-			Logo:     customerCtx.Logo,
-		},
 	}
 	if model.Validate() == false {
-		templates.RenderInLayout(w, "submit.html", model)
+		templates.RenderInLayout(w, r, "submit.html", model)
 		return
 	}
 	if strings.TrimSpace(model.URL) != "" &&
@@ -332,11 +228,12 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request, user *shared.Signe
 		fetchedTitle, err := shared.FetchURL(model.URL)
 		if err != nil {
 			model.Errors["URL"] = "Something went wrong while fetching URL. Please make sure that you entered a valid URL."
-			templates.RenderInLayout(w, "submit.html", model)
+			templates.RenderInLayout(w, r, "submit.html", model)
 			return
 		}
 		model.Title = fetchedTitle
 	}
+	user := shared.GetUserFromContext(r)
 	var story data.Story
 	story.Title = model.Title
 	story.URL = model.URL
@@ -382,25 +279,15 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(fmt.Errorf("Cannot get comments from db (StoryID : %d). Original err : %v", storyID, err))
 	}
-	isAuth, signedInUserClaims, err := shared.IsAuthenticated(r)
-	if err != nil {
-		panic(fmt.Errorf("An error occured when run IsAuthenticated func in StoryDetailHandler"))
-	}
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
 	model := &models.StoryDetailPageViewModel{
 		Title: story.Title,
-		Layout: &models.LayoutViewModel{
-			Platform: customerCtx.Platform,
-			Logo:     customerCtx.Logo,
-		},
 	}
-	if isAuth {
-		model.IsAuthenticated = true
-		model.SignedInUser = mapUserClaimsToSignedUserViewModel(signedInUserClaims)
-	}
-	model.Story = mapStoryToStoryViewModel(story, model.SignedInUser)
-	model.Comments = mapCommentsToViewModelsWithChildren(comments, model.SignedInUser, storyID)
-	templates.RenderInLayout(w, "detail.html", model)
+	user := shared.GetUserFromContext(r)
+	userViewModel := mapUserClaimsToSignedUserViewModel(user)
+	model.Story = mapStoryToStoryViewModel(story, userViewModel)
+	model.Comments = mapCommentsToViewModelsWithChildren(comments, userViewModel, storyID)
+
+	templates.RenderInLayout(w, r, "detail.html", model)
 }
 
 /*VoteStoryHandler runs when click to upvote and downvote story button. If not voted before by user, votes that story*/

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"linkwind/app/models"
+	"linkwind/app/shared"
 	"log"
 	"net/http"
 	"os"
@@ -53,11 +55,22 @@ func init() {
 // RenderInLayout is a wrapper around template.ExecuteTemplate.
 // It writes into a bytes.Buffer before writing to the http.ResponseWriter to catch
 // any errors resulting from populating the template.
-func RenderInLayout(w http.ResponseWriter, name string, data interface{}) error {
+func RenderInLayout(
+	w http.ResponseWriter,
+	r *http.Request,
+	name string,
+	data models.BaseViewModelInterface) error {
+
 	tmpl, ok := templates[name]
 	if !ok {
 		return fmt.Errorf("The template %s does not exist", name)
 	}
+
+	userCtx := shared.GetUserFromContext(r)
+	customerCtx := shared.GetCustomerFromContext(r)
+
+	data.SetLayout(customerCtx.Platform, customerCtx.Logo)
+	data.SetSignedInUser(userCtx)
 
 	// Create a buffer to temporarily write to and check if any errors were encounted.
 	buf := bufpool.Get()
@@ -75,7 +88,11 @@ func RenderInLayout(w http.ResponseWriter, name string, data interface{}) error 
 }
 
 /*RenderFile renders a template file excluded from base template.*/
-func RenderFile(w http.ResponseWriter, tmplPath string, data interface{}) error {
+func RenderFile(
+	w http.ResponseWriter,
+	tmplPath string,
+	data interface{}) error {
+
 	tmpl, err := template.ParseFiles(path.Join(templatesDir, tmplPath))
 	if err != nil {
 		return err

@@ -3,6 +3,7 @@ package middlewares
 import (
 	"context"
 	"fmt"
+	"linkwind/app/caching"
 	"linkwind/app/data"
 	"linkwind/app/shared"
 	"net"
@@ -11,17 +12,9 @@ import (
 	"sync"
 )
 
-/*CustomerCtx respresents the customer object in the request context*/
-type CustomerCtx struct {
-	ID       int
-	Platform string
-	Logo     string
-}
-
 var mutex = &sync.Mutex{}
-var customers map[string]*CustomerCtx = map[string]*CustomerCtx{}
 
-var defaultCustometCtx = &CustomerCtx{
+var defaultCustomerCtx = &caching.CustomerCtx{
 	ID:       shared.DefaultCustomerID,
 	Platform: shared.DefaultCustomerName,
 	Logo:     "", // TODO: set default logo here
@@ -35,7 +28,7 @@ func CustomerMiddleware() func(http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 
 			if isLocalHost(r) {
-				nexWithContext(next, w, r, defaultCustometCtx)
+				nexWithContext(next, w, r, defaultCustomerCtx)
 				return
 			}
 			if isCustomDomain(r.Host) {
@@ -51,13 +44,11 @@ func CustomerMiddleware() func(http.Handler) http.Handler {
 func handleCustomDomains(next http.Handler, w http.ResponseWriter, r *http.Request) {
 
 	domain := r.Host
-	exists, customerCtx := existsInCache(domain)
 
-	if exists == false {
+	if caching.ExistsCustomer(domain) == false {
 		mutex.Lock()
 		defer mutex.Unlock()
-		exists, customerCtx = existsInCache(domain)
-		if exists == false {
+		if caching.ExistsCustomer(domain) == false {
 			customer, err := data.GetCustomerByDomain(domain)
 			if err != nil {
 				panic(err)
@@ -66,22 +57,22 @@ func handleCustomDomains(next http.Handler, w http.ResponseWriter, r *http.Reque
 				shared.ReturnNotFoundTemplate(w)
 				return
 			}
-
-			imageasB64, err := shared.EncodeLogoImageToBase64(customer.LogoImage)
-			if err != nil {
-				panic(err)
+			var imageasB64 string
+			if customer.LogoImage != nil {
+				imageasB64, err = shared.EncodeLogoImageToBase64(customer.LogoImage)
+				if err != nil {
+					panic(err)
+				}
 			}
-
-			customerCtx = &CustomerCtx{
+			customerCtx := &caching.CustomerCtx{
 				ID:       customer.ID,
 				Platform: customer.Name,
 				Logo:     imageasB64,
 			}
-			customers[customer.Name] = customerCtx
+			caching.SetCustomer(domain, customerCtx)
 		}
-
 	}
-	nexWithContext(next, w, r, customerCtx)
+	nexWithContext(next, w, r, caching.GetCustomer(domain))
 }
 
 func handleSubDomains(next http.Handler, w http.ResponseWriter, r *http.Request) {
@@ -102,16 +93,14 @@ func handleSubDomains(next http.Handler, w http.ResponseWriter, r *http.Request)
 			shared.ReturnNotFoundTemplate(w)
 			return
 		}
-		nexWithContext(next, w, r, defaultCustometCtx)
+		nexWithContext(next, w, r, defaultCustomerCtx)
 		return
 	}
 
-	exists, customerCtx := existsInCache(custName)
-	if exists == false {
+	if caching.ExistsCustomer(custName) == false {
 		mutex.Lock()
 		defer mutex.Unlock()
-		exists, customerCtx = existsInCache(custName)
-		if exists == false {
+		if caching.ExistsCustomer(custName) == false {
 			customer, err := data.GetCustomerByName(custName)
 			if err != nil {
 				panic(err)
@@ -121,32 +110,27 @@ func handleSubDomains(next http.Handler, w http.ResponseWriter, r *http.Request)
 				return
 			}
 
-			imageasB64, err := shared.EncodeLogoImageToBase64(customer.LogoImage)
-			if err != nil {
-				panic(err)
+			var imageasB64 string
+			if customer.LogoImage != nil {
+				imageasB64, err = shared.EncodeLogoImageToBase64(customer.LogoImage)
+				if err != nil {
+					panic(err)
+				}
 			}
-
-			customerCtx = &CustomerCtx{
+			customerCtx := &caching.CustomerCtx{
 				ID:       customer.ID,
 				Logo:     imageasB64,
 				Platform: customer.Name,
 			}
-			customers[customer.Name] = customerCtx
+			caching.SetCustomer(custName, customerCtx)
 		}
 	}
-	nexWithContext(next, w, r, customerCtx)
+	nexWithContext(next, w, r, caching.GetCustomer(custName))
 }
 
-func nexWithContext(next http.Handler, w http.ResponseWriter, r *http.Request, customersOBJ *CustomerCtx) {
+func nexWithContext(next http.Handler, w http.ResponseWriter, r *http.Request, customersOBJ *caching.CustomerCtx) {
 	ctx := context.WithValue(r.Context(), shared.CustomerContextKey, customersOBJ)
 	next.ServeHTTP(w, r.WithContext(ctx))
-}
-
-func existsInCache(custNameOrDomain string) (bool, *CustomerCtx) {
-	if customer, ok := customers[custNameOrDomain]; ok {
-		return ok, customer
-	}
-	return false, nil
 }
 
 func parseCustomerName(host string) string {

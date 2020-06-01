@@ -9,6 +9,7 @@ import (
 	"image/jpeg"
 	"io"
 	"io/ioutil"
+	"linkwind/app/caching"
 	"math"
 	"math/rand"
 	"net/http"
@@ -269,4 +270,14 @@ func EncodeLogoImageToBase64(logoImage []byte) (string, error) {
 	}
 	return base64.StdEncoding.EncodeToString(buffer.Bytes()), err
 
+}
+
+/*GetCustomerFromContext gets cached customer informations from request context*/
+func GetCustomerFromContext(r *http.Request) *caching.CustomerCtx {
+	return r.Context().Value(CustomerContextKey).(*caching.CustomerCtx)
+}
+
+/*GetUserFromContext gets authenticated user informations from request context*/
+func GetUserFromContext(r *http.Request) *SignedInUserClaims {
+	return r.Context().Value(UserContextKey).(*SignedInUserClaims)
 }

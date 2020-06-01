@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"linkwind/app/data"
-	"linkwind/app/middlewares"
 	"linkwind/app/models"
 	"linkwind/app/shared"
 	"linkwind/app/templates"
@@ -10,66 +9,27 @@ import (
 	"strings"
 )
 
-/*UserProfileViewModel represents the data which is needed on sigin UI.*/
-type UserProfileViewModel struct {
-	About          string
-	Email          string
-	FullName       string
-	Karma          int
-	RegisteredOn   string
-	UserName       string
-	Errors         map[string]string
-	SuccessMessage string
-	SignedInUser   *models.SignedInUserViewModel
-	IsAdmin        bool
-	Layout         *models.LayoutViewModel
-}
-
-/*Validate validates the UserProfileViewModel*/
-func (model *UserProfileViewModel) Validate() bool {
-	model.Errors = make(map[string]string)
-	if strings.TrimSpace(model.Email) == "" {
-		model.Errors["Email"] = "Email is required!"
-	}
-	if !shared.IsEmailAdressValid(model.Email) {
-		model.Errors["General"] = "E-mail address is not valid!"
-	}
-	return len(model.Errors) == 0
-}
-
 /*UserProfileHandler handles showing user profile detail*/
 func UserProfileHandler(w http.ResponseWriter, r *http.Request) {
-	user := shared.GetUser(r)
 	switch r.Method {
 	case "GET":
-		handleUserProfileGET(w, r, user)
+		handleUserProfileGET(w, r)
 	case "POST":
-		handleUserProfilePOST(w, r, user)
+		handleUserProfilePOST(w, r)
 	default:
-		handleUserProfileGET(w, r, user)
+		handleUserProfileGET(w, r)
 	}
 }
 
-func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) {
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
-	model := &UserProfileViewModel{
-		SignedInUser: &models.SignedInUserViewModel{
-			UserName:   userClaims.UserName,
-			UserID:     userClaims.ID,
-			CustomerID: userClaims.CustomerID,
-			Email:      userClaims.Email,
-		},
-		Layout: &models.LayoutViewModel{
-			Platform: customerCtx.Platform,
-			Logo:     customerCtx.Logo,
-		},
-	}
+func handleUserProfileGET(w http.ResponseWriter, r *http.Request) {
+	userCtx := shared.GetUserFromContext(r)
+	model := &models.UserProfileViewModel{}
 	renderFilePath := "readonly-profile.html"
 	userName := r.URL.Query().Get("user")
 	if strings.TrimSpace(userName) == "" {
-		userName = userClaims.UserName
+		userName = userCtx.UserName
 	}
-	if userName == userClaims.UserName {
+	if userName == userCtx.UserName {
 		renderFilePath = "profile-edit.html"
 	}
 
@@ -89,39 +49,30 @@ func handleUserProfileGET(w http.ResponseWriter, r *http.Request, userClaims *sh
 		panic(err)
 	}
 	setUserToModel(user, model, isAdmin)
-	err = templates.RenderInLayout(w, renderFilePath, model)
+	err = templates.RenderInLayout(w, r, renderFilePath, model)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *shared.SignedInUserClaims) error {
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
-	model := &UserProfileViewModel{
+func handleUserProfilePOST(w http.ResponseWriter, r *http.Request) error {
+	model := &models.UserProfileViewModel{
 		FullName: r.FormValue("fullName"),
 		Email:    r.FormValue("email"),
 		About:    r.FormValue("about"),
-		SignedInUser: &models.SignedInUserViewModel{
-			UserName:   userClaims.UserName,
-			UserID:     userClaims.ID,
-			CustomerID: userClaims.CustomerID,
-			Email:      userClaims.Email,
-		},
-		Layout: &models.LayoutViewModel{
-			Platform: customerCtx.Platform,
-			Logo:     customerCtx.Logo,
-		},
 	}
 
 	if model.Validate() == false {
-		err := templates.RenderInLayout(w, "profile-edit.html", model)
+		err := templates.RenderInLayout(w, r, "profile-edit.html", model)
 		if err != nil {
 			return err
 		}
 		return nil
 	}
 
-	user, err := data.GetUserByUserName(userClaims.UserName)
+	userCtx := shared.GetUserFromContext(r)
+
+	user, err := data.GetUserByUserName(userCtx.UserName)
 	if err != nil {
 		return err
 	}
@@ -139,7 +90,7 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 			user.About = model.About
 			setUserToModel(user, model, isAdmin)
 			model.Errors["Email"] = "Entered e-mail address exists in db!"
-			err := templates.RenderInLayout(w, "profile-edit.html", model)
+			err := templates.RenderInLayout(w, r, "profile-edit.html", model)
 			if err != nil {
 				return err
 			}
@@ -157,14 +108,14 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request, userClaims *s
 
 	setUserToModel(user, model, isAdmin)
 	model.SuccessMessage = "User infos updated successfuly!"
-	err = templates.RenderInLayout(w, "profile-edit.html", model)
+	err = templates.RenderInLayout(w, r, "profile-edit.html", model)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func setUserToModel(user *data.User, model *UserProfileViewModel, isAdmin bool) {
+func setUserToModel(user *data.User, model *models.UserProfileViewModel, isAdmin bool) {
 	model.UserName = user.UserName
 	model.FullName = user.FullName
 	model.Karma = user.Karma

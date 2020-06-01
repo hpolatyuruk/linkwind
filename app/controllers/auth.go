@@ -3,7 +3,6 @@ package controllers
 import (
 	"fmt"
 	"linkwind/app/data"
-	"linkwind/app/middlewares"
 	"linkwind/app/shared"
 	"linkwind/app/templates"
 	"net/http"
@@ -212,7 +211,7 @@ func handleSignInPOST(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
+	customerCtx := shared.GetCustomerFromContext(r)
 
 	//
 	// In case user exists but customer id from context (coming from subdomain) and user's customer id are different, it means that user wants to login to someone else's platform. We don't allow this to happen
@@ -472,7 +471,7 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) {
 
 	token := shared.GenerateResetPasswordToken()
 
-	customerCtx := r.Context().Value(shared.CustomerContextKey).(*middlewares.CustomerCtx)
+	customerCtx := shared.GetCustomerFromContext(r)
 
 	query := shared.ResetPasswordMailInfo{
 		Email:    email,
