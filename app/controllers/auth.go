@@ -275,25 +275,25 @@ func handleSignUpGET(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing invite code!", http.StatusBadRequest)
 		return
 	}
-	exists, err := data.ExistsInviteCode(inviteCode)
+	invideCodeInfo, err := data.GetInviteCodeInfoByCode(inviteCode)
 	if err != nil {
 		panic(err)
 	}
-	if exists == false {
+	if invideCodeInfo == nil {
 		http.Error(w, "Invite code could not be found!", http.StatusBadRequest)
 		panic(nil)
 	}
-	used, err := data.IsInviteCodeUsed(inviteCode)
-	if err != nil {
-		panic(err)
-	}
-	if used {
+	if invideCodeInfo.Used {
 		http.Error(w, "The invite code is already used!", http.StatusBadRequest)
+		return
 	}
 	templates.RenderFile(
 		w,
 		"layouts/users/signup.html",
-		SignUpViewModel{InviteCode: inviteCode},
+		SignUpViewModel{
+			InviteCode: invideCodeInfo.Code,
+			Email:      invideCodeInfo.InvitedEmailAddress,
+		},
 	)
 }
 
@@ -328,6 +328,11 @@ func handleSignUpPOST(w http.ResponseWriter, r *http.Request) {
 	}
 	if invitedCodeInfo.Used {
 		model.Errors["General"] = "The invite code is already used!"
+		return
+	}
+	if invitedCodeInfo.InvitedEmailAddress != model.Email {
+		model.Errors["General"] = "The email address you entered does not match the invited email address."
+		templates.RenderFile(w, signUpHTMLPath, model)
 		return
 	}
 	exists, err := data.ExistsUserByUserName(model.UserName)
@@ -523,7 +528,9 @@ func handleSetNewPasswordGET(w http.ResponseWriter, r *http.Request) {
 	err = templates.RenderFile(
 		w,
 		"layouts/users/set-new-password.html",
-		SetNewPasswordViewModel{},
+		&SetNewPasswordViewModel{
+			UserName: user.UserName,
+		},
 	)
 	if err != nil {
 		panic(err)

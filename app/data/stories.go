@@ -286,7 +286,7 @@ func GetUserSavedStories(userID int, pageNumber int, pageRowCount int) (*[]Story
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d PageNo: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
 	}
 	defer db.Close()
-	sql := "SELECT stories.*, users.username, stories.calculatestoryrank FROM stories INNER JOIN saved ON stories.id = saved.storyid INNER JOIN users ON users.id = saved.userid WHERE saved.userid = $1 ORDER BY savedon DESC LIMIT $2 OFFSET $3"
+	sql := "SELECT stories.*, users.username, stories.calculatestoryrank FROM stories INNER JOIN saved ON stories.id = saved.storyid INNER JOIN users ON users.id = stories.userid WHERE saved.userid = $1 ORDER BY savedon DESC LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, userID, pageRowCount, (pageNumber-1)*pageRowCount)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot query user's saved stories. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
@@ -300,7 +300,7 @@ func GetUserSavedStories(userID int, pageNumber int, pageRowCount int) (*[]Story
 
 /*GetUserSavedStoriesCount gets the total number of user's saved stories.*/
 func GetUserSavedStoriesCount(userID int) (int, error) {
-	sql := "SELECT COUNT(stories.id) FROM stories INNER JOIN saved ON stories.id = saved.storyid INNER JOIN users ON users.id = saved.userid WHERE saved.userid = $1"
+	sql := "SELECT COUNT(stories.id) FROM stories INNER JOIN saved ON stories.id = saved.storyid INNER JOIN users ON users.id = stories.userid WHERE saved.userid = $1"
 	return count(sql, userID)
 }
 
@@ -311,7 +311,7 @@ func GetUserUpvotedStories(userID int, pageNumber int, pageRowCount int) (*[]Sto
 		return nil, &DBError{fmt.Sprintf("DB connection error. UserID: %d PageNo: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
 	}
 	defer db.Close()
-	sql := "SELECT stories.*, users.username, stories.calculatestoryrank FROM stories INNER JOIN storyvotes ON stories.id = storyvotes.storyid INNER JOIN users ON users.id = storyvotes.userid WHERE storyvotes.userid = $1 ORDER BY stories.submittedon DESC LIMIT $2 OFFSET $3"
+	sql := "SELECT stories.*, users.username, stories.calculatestoryrank FROM stories INNER JOIN storyvotes ON stories.id = storyvotes.storyid INNER JOIN users ON users.id = stories.userid WHERE storyvotes.userid = $1 ORDER BY stories.submittedon DESC LIMIT $2 OFFSET $3"
 	rows, err := db.Query(sql, userID, pageRowCount, (pageNumber-1)*pageRowCount)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot query user's saved stories. UserID: %d, PageNumber: %d, PageRowCount: %d", userID, pageNumber, pageRowCount), err}
@@ -325,7 +325,7 @@ func GetUserUpvotedStories(userID int, pageNumber int, pageRowCount int) (*[]Sto
 
 /*GetUserUpvotedStoriesCount gets the total number of user's upvoted stories.*/
 func GetUserUpvotedStoriesCount(userID int) (int, error) {
-	sql := "SELECT COUNT(stories.id) FROM stories INNER JOIN storyvotes ON stories.id = storyvotes.storyid INNER JOIN users ON users.id = storyvotes.userid WHERE storyvotes.userid = $1"
+	sql := "SELECT COUNT(stories.id) FROM stories INNER JOIN storyvotes ON stories.id = storyvotes.storyid INNER JOIN users ON users.id = stories.userid WHERE storyvotes.userid = $1"
 	return count(sql, userID)
 }
 

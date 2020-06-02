@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"linkwind/app/data"
 	"linkwind/app/enums"
-	"linkwind/app/models"
 	"linkwind/app/shared"
 	"linkwind/app/templates"
 	"net/http"
@@ -71,7 +70,7 @@ func AddCommentHandler(w http.ResponseWriter, r *http.Request) {
 
 /*ReplyToCommentHandler write a reply to comment.*/
 func ReplyToCommentHandler(w http.ResponseWriter, r *http.Request) {
-	user := shared.GetUser(r)
+	user := shared.GetUserFromContext(r)
 	if r.Method == "GET" {
 		http.Error(w, "Unsupported method. Only post method is supported.", http.StatusMethodNotAllowed)
 		return
@@ -101,14 +100,8 @@ func ReplyToCommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	comment.ID = *commentID
-	signedUserModel := &models.SignedInUserViewModel{
-		UserID:     user.ID,
-		UserName:   user.UserName,
-		CustomerID: user.CustomerID,
-		Email:      user.Email,
-	}
 	output, err := templates.RenderAsString("partials/comment.html", "comment",
-		mapCommentToCommentViewModel(comment, signedUserModel))
+		mapCommentToCommentViewModel(comment, user))
 	if err != nil {
 		sentry.CaptureException(err)
 		http.Error(w, fmt.Sprintf("Cannot render comment template. Error: %v", err), http.StatusInternalServerError)

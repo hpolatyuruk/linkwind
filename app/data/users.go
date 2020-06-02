@@ -209,7 +209,7 @@ func GetUserByID(userID int) (user *User, err error) {
 	row := db.QueryRow(sql, userID)
 	user, err = MapSQLRowToUser(row)
 	if err != nil {
-		return nil, &DBError{fmt.Sprintf("Cannot read user by user name from db. UserID: %s", userID), err}
+		return nil, &DBError{fmt.Sprintf("Cannot read user by user name from db. UserID: %d", userID), err}
 	}
 	return user, nil
 }

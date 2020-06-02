@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
+	"strconv"
 )
 
 /*InviteMailInfo represents InviteMail parameters*/
@@ -14,6 +15,15 @@ type InviteMailInfo struct {
 	UserName   string
 	Memo       string
 	Platform   string
+}
+
+// SMTPConfig contains SMTP server and credentials
+type SMTPConfig struct {
+	Server   string
+	Port     int
+	UserName string
+	Password string
+	Address  string
 }
 
 /*ResetPasswordMailInfo represents ResetPasswordMail parameters*/
@@ -47,9 +57,6 @@ func SetInviteMailBody(m InviteMailInfo, platformName string) string {
 
 /*SendEmailInvitation send mail for invite to join*/
 func SendEmailInvitation(m InviteMailInfo) error {
-	pass := os.Getenv("MAIL_PASSWORD")
-	from := "www.linkwind.co@gmail.com"
-	to := m.Email
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
 	platformName := m.Platform
@@ -62,9 +69,20 @@ func SendEmailInvitation(m InviteMailInfo) error {
 	body := SetInviteMailBody(m, platformName)
 	msg := []byte(subject + mime + "\n" + body)
 
-	err := smtp.SendMail("smtp.gmail.com:587",
-		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
-		from, []string{to}, msg)
+	from := "www.linkwind.co@gmail.com"
+	to := m.Email
+	smtpConfig := getSMTPConfig()
+
+	err := smtp.SendMail(
+		smtpConfig.Address,
+		smtp.PlainAuth(
+			"",
+			smtpConfig.UserName,
+			smtpConfig.Password,
+			smtpConfig.Server),
+		from,
+		[]string{to},
+		msg)
 
 	if err != nil {
 		return err
@@ -74,9 +92,6 @@ func SendEmailInvitation(m InviteMailInfo) error {
 
 /*SendResetPasswordMail send to mail for reset password with resetPassword token*/
 func SendResetPasswordMail(r ResetPasswordMailInfo) error {
-	pass := os.Getenv("MAIL_PASSWORD")
-	from := "www.linkwind.co@gmail.com"
-	to := r.Email
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
 	platformName := r.Platform
@@ -86,12 +101,23 @@ func SendResetPasswordMail(r ResetPasswordMailInfo) error {
 
 	subject := "Subject: " + "[" + platformName + "] Reset Your Password\n"
 
-	body := setResetPasswordMailBody(r, platformName)
+	body := generateResetPasswordMailBody(r, platformName)
 	msg := []byte(subject + mime + "\n" + body)
 
-	err := smtp.SendMail("smtp.gmail.com:587",
-		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
-		from, []string{to}, msg)
+	from := "www.linkwind.co@gmail.com"
+	to := r.Email
+	smtpConfig := getSMTPConfig()
+
+	err := smtp.SendMail(
+		smtpConfig.Address,
+		smtp.PlainAuth(
+			"",
+			smtpConfig.UserName,
+			smtpConfig.Password,
+			smtpConfig.Server),
+		from,
+		[]string{to},
+		msg)
 
 	if err != nil {
 		return fmt.Errorf("An error occured when send forgot password mail : %s", err)
@@ -99,7 +125,7 @@ func SendResetPasswordMail(r ResetPasswordMailInfo) error {
 	return nil
 }
 
-func setResetPasswordMailBody(r ResetPasswordMailInfo, platformName string) string {
+func generateResetPasswordMailBody(r ResetPasswordMailInfo, platformName string) string {
 	content := ""
 	fontColour := "blue"
 	content += "<p>Hello </><font color=" + fontColour + ">" + r.UserName + "</font>"
@@ -117,4 +143,19 @@ func setResetPasswordMailBody(r ResetPasswordMailInfo, platformName string) stri
 	content += "<a href=" + url + ">" + url + "</a>"
 
 	return content
+}
+
+func getSMTPConfig() *SMTPConfig {
+	server := os.Getenv("SMTP_SERVER")
+	port, _ := strconv.Atoi(os.Getenv("SMTP_PORT"))
+	userName := os.Getenv("SMTP_USERNAME")
+	password := os.Getenv("SMTP_PASSWORD")
+
+	return &SMTPConfig{
+		Server:   server,
+		Port:     port,
+		UserName: userName,
+		Password: password,
+		Address:  fmt.Sprintf("%s:%d", server, port),
+	}
 }

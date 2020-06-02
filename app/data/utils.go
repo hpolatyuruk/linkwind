@@ -113,6 +113,9 @@ func MapSQLRowToInviteCodeInfo(row *sql.Row) (inviteCodeInfo *InviteCodeInfo, er
 		&_inviteCodeInfo.Used,
 		&_inviteCodeInfo.CreatedOn)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, &DBError{fmt.Sprintf("Cannot map sql row to invite code info struct"), err}
 	}
 	inviteCodeInfo = &_inviteCodeInfo

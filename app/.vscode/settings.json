@@ -1,0 +1,15 @@
+{
+    "deno.enable": false,
+    	/*for more:https://code.visualstudio.com/docs/getstarted/settings*/
+	"[html]": {
+
+  	},
+	"[go]": {
+    "editor.rulers": [80],
+        // Lines will wrap at the minimum of viewport and "Editor: Word Wrap Column".
+	"editor.wordWrap": "bounded",
+  },
+  "workbench.colorCustomizations": {
+    "editorRuler.foreground": "#ff4081"
+	},
+}

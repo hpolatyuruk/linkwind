@@ -227,6 +227,7 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := shared.GetUserFromContext(r)
+	customer := shared.GetCustomerFromContext(r)
 
 	inviteCode, err := data.CreateInviteCode(user.ID, model.EmailAddress)
 	if err != nil {
@@ -244,7 +245,7 @@ func handleInviteUserPOST(w http.ResponseWriter, r *http.Request) {
 		Email:      model.EmailAddress,
 		UserName:   user.UserName,
 		Memo:       model.Memo,
-		Platform:   model.Layout.Platform,
+		Platform:   customer.Platform,
 	}
 	err = shared.SendEmailInvitation(m)
 	if err != nil {

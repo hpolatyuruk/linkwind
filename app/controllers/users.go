@@ -89,7 +89,7 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request) error {
 			model.Email = user.Email
 			user.About = model.About
 			setUserToModel(user, model, isAdmin)
-			model.Errors["Email"] = "Entered e-mail address exists in db!"
+			model.Errors["Email"] = "The user associated with e-mail address already exists!"
 			err := templates.RenderInLayout(w, r, "profile-edit.html", model)
 			if err != nil {
 				return err
@@ -116,6 +116,7 @@ func handleUserProfilePOST(w http.ResponseWriter, r *http.Request) error {
 }
 
 func setUserToModel(user *data.User, model *models.UserProfileViewModel, isAdmin bool) {
+	model.ID = user.ID
 	model.UserName = user.UserName
 	model.FullName = user.FullName
 	model.Karma = user.Karma

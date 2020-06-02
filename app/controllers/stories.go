@@ -59,6 +59,7 @@ func RecentStoriesHandler(w http.ResponseWriter, r *http.Request) {
 func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.ResponseWriter, r *http.Request) {
 	var model = &models.StoryPageViewModel{Title: title}
 	customerCtx := shared.GetCustomerFromContext(r)
+	user := shared.GetUserFromContext(r)
 
 	var page int = getPage(r)
 	stories, err := fnGetStories(customerCtx.ID, page, DefaultPageSize)
@@ -77,9 +78,8 @@ func renderStoriesPage(title string, fnGetStories getStoriesPaged, w http.Respon
 	}
 	model.Page = pagingModel
 	if stories != nil && len(*stories) > 0 {
-		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
+		model.Stories = *mapStoriesToStoryViewModel(stories, user)
 	}
-
 	templates.RenderInLayout(w, r, "stories.html", model)
 }
 
@@ -123,7 +123,7 @@ func UserSavedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	model.Page = pagingModel
 	if stories == nil || len(*stories) > 0 {
-		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
+		model.Stories = *mapStoriesToStoryViewModel(stories, user)
 	}
 	err = templates.RenderInLayout(w, r, "stories.html", model)
 	if err != nil {
@@ -136,15 +136,18 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	var model = &models.StoryPageViewModel{
 		Title: "Submitted Stories",
 	}
-
 	user := shared.GetUserFromContext(r)
-
+	userID := user.ID
+	strUserID := r.URL.Query().Get("userid")
+	if strings.TrimSpace(strUserID) != "" {
+		userID, _ = strconv.Atoi(strUserID)
+	}
 	var page int = getPage(r)
-	stories, err := data.GetUserSubmittedStories(user.ID, page, DefaultPageSize)
+	stories, err := data.GetUserSubmittedStories(userID, page, DefaultPageSize)
 	if err != nil {
 		panic(err)
 	}
-	storiesCount, err := data.GetUserSubmittedStoriesCount(user.ID)
+	storiesCount, err := data.GetUserSubmittedStoriesCount(userID)
 	if err != nil {
 		panic(err)
 	}
@@ -154,7 +157,7 @@ func UserSubmittedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	model.Page = pagingModel
 	if stories == nil || len(*stories) > 0 {
-		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
+		model.Stories = *mapStoriesToStoryViewModel(stories, user)
 	}
 	err = templates.RenderInLayout(w, r, "stories.html", model)
 	if err != nil {
@@ -185,7 +188,7 @@ func UserUpvotedStoriesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	model.Page = pagingModel
 	if stories == nil || len(*stories) > 0 {
-		model.Stories = *mapStoriesToStoryViewModel(stories, model.SignedInUser)
+		model.Stories = *mapStoriesToStoryViewModel(stories, user)
 	}
 	err = templates.RenderInLayout(w, r, "stories.html", model)
 	if err != nil {
@@ -227,6 +230,7 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request) {
 		strings.TrimSpace(model.Title) == "" {
 		fetchedTitle, err := shared.FetchURL(model.URL)
 		if err != nil {
+			fmt.Println(err)
 			model.Errors["URL"] = "Something went wrong while fetching URL. Please make sure that you entered a valid URL."
 			templates.RenderInLayout(w, r, "submit.html", model)
 			return
@@ -283,11 +287,65 @@ func StoryDetailHandler(w http.ResponseWriter, r *http.Request) {
 		Title: story.Title,
 	}
 	user := shared.GetUserFromContext(r)
-	userViewModel := mapUserClaimsToSignedUserViewModel(user)
-	model.Story = mapStoryToStoryViewModel(story, userViewModel)
-	model.Comments = mapCommentsToViewModelsWithChildren(comments, userViewModel, storyID)
+	model.Story = mapStoryToStoryViewModel(story, user)
+	model.Comments = mapCommentsToViewModelsWithChildren(comments, user, storyID)
 
 	templates.RenderInLayout(w, r, "detail.html", model)
+}
+
+func mapStoriesToStoryViewModel(stories *[]data.Story, userClaims *shared.SignedInUserClaims) *[]models.StoryViewModel {
+	var viewModels []models.StoryViewModel
+
+	for _, story := range *stories {
+		viewModel := mapStoryToStoryViewModel(&story, userClaims)
+		viewModels = append(viewModels, *viewModel)
+	}
+	return &viewModels
+}
+
+func mapStoryToStoryViewModel(story *data.Story, userClaims *shared.SignedInUserClaims) *models.StoryViewModel {
+	uri, _ := url.Parse(story.URL)
+	var viewModel = models.StoryViewModel{
+		ID:              story.ID,
+		Title:           story.Title,
+		URL:             story.URL,
+		Text:            template.HTML(strings.ReplaceAll(story.Text, "\n", "<br />")),
+		Host:            uri.Hostname(),
+		Points:          story.UpVotes,
+		UserID:          story.UserID,
+		UserName:        story.UserName,
+		CommentCount:    story.CommentCount,
+		IsUpvoted:       false,
+		IsDownvoted:     false,
+		IsSaved:         false,
+		ShowDownvoteBtn: false,
+		SubmittedOnText: shared.DateToString(story.SubmittedOn),
+	}
+
+	if userClaims != nil {
+		viewModel.SignedInUser = mapUserClaimsToSignedUserViewModel(userClaims)
+		viewModel.ShowDownvoteBtn = userClaims.Karma > MinKarmaToDownVote
+		voteType, err := data.GetStoryVoteByUser(userClaims.ID, story.ID)
+		if err != nil {
+			sentry.CaptureException(err)
+		}
+		if voteType != nil {
+			if *voteType == enums.UpVote {
+				viewModel.IsUpvoted = true
+			} else if *voteType == enums.DownVote {
+				viewModel.IsDownvoted = true
+			}
+		}
+
+		isSaved, err := data.CheckIfUserSavedStory(userClaims.ID, story.ID)
+
+		if err != nil {
+			sentry.CaptureException(err)
+			isSaved = false
+		}
+		viewModel.IsSaved = isSaved
+	}
+	return &viewModel
 }
 
 /*VoteStoryHandler runs when click to upvote and downvote story button. If not voted before by user, votes that story*/
@@ -485,62 +543,7 @@ func getPage(r *http.Request) int {
 	return page
 }
 
-func mapStoriesToStoryViewModel(stories *[]data.Story, signedInUser *models.SignedInUserViewModel) *[]models.StoryViewModel {
-	var viewModels []models.StoryViewModel
-
-	for _, story := range *stories {
-		viewModel := mapStoryToStoryViewModel(&story, signedInUser)
-		viewModels = append(viewModels, *viewModel)
-	}
-	return &viewModels
-}
-
-func mapStoryToStoryViewModel(story *data.Story, signedInUser *models.SignedInUserViewModel) *models.StoryViewModel {
-	uri, _ := url.Parse(story.URL)
-	var viewModel = models.StoryViewModel{
-		ID:              story.ID,
-		Title:           story.Title,
-		URL:             story.URL,
-		Text:            template.HTML(strings.ReplaceAll(story.Text, "\n", "<br />")),
-		Host:            uri.Hostname(),
-		Points:          story.UpVotes,
-		UserID:          story.UserID,
-		UserName:        story.UserName,
-		CommentCount:    story.CommentCount,
-		IsUpvoted:       false,
-		IsDownvoted:     false,
-		IsSaved:         false,
-		ShowDownvoteBtn: false,
-		SubmittedOnText: shared.DateToString(story.SubmittedOn),
-		SignedInUser:    signedInUser,
-	}
-
-	if signedInUser != nil {
-		viewModel.ShowDownvoteBtn = signedInUser.Karma > MinKarmaToDownVote
-		voteType, err := data.GetStoryVoteByUser(signedInUser.UserID, story.ID)
-		if err != nil {
-			sentry.CaptureException(err)
-		}
-		if voteType != nil {
-			if *voteType == enums.UpVote {
-				viewModel.IsUpvoted = true
-			} else if *voteType == enums.DownVote {
-				viewModel.IsDownvoted = true
-			}
-		}
-
-		isSaved, err := data.CheckIfUserSavedStory(signedInUser.UserID, story.ID)
-
-		if err != nil {
-			sentry.CaptureException(err)
-			isSaved = false
-		}
-		viewModel.IsSaved = isSaved
-	}
-	return &viewModel
-}
-
-func mapCommentToCommentViewModel(comment *data.Comment, signedInUser *models.SignedInUserViewModel) *models.CommentViewModel {
+func mapCommentToCommentViewModel(comment *data.Comment, userClaims *shared.SignedInUserClaims) *models.CommentViewModel {
 	model := &models.CommentViewModel{
 		ID:              comment.ID,
 		ParentID:        comment.ParentID,
@@ -550,14 +553,14 @@ func mapCommentToCommentViewModel(comment *data.Comment, signedInUser *models.Si
 		UserID:          comment.UserID,
 		UserName:        comment.UserName,
 		CommentedOnText: shared.DateToString(comment.CommentedOn),
-		SignedInUser:    signedInUser,
 	}
 	if comment.ParentID == data.CommentRootID {
 		model.IsRoot = true
 	}
-	if signedInUser != nil {
-		model.ShowDownvoteBtn = signedInUser.Karma > MinKarmaToDownVote
-		voteType, err := data.GetCommentVoteByUser(signedInUser.UserID, comment.ID)
+	if userClaims != nil {
+		model.SignedInUser = mapUserClaimsToSignedUserViewModel(userClaims)
+		model.ShowDownvoteBtn = userClaims.Karma > MinKarmaToDownVote
+		voteType, err := data.GetCommentVoteByUser(userClaims.ID, comment.ID)
 		if err != nil {
 			sentry.CaptureException(err)
 		}
@@ -573,16 +576,16 @@ func mapCommentToCommentViewModel(comment *data.Comment, signedInUser *models.Si
 	return model
 }
 
-func mapCommentsToViewModelsWithChildren(comments *[]data.Comment, signedInUser *models.SignedInUserViewModel, storyID int) *[]models.CommentViewModel {
+func mapCommentsToViewModelsWithChildren(comments *[]data.Comment, userClaims *shared.SignedInUserClaims, storyID int) *[]models.CommentViewModel {
 	var viewModels []models.CommentViewModel
 	for _, comment := range *comments {
-		viewModel := *mapCommentToCommentViewModel(&comment, signedInUser)
+		viewModel := *mapCommentToCommentViewModel(&comment, userClaims)
 		childComments, err := data.GetCommentsByParentIDAndStoryID(comment.ID, storyID)
 		if err != nil {
 			sentry.CaptureException(err)
 			continue
 		}
-		viewModel.ChildComments = *mapCommentsToViewModelsWithChildren(childComments, signedInUser, storyID)
+		viewModel.ChildComments = *mapCommentsToViewModelsWithChildren(childComments, userClaims, storyID)
 		viewModels = append(viewModels, viewModel)
 	}
 	return &viewModels

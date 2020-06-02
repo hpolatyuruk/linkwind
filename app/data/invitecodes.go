@@ -116,8 +116,8 @@ func GetInviteCodeInfoByCode(inviteCode string) (*InviteCodeInfo, error) {
 		return nil, err
 	}
 	defer db.Close()
-	sql := "SELECT code, inviteruserid, invitedemail, used, createdon FROM invitecodes WHERE code = $1"
-	row := db.QueryRow(sql, inviteCode)
+	query := "SELECT code, inviteruserid, invitedemail, used, createdon FROM invitecodes WHERE code = $1"
+	row := db.QueryRow(query, inviteCode)
 	inviteCodeInfo, err := MapSQLRowToInviteCodeInfo(row)
 	if err != nil {
 		return nil, &DBError{fmt.Sprintf("Cannot read invite code info by code from db. InviteCode: %s", inviteCode), err}
