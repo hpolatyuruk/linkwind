@@ -98,3 +98,57 @@ func (model *CustomerAdminViewModel) Validate() bool {
 	}
 	return len(model.Errors) == 0
 }
+
+/*AboutViewModel contains informations related to about page */
+type AboutViewModel struct {
+	BaseViewModel
+}
+
+/*SetLayout sets about page view model layout members.*/
+func (model *AboutViewModel) SetLayout(platformName string, logo string) {
+	model.Layout = generateLayoutViewModel(platformName, logo)
+}
+
+/*SetSignedInUser sets about page view model signed in user members.*/
+func (model *AboutViewModel) SetSignedInUser(userClaims *shared.SignedInUserClaims) {
+	if userClaims == nil {
+		return
+	}
+	model.SignedInUser = generateSignedInUserViewModel(userClaims)
+}
+
+/*FAQViewModel contains informations related to faq page */
+type FAQViewModel struct {
+	BaseViewModel
+}
+
+/*SetLayout sets about page view model layout members.*/
+func (model *FAQViewModel) SetLayout(platformName string, logo string) {
+	model.Layout = generateLayoutViewModel(platformName, logo)
+}
+
+/*SetSignedInUser sets about page view model signed in user members.*/
+func (model *FAQViewModel) SetSignedInUser(userClaims *shared.SignedInUserClaims) {
+	if userClaims == nil {
+		return
+	}
+	model.SignedInUser = generateSignedInUserViewModel(userClaims)
+}
+
+/*PrivacyViewModel contains informations related to privacy page */
+type PrivacyViewModel struct {
+	BaseViewModel
+}
+
+/*SetLayout sets about page view model layout members.*/
+func (model *PrivacyViewModel) SetLayout(platformName string, logo string) {
+	model.Layout = generateLayoutViewModel(platformName, logo)
+}
+
+/*SetSignedInUser sets about page view model signed in user members.*/
+func (model *PrivacyViewModel) SetSignedInUser(userClaims *shared.SignedInUserClaims) {
+	if userClaims == nil {
+		return
+	}
+	model.SignedInUser = generateSignedInUserViewModel(userClaims)
+}

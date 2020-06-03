@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/oxtoacart/bpool"
@@ -69,7 +70,9 @@ func RenderInLayout(
 	userCtx := shared.GetUserFromContext(r)
 	customerCtx := shared.GetCustomerFromContext(r)
 
-	data.SetLayout(customerCtx.Platform, customerCtx.Logo)
+	capitailizedPlatform := strings.Title(customerCtx.Platform)
+
+	data.SetLayout(capitailizedPlatform, customerCtx.Logo)
 	data.SetSignedInUser(userCtx)
 
 	// Create a buffer to temporarily write to and check if any errors were encounted.

@@ -1,0 +1,174 @@
+{{template "layout" .}}
+{{define "title" }}FAQ{{ end }}
+{{define "content"}}
+<div class="md:w-3/4">
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+        </div>
+        <div class="md:w-2/3">
+            <h2 class="text-gray-700 font-bold mb-2">{{.Layout.Platform}} FAQ</h2>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">How are stories ranked?</h4>
+            <p>The basic algorithm divides points by a power of the time since a story was submitted.
+                We do not rank comments. We show comments by their submission date.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">How do I submit a link?</h4>
+            <p>You can use the submit page <a href="/submit">here</a>.
+                Enter the link you want to submit into the URL field and click on the submit button.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">How do I submit a question?</h4>
+            <p>Use the submit page <a href="/submit">here</a>.
+                Leave the URL field empty and enter your question into the title field. Your
+                question should start with "ASK:" prefix. If you would like to enter a description of your question, you
+                can enter it into the text field.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">How do I show my project or work to the community?</h4>
+            <p>You can use <a href="/submit">the submit page</a>.
+                Just enter the link to your project into the URL field.
+                Leave the title field empty and if you would like to additinal texts, you can use the text field.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">Why don't I see down arrows?</h4>
+            <p>They appear on stories and comments after users reach a certain karma threshold. The threshold is 100.
+            </p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">In my profile, what is karma?</h4>
+            <p>You can think karma as points you collected on the platform. Any time a user upvoted a story
+                or a comment
+                you submitted on the platform, your karma will be increased by one. To get more information
+                related to
+                how karma calculated, follow the next question.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">How is a user's karma calculated?</h4>
+            <p>Roughly, the number of upvotes on their stories and comments minus the number of downvotes. These
+                don't
+                match up exactly; some votes are dropped to prevent abuse.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">Can I ask people to upvote my submission?</h4>
+            <p>No. Users should vote for a story because they personally find it intellectually interesting, not
+                because
+                someone has content to promote.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">Can I ask people to comment on my submission?</h4>
+            <p>No, for the same reason. It's also not in your interest, because {{.Layout.Platform}} readers will
+                figure
+                it out, flag the
+                thread, and use unkind words like 'spam'.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">How do I change my password?</h4>
+            <p>Use the page <a href="/change-password">here</a> to change your password. Only signed-in users can
+                change
+                the password. So if you see the sign-in dialog when you click on the link, please do not be
+                surprised.
+                Sign in first, then you can change your password.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">How do I reset my password?</h4>
+            <p>Use the page <a href="/reset-password">here</a> to reset your password. Enter your user name or email
+                address into the text box and
+                click on reset password button.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">How do I create an account on {{.Layout.Platform}}?</h4>
+            <p>Only invited users can have an account on {{.Layout.Platform}}. To sign up for the platform, please
+                contact someone who already has an account on the platform and ask for an invitation. Once you are
+                invited, you will be able to access to the sign-up page.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">Why do I need to have an account on {{.Layout.Platform}}?</h4>
+            <p>If you would like to submit a link, ask a question, or start a discussion about anything, you need to
+                have an account. Otherwise, you do not need an account. All links and comments are public to
+                everyone by
+                design.
+            </p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">How do I invite someone to join the platform?</h4>
+            <p>
+                You must have an admin account to invite someone. If you have an admin account, you can use the
+                "Invite
+                User" link on your <a href="/users/profile">profile page</a>.
+            </p>
+        </div>
+    </div>
+</div>
+{{end}}

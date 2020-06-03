@@ -399,6 +399,33 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//AboutHandler handles showing the about page
+func AboutHandler(w http.ResponseWriter, r *http.Request) {
+	model := &models.AboutViewModel{}
+	err := templates.RenderInLayout(w, r, "about.html", model)
+	if err != nil {
+		panic(err)
+	}
+}
+
+//FAQHandler handles showing the faq page
+func FAQHandler(w http.ResponseWriter, r *http.Request) {
+	model := &models.FAQViewModel{}
+	err := templates.RenderInLayout(w, r, "faq.html", model)
+	if err != nil {
+		panic(err)
+	}
+}
+
+//PrivacyHandler handles showing the privacy page
+func PrivacyHandler(w http.ResponseWriter, r *http.Request) {
+	model := &models.PrivacyViewModel{}
+	err := templates.RenderInLayout(w, r, "privacy.html", model)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func setCustomerByModel(model *CustomerSignUpViewModel) data.Customer {
 	var customer data.Customer
 	customer.Email = model.Email

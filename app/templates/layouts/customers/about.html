@@ -1,0 +1,76 @@
+{{template "layout" .}}
+{{define "title" }}About{{ end }}
+{{define "content"}}
+<div class="md:w-3/4">
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+        </div>
+        <div class="md:w-2/3">
+            <h2 class="text-gray-700 font-bold mb-2">About</h2>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <p><strong>{{.Layout.Platform}}</strong> is a simple link aggregation and discussion platform.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">Link and news sharing</h4>
+            <p>Users can share useful and interesting links and start a discussion. If you have an account, use the link
+                <a href="/submit">here</a> to submit a link and start a discussion about it.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">Discussions and Comments</h4>
+            <p>Anyone on <strong>{{.Layout.Platform}}</strong> can write a comment to any post shared and others can
+                reply to that
+                comment as well. In this way users will start a discussion and engage on any kind of post.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">Upvote & Downvote</h4>
+            <p>If a user founds a useful post shared on the platform, he/she can show their appreciation by up-voting
+                that post. Not every post may be welcomed by your community. If this is the case, users can react to
+                that post by down-voting it.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">Works with invitation</h4>
+            <p>Not everyone can join <strong>{{.Layout.Platform}}</strong>.
+                Users can only be signed up to the platform if they are invited.
+                If you would like to have an account on {{.Layout.Platform}} you can find someone who already has an
+                account and ask for an invitation.</p>
+        </div>
+    </div>
+    <div class="md:flex md:items-center mb-6">
+        <div class="md:w-1/3">
+            &nbsp;
+        </div>
+        <div class="md:w-2/3 text-gray-700">
+            <h4 class="text-gray-700 font-bold mb-2">Ask & Show</h4>
+            <p>You can submit a question about any topic to the community and start collecting feedback. E.g. You just
+                finished a project and you are desperately in the need of feedback? We have all been there. Just post
+                your project to the community and collect all needed feedback so you can continue improving it.</p>
+        </div>
+    </div>
+</div>
+{{end}}
