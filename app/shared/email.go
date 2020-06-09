@@ -9,7 +9,7 @@ import (
 
 /*InviteMailInfo represents InviteMail parameters*/
 type InviteMailInfo struct {
-	Domain     string
+	Domain     *string
 	InviteCode string
 	Email      string
 	UserName   string
@@ -45,8 +45,8 @@ func SetInviteMailBody(m InviteMailInfo, platformName string) string {
 	}
 
 	domain := platformName + ".linkwind.co"
-	if m.Domain != "" {
-		domain = m.Domain
+	if m.Domain != nil {
+		domain = *m.Domain
 	}
 
 	content += "<p>To join " + platformName + ", you can create an account by clicking the link below.</p>"
@@ -60,8 +60,8 @@ func SendEmailInvitation(m InviteMailInfo) error {
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
 	platformName := m.Platform
-	if m.Domain != "" {
-		platformName = m.Domain
+	if m.Domain != nil {
+		platformName = *m.Domain
 	}
 
 	subject := "Subject: " + "[" + platformName + "] You have been invited to join " + platformName + "\n"

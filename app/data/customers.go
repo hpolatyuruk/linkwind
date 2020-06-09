@@ -46,14 +46,13 @@ func CreateCustomer(customer *Customer) (err error) {
 		return &CustomerError{"Cannot connect to db", customer, err}
 	}
 	defer db.Close()
-	query := "INSERT INTO customers (email, name, domain,registeredon,imglogo) VALUES ($1, $2, $3, $4, $5)"
+	query := "INSERT INTO customers (email, name, domain, registeredon) VALUES ($1, $2, $3, $4)"
 	_, err = db.Exec(
 		query,
 		customer.Email,
 		customer.Name,
 		nullCustomerDomain(customer.Domain),
-		customer.RegisteredOn,
-		customer.LogoImage)
+		customer.RegisteredOn)
 	if err != nil {
 		return &CustomerError{"Cannot insert customer to the database!", customer, err}
 	}
@@ -72,7 +71,7 @@ func UpdateCustomer(customer *Customer) error {
 		sql,
 		customer.Name,
 		customer.Email,
-		customer.Domain,
+		nullCustomerDomain(customer.Domain),
 		customer.RegisteredOn,
 		customer.LogoImage,
 		customer.ID)

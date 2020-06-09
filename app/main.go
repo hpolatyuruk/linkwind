@@ -81,6 +81,7 @@ func configureRouter(router *http.ServeMux) http.Handler {
 		{"/about", controllers.AboutHandler, false},
 		{"/faq", controllers.FAQHandler, false},
 		{"/privacy", controllers.PrivacyHandler, false},
+		{"/auth", controllers.SetAuthTokenHandler, false},
 		{"/invitecodes/generate", controllers.GenerateInviteCodeHandler, false},
 		{"/users/profile", controllers.UserProfileHandler, true},
 		{"/change-password", controllers.ChangePasswordHandler, true},

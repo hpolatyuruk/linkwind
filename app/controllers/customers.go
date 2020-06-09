@@ -174,13 +174,17 @@ func handleCustomerSignUpPOST(w http.ResponseWriter, r *http.Request) {
 	// Declare the expiration time of the token
 	// here, we have kept it as 5 minutes
 	expirationTime := time.Now().Add(authExpirationMinutes * time.Minute)
-
 	token, err := shared.GenerateAuthToken(user, expirationTime)
 	if err != nil {
 		panic(err)
 	}
-	shared.SetAuthCookie(w, token, expirationTime)
-	http.Redirect(w, r, fmt.Sprintf("https://%s.linkwind.co", model.Name), http.StatusSeeOther)
+	http.Redirect(
+		w,
+		r,
+		fmt.Sprintf("https://%s.linkwind.co/auth?customer=%s&auth=%s",
+			model.Name,
+			model.Name,
+			token), http.StatusSeeOther)
 }
 
 /*InviteUserHandler handles user invite operations*/
@@ -464,7 +468,7 @@ func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUse
 		model.Domain = customer.Domain
 	}
 
-	if len(customer.LogoImage) != 0 {
+	if customer.LogoImage != nil {
 		imageasB64, err := shared.EncodeLogoImageToBase64(customer.LogoImage)
 		if err != nil {
 			return nil, err

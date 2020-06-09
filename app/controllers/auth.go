@@ -481,7 +481,7 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) {
 	query := shared.ResetPasswordMailInfo{
 		Email:    email,
 		UserName: userName,
-		Domain:   domain,
+		Domain:   *domain,
 		Platform: customerCtx.Platform,
 		Token:    token,
 	}
@@ -653,4 +653,37 @@ func GenerateInviteCodeHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Header().Add("Content-Type", "text/plain")
 	w.Write([]byte(inviteCode))
+}
+
+// SetAuthTokenHandler sets the auth cookie and redirect user to main page
+func SetAuthTokenHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Only http get allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	platformName := r.URL.Query().Get("customer")
+	if strings.TrimSpace(platformName) == "" {
+		http.Error(w, "Missing customer param.", http.StatusBadRequest)
+		return
+	}
+	customer, err := data.GetCustomerByName(platformName)
+	if err != nil {
+		panic(err)
+	}
+	if customer == nil {
+		http.Error(w, "Customer does not exist.", http.StatusNotFound)
+		return
+	}
+	authToken := r.URL.Query().Get("auth")
+	if strings.TrimSpace(authToken) != "" {
+		// Declare the expiration time of the token
+		// here, we have kept it as 5 minutes
+		expirationTime := time.Now().Add(authExpirationMinutes * time.Minute)
+		shared.SetAuthCookie(w, authToken, expirationTime)
+	}
+	http.Redirect(
+		w,
+		r,
+		fmt.Sprintf("https://%s.linkwind.co", platformName),
+		http.StatusSeeOther)
 }

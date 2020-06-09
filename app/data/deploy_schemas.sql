@@ -135,7 +135,7 @@ TABLESPACE
             url character varying(500) COLLATE pg_catalog
             ."default",
     title character varying
-            (150) COLLATE pg_catalog."default" NOT NULL,
+            (250) COLLATE pg_catalog."default" NOT NULL,
     text text COLLATE pg_catalog."default",
     upvotes integer NOT NULL DEFAULT 0,
     commentcount integer NOT NULL DEFAULT 0,
