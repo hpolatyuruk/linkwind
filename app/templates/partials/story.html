@@ -16,11 +16,15 @@
       {{end}}
     </div>
     <div style="display: flex;">
-      <a href="{{if .URL}}{{.URL}}{{else}}/stories/detail?id={{.ID}}{{end}}"
-        target="{{if .URL}}_blank{{else}}_self{{end}}" class="text-indigo-600 font-semibold">{{.Title}}</a>
-      {{if .URL}}
-      <a href="http://{{.Host}}" target="_blank" class="text-gray-500 font-semibold text-xs ml-1">({{.Host}})</a>
-      {{end}}
+      <diV class="float-left">
+        <a href="{{if .URL}}{{.URL}}{{else}}/stories/detail?id={{.ID}}{{end}}"
+          target="{{if .URL}}_blank{{else}}_self{{end}}" class="text-indigo-600 font-semibold">
+          {{.Title}}
+          {{if .URL}}
+          <a href="http://{{.Host}}" target="_blank" class="text-gray-500 font-semibold text-xs ml-1">({{.Host}})</a>
+          {{end}}
+        </a>
+      </diV>
     </div>
   </div>
   <div class="flex-row w-full text-xs font-medium text-gray-600 ml-10">
