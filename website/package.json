@@ -1,5 +1,5 @@
 {
-  "name": "turkdev-website",
+  "name": "linkwind-website",
   "version": "1.0.0",
   "description": "",
   "main": "sass/mystyles.scss",
@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hpolatyuruk/turkdev-website.git"
+    "url": "git+https://github.com/hpolatyuruk/linkwind.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/hpolatyuruk/turkdev-website/issues"
+    "url": "https://github.com/hpolatyuruk/linkwind/issues"
   },
-  "homepage": "https://github.com/hpolatyuruk/turkdev-website#readme",
+  "homepage": "https://github.com/hpolatyuruk/linkwind#readme",
   "devDependencies": {
     "bulma": "^0.8.0",
     "node-sass": "^4.13.1"
