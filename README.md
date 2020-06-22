@@ -4,7 +4,6 @@
     <img alt="golang" src="https://forthebadge.com/images/badges/made-with-go.svg">
 </p>
 
-
 <p align="center">
     <img alt="GitHub issues" src="https://img.shields.io/github/issues/hpolatyuruk/linkwind">
     <img alt="License" src="https://img.shields.io/github/license/hpolatyuruk/linkwind">
@@ -12,6 +11,7 @@
 </p>
 
 ---
+
 Linkwind is an open source simple link aggregation and discussion platform for communities & teams. It allows you to create your own customized news sharing platform so you and anyone in your community can share interesting links, ask for advice about anything and collect feedback.
 
 You can create your account [here](https://app.linkwind.co/customer-signup) or see a workind demo [here](https://demo.linkwind.co/).
@@ -40,11 +40,15 @@ You can submit a question about any topic to the community and start collecting 
 
 ### Unique domain to your platform
 
-Once you create your platform, you will get an unique subdomain automatically created for your platform. If you would like to use your own custom domain to access your platform, you can do that as well.
+Once you create your platform, you will get an unique subdomain automatically created for your platform. e.g https://your-platform-name.linkwind.co
+
+### Custom domain
+
+If you would like to use your own custom domain to access your platform, you can do that as well.
 
 Here is an example platform created using LinkWind.
 
-![alt text](https://www.linkwind.co/images/product.png 'LinkWind Demo')
+![alt text](https://www.linkwind.co/images/ss1.png 'LinkWind Demo')
 
 ## Developers
 
