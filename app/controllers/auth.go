@@ -272,7 +272,7 @@ func handleSignUpGET(w http.ResponseWriter, r *http.Request) {
 	// Only invited users can create an account
 	inviteCode := r.URL.Query().Get("invitecode")
 	if strings.TrimSpace(inviteCode) == "" {
-		http.Error(w, "Missing invite code!", http.StatusBadRequest)
+		templates.RenderFile(w, "layouts/users/forbidden-signup.html", &SignUpViewModel{})
 		return
 	}
 	invideCodeInfo, err := data.GetInviteCodeInfoByCode(inviteCode)
@@ -481,7 +481,7 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) {
 	query := shared.ResetPasswordMailInfo{
 		Email:    email,
 		UserName: userName,
-		Domain:   *domain,
+		Domain:   domain,
 		Platform: customerCtx.Platform,
 		Token:    token,
 	}

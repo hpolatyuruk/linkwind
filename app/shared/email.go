@@ -30,7 +30,7 @@ type SMTPConfig struct {
 type ResetPasswordMailInfo struct {
 	Email    string
 	UserName string
-	Domain   string
+	Domain   *string
 	Platform string
 	Token    string
 }
@@ -95,8 +95,8 @@ func SendResetPasswordMail(r ResetPasswordMailInfo) error {
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
 	platformName := r.Platform
-	if r.Domain != "" {
-		platformName = r.Domain
+	if r.Domain != nil {
+		platformName = *r.Domain
 	}
 
 	subject := "Subject: " + "[" + platformName + "] Reset Your Password\n"
@@ -134,8 +134,8 @@ func generateResetPasswordMailBody(r ResetPasswordMailInfo, platformName string)
 	content += "<p>If you did not make such a request, do not care about this message.</p>"
 
 	domain := platformName + ".linkwind.co"
-	if r.Domain != "" {
-		domain = r.Domain
+	if r.Domain != nil {
+		domain = *r.Domain
 	}
 
 	url := domain + "/set-new-password?token=" + r.Token
