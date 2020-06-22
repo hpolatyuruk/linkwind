@@ -1,10 +1,10 @@
 {{template "layout" .}}
-{{define "title" }}Admin Panel{{ end }}
+{{define "title" }}Admin Panel | {{.Layout.Platform}}{{ end }}
 {{define "content"}}
 <form action="/admin" enctype="multipart/form-data" method="POST">
   <div class="md:w-3/4">
     <div class="md:w-1/3 md:text-right pb-5">
-      <h2 class="text-gray-700 text-center font-bold mb-2">Profile Edit</h2>
+      <h2 class="text-gray-700 text-center font-bold mb-2">Profile</h2>
     </div>
 
     <div class="md:flex md:items-center mb-4">
@@ -16,8 +16,25 @@
       <div class="md:w-2/3">
         <input
           class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
-          id="name" name="name" type="text" value="{{.Name}}" placeholder="name" />
+          id="name" name="name" type="text" value="{{.Name}}"
+          placeholder="will be shown in header and used to create your unique sub domain" />
         {{with .Errors.Name}}
+        <p class="text-red-500 text-sm italic">{{.}}</p>
+        {{end}}
+      </div>
+    </div>
+    <div class="md:flex md:items-center mb-4">
+      <div class="md:w-1/3">
+        <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-6" for="title">
+          Title
+        </label>
+      </div>
+      <div class="md:w-2/3">
+        <input
+          class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+          id="title" name="title" type="text" value="{{.Title}}"
+          placeholder="will be the title of your main page for search engines" />
+        {{with .Errors.Title}}
         <p class="text-red-500 text-sm italic">{{.}}</p>
         {{end}}
       </div>
