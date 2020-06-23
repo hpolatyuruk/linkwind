@@ -1,11 +1,11 @@
 {{template "layout" .}}
-{{define "title" }}Profile edit{{ end }}
+{{define "title" }}Profile | {{.Layout.Platform}}{{ end }}
 {{define "content"}}
 <form action="/profile-edit" method="POST">
   <div class="md:w-3/4">
     <div class="md:flex md:items-center mb-6">
       <div class="md:w-2/3">
-        <h2 class="text-gray-700 text-center font-bold mb-2">Profile Edit</h2>
+        <h2 class="text-gray-700 text-center font-bold mb-2">Profile</h2>
       </div>
     </div>
     <div class="md:flex md:items-center mb-6">

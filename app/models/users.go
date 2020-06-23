@@ -34,8 +34,8 @@ func (model *UserProfileViewModel) Validate() bool {
 }
 
 /*SetLayout sets story detail page view model layout members.*/
-func (model *UserProfileViewModel) SetLayout(platformName string, logo string) {
-	model.Layout = generateLayoutViewModel(platformName, logo)
+func (model *UserProfileViewModel) SetLayout(platformName string, logo string, title string) {
+	model.Layout = generateLayoutViewModel(platformName, logo, title)
 }
 
 /*SetSignedInUser sets story detail page view model signed in user members.*/
@@ -56,8 +56,8 @@ type InviteUserViewModel struct {
 }
 
 /*SetLayout sets story detail page view model layout members.*/
-func (model *InviteUserViewModel) SetLayout(platformName string, logo string) {
-	model.Layout = generateLayoutViewModel(platformName, logo)
+func (model *InviteUserViewModel) SetLayout(platformName string, logo string, title string) {
+	model.Layout = generateLayoutViewModel(platformName, logo, title)
 }
 
 /*SetSignedInUser sets story detail page view model signed in user members.*/

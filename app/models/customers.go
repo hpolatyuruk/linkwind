@@ -13,6 +13,7 @@ import (
 /*CustomerAdminViewModel represents the data which is needed on sigin UI.*/
 type CustomerAdminViewModel struct {
 	Name              string
+	Title             string
 	Domain            string
 	LogoImageAsBase64 string
 	Errors            map[string]string
@@ -21,8 +22,8 @@ type CustomerAdminViewModel struct {
 }
 
 /*SetLayout sets story detail page view model layout members.*/
-func (model *CustomerAdminViewModel) SetLayout(platformName string, logo string) {
-	model.Layout = generateLayoutViewModel(platformName, logo)
+func (model *CustomerAdminViewModel) SetLayout(platformName string, logo string, title string) {
+	model.Layout = generateLayoutViewModel(platformName, logo, title)
 }
 
 /*SetSignedInUser sets story detail page view model signed in user members.*/
@@ -61,6 +62,7 @@ func (model *CustomerAdminViewModel) Validate() bool {
 
 	const (
 		maxPlatformNameLength = 25
+		maxTitleLength        = 60
 		maxImageWidth         = 30
 		maxImageLength        = 30
 	)
@@ -75,6 +77,12 @@ func (model *CustomerAdminViewModel) Validate() bool {
 		}
 		if strings.Contains(model.Name, " ") {
 			model.Errors["Name"] = "Name cannot contain spaces"
+		}
+	}
+
+	if strings.TrimSpace(model.Title) != "" {
+		if len(model.Title) > maxTitleLength {
+			model.Errors["Title"] = "Title cannot be longer than 60 characters"
 		}
 	}
 
@@ -105,8 +113,8 @@ type AboutViewModel struct {
 }
 
 /*SetLayout sets about page view model layout members.*/
-func (model *AboutViewModel) SetLayout(platformName string, logo string) {
-	model.Layout = generateLayoutViewModel(platformName, logo)
+func (model *AboutViewModel) SetLayout(platformName string, logo string, title string) {
+	model.Layout = generateLayoutViewModel(platformName, logo, title)
 }
 
 /*SetSignedInUser sets about page view model signed in user members.*/
@@ -123,8 +131,8 @@ type FAQViewModel struct {
 }
 
 /*SetLayout sets about page view model layout members.*/
-func (model *FAQViewModel) SetLayout(platformName string, logo string) {
-	model.Layout = generateLayoutViewModel(platformName, logo)
+func (model *FAQViewModel) SetLayout(platformName string, logo string, title string) {
+	model.Layout = generateLayoutViewModel(platformName, logo, title)
 }
 
 /*SetSignedInUser sets about page view model signed in user members.*/
@@ -141,8 +149,8 @@ type PrivacyViewModel struct {
 }
 
 /*SetLayout sets about page view model layout members.*/
-func (model *PrivacyViewModel) SetLayout(platformName string, logo string) {
-	model.Layout = generateLayoutViewModel(platformName, logo)
+func (model *PrivacyViewModel) SetLayout(platformName string, logo string, title string) {
+	model.Layout = generateLayoutViewModel(platformName, logo, title)
 }
 
 /*SetSignedInUser sets about page view model signed in user members.*/

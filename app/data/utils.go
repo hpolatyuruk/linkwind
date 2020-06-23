@@ -81,13 +81,15 @@ func MapSQLRowToUser(row *sql.Row) (user *User, err error) {
 func MapSQLRowToCustomer(row *sql.Row) (customer *Customer, err error) {
 	var _customer Customer
 	var domain sql.NullString
+	var title sql.NullString
 	err = row.Scan(
 		&_customer.ID,
 		&_customer.Name,
 		&_customer.Email,
 		&_customer.RegisteredOn,
 		&domain,
-		&_customer.LogoImage)
+		&_customer.LogoImage,
+		&title)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -98,6 +100,11 @@ func MapSQLRowToCustomer(row *sql.Row) (customer *Customer, err error) {
 		_customer.Domain = string(domain.String)
 	} else {
 		_customer.Domain = CustomerDefaultDomain
+	}
+	if title.Valid {
+		_customer.Title = string(title.String)
+	} else {
+		_customer.Title = ""
 	}
 	customer = &_customer
 	return customer, nil

@@ -18,6 +18,7 @@ var defaultCustomerCtx = &caching.CustomerCtx{
 	ID:       shared.DefaultCustomerID,
 	Platform: shared.DefaultCustomerName,
 	Logo:     "", // TODO: set default logo here
+	Title:    "",
 }
 
 /*CustomerMiddleware sets requested customer info to request context*/
@@ -68,6 +69,7 @@ func handleCustomDomains(next http.Handler, w http.ResponseWriter, r *http.Reque
 				ID:       customer.ID,
 				Platform: customer.Name,
 				Logo:     imageasB64,
+				Title:    customer.Title,
 			}
 			caching.SetCustomer(domain, customerCtx)
 		}
@@ -121,6 +123,7 @@ func handleSubDomains(next http.Handler, w http.ResponseWriter, r *http.Request)
 				ID:       customer.ID,
 				Logo:     imageasB64,
 				Platform: customer.Name,
+				Title:    customer.Title,
 			}
 			caching.SetCustomer(custName, customerCtx)
 		}

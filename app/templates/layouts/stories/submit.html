@@ -1,5 +1,5 @@
 {{template "layout" .}}
-{{define "title" }}Submit a story{{ end }}
+{{define "title" }}Submit | {{.Layout.Platform}}{{ end }}
 {{define "content"}}
 <form action="/submit" method="POST">
   <div class="md:w-3/4">

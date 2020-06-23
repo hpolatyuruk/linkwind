@@ -16,8 +16,8 @@ type StoryPageViewModel struct {
 }
 
 /*SetLayout sets story page view model layout members.*/
-func (model *StoryPageViewModel) SetLayout(platformName string, logo string) {
-	model.Layout = generateLayoutViewModel(platformName, logo)
+func (model *StoryPageViewModel) SetLayout(platformName string, logo string, title string) {
+	model.Layout = generateLayoutViewModel(platformName, logo, title)
 }
 
 /*SetSignedInUser sets story page view model signed in user members.*/
@@ -59,8 +59,8 @@ func (model *StorySubmitModel) Validate() bool {
 }
 
 /*SetLayout sets story submit model layout members.*/
-func (model *StorySubmitModel) SetLayout(platformName string, logo string) {
-	model.Layout = generateLayoutViewModel(platformName, logo)
+func (model *StorySubmitModel) SetLayout(platformName string, logo string, title string) {
+	model.Layout = generateLayoutViewModel(platformName, logo, title)
 }
 
 /*SetSignedInUser sets story submit model signed in user members.*/
@@ -81,8 +81,8 @@ type StoryDetailPageViewModel struct {
 }
 
 /*SetLayout sets story detail page view model layout members.*/
-func (model *StoryDetailPageViewModel) SetLayout(platformName string, logo string) {
-	model.Layout = generateLayoutViewModel(platformName, logo)
+func (model *StoryDetailPageViewModel) SetLayout(platformName string, logo string, title string) {
+	model.Layout = generateLayoutViewModel(platformName, logo, title)
 }
 
 /*SetSignedInUser sets story detail page view model signed in user members.*/

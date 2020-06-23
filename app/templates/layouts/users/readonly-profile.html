@@ -1,5 +1,5 @@
 {{template "layout" .}}
-{{define "title" }}User profile{{ end }}
+{{define "title" }}Profile | {{.Layout.Platform}}{{ end }}
 {{define "content"}}
 <form action="/readonly-profile" method="POST">
   <div class="md:w-3/4">

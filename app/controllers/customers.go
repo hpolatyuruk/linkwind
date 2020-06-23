@@ -318,6 +318,7 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request) {
 	adminHTMLPath := "admin.html"
 	model := &models.CustomerAdminViewModel{
 		Name:              r.FormValue("name"),
+		Title:             r.FormValue("title"),
 		Domain:            r.FormValue("domain"),
 		LogoImageAsBase64: getImage(customer, r),
 	}
@@ -389,6 +390,7 @@ func handleAdminPOST(w http.ResponseWriter, r *http.Request) {
 		ID:       customer.ID,
 		Platform: customer.Name,
 		Logo:     model.LogoImageAsBase64,
+		Title:    customer.Title,
 	}
 
 	ctx := context.WithValue(r.Context(), shared.CustomerContextKey, customerCtx)
@@ -467,6 +469,9 @@ func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUse
 	if customer.Domain != "" {
 		model.Domain = customer.Domain
 	}
+	if customer.Title != "" {
+		model.Title = customer.Title
+	}
 
 	if customer.LogoImage != nil {
 		imageasB64, err := shared.EncodeLogoImageToBase64(customer.LogoImage)
@@ -482,6 +487,7 @@ func setCustomerAdminViewModel(customer *data.Customer, user *shared.SignedInUse
 
 func setUpdatedCustomerByModel(model *models.CustomerAdminViewModel, customer *data.Customer) {
 	customer.Name = model.Name
+	customer.Title = model.Title
 	customer.Domain = model.Domain
 	if model.LogoImageAsBase64 == "" {
 		return

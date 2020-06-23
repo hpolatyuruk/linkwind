@@ -8,6 +8,7 @@ import (
 type LayoutViewModel struct {
 	Platform string
 	Logo     string
+	Title    string
 }
 
 // SignedInUserViewModel contains informations related to signed in user
@@ -21,7 +22,7 @@ type SignedInUserViewModel struct {
 
 /*BaseViewModelInterface represents the base view model interface that contains methods to set BaseViewModel*/
 type BaseViewModelInterface interface {
-	SetLayout(platformName string, logo string)
+	SetLayout(platformName string, logo string, title string)
 	SetSignedInUser(userClaims *shared.SignedInUserClaims)
 }
 
@@ -31,10 +32,11 @@ type BaseViewModel struct {
 	SignedInUser *SignedInUserViewModel
 }
 
-func generateLayoutViewModel(platformName string, logo string) *LayoutViewModel {
+func generateLayoutViewModel(platformName string, logo string, title string) *LayoutViewModel {
 	return &LayoutViewModel{
 		Platform: platformName,
 		Logo:     logo,
+		Title:    title,
 	}
 }
 

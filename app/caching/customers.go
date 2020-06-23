@@ -5,6 +5,7 @@ type CustomerCtx struct {
 	ID       int
 	Platform string
 	Logo     string
+	Title    string
 }
 
 var customers map[string]*CustomerCtx = map[string]*CustomerCtx{}

@@ -1,11 +1,19 @@
 {{template "layout" .}}
-{{define "title" }}{{.Title}}{{ end }}
+{{define "title" }}
+
+{{if .Layout.Title}}
+{{.Layout.Title}} | {{.Layout.Platform}}
+{{else}}
+{{.Title}} | {{.Layout.Platform}}
+{{end}}
+
+{{ end }}
 {{define "content"}}
 {{range .Stories}}
 {{template "story" .}}
 {{else}}
 <div class="flex flex-wrap w-full mt-2">
-  <p>No posts submitted yet.</p>
+  <p>No posts yet.</p>
 </div>
 {{end}}
 <div class="container mx-auto">

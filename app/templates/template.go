@@ -72,7 +72,7 @@ func RenderInLayout(
 
 	capitailizedPlatform := strings.Title(customerCtx.Platform)
 
-	data.SetLayout(capitailizedPlatform, customerCtx.Logo)
+	data.SetLayout(capitailizedPlatform, customerCtx.Logo, customerCtx.Title)
 	data.SetSignedInUser(userCtx)
 
 	// Create a buffer to temporarily write to and check if any errors were encounted.
