@@ -21,7 +21,7 @@ func NotFoundMiddleware(paths []string) func(http.Handler) http.Handler {
 			} else if urlPath == "/robots.txt" {
 
 				w.Header().Set("Content-Type", "text/plain")
-				w.Write([]byte("User-agent: *\nDisallow: /"))
+				w.Write([]byte("User-agent: *\nAllow: /"))
 
 			} else {
 				shared.ReturnNotFoundTemplate(w)
