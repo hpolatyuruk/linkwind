@@ -433,41 +433,36 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var exists bool
 	var err error
 	var email string
 	var userName string
 	var user *data.User
+	model.SuccessMessage = "Password recovery message sent. If you don't see it, you might want to check your spam folder."
 	if shared.IsEmailAdressValid(model.EmailOrUserName) {
-		exists, err = data.ExistsUserByEmail(model.EmailOrUserName)
-		if !exists {
-			model.Errors["General"] = "User does not exist!"
-			err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
-			if err != nil {
-				panic(err)
-			}
-			return
-		}
 		email = model.EmailOrUserName
 		userName, err = data.GetUserNameByEmail(model.EmailOrUserName)
 	} else {
-		exists, err = data.ExistsUserByUserName(model.EmailOrUserName)
-		if !exists {
-			model.Errors["General"] = "User does not exist!"
+		userName = model.EmailOrUserName
+		user, err = data.GetUserByUserName(userName)
+		if user != nil {
+			email = user.Email
+		}
+	}
+
+	if err != nil {
+		// If submitted mail does not exist in db, error return
+		// "no rows in result set". If error return this message,
+		// we response success message because we do not want to reveal db
+		// records. Otherwise, return panic(500)
+		if strings.Contains(err.Error(), "no rows in result set") {
 			err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
 			if err != nil {
 				panic(err)
 			}
 			return
 		}
-		userName = model.EmailOrUserName
-	}
-	if err != nil {
 		panic(err)
 	}
-
-	user, err = data.GetUserByUserName(userName)
-	email = user.Email
 
 	domain, err := data.GetCustomerDomainByUserName(userName)
 	if err != nil {
@@ -491,7 +486,6 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data.SaveResetPasswordToken(token, user.ID)
-	model.SuccessMessage = "Password recovery message sent. If you don't see it, you might want to check your spam folder."
 	err = templates.RenderFile(w, "layouts/users/reset-password.html", model)
 	if err != nil {
 		panic(err)
