@@ -226,8 +226,7 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request) {
 		templates.RenderInLayout(w, r, "submit.html", model)
 		return
 	}
-	if strings.TrimSpace(model.URL) != "" &&
-		strings.TrimSpace(model.Title) == "" {
+	if strings.TrimSpace(model.URL) != "" {
 		fetchedTitle, err := shared.FetchURL(model.URL)
 		if err != nil {
 			fmt.Println(err)
@@ -235,8 +234,12 @@ func handleSubmitPOST(w http.ResponseWriter, r *http.Request) {
 			templates.RenderInLayout(w, r, "submit.html", model)
 			return
 		}
-		model.Title = fetchedTitle
+
+		if strings.TrimSpace(model.Title) == "" {
+			model.Title = fetchedTitle
+		}
 	}
+
 	user := shared.GetUserFromContext(r)
 	var story data.Story
 	story.Title = model.Title
