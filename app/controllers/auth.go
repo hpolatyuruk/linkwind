@@ -443,10 +443,11 @@ func handleResetPasswordPOST(w http.ResponseWriter, r *http.Request) {
 		userName, err = data.GetUserNameByEmail(model.EmailOrUserName)
 	} else {
 		userName = model.EmailOrUserName
-		user, err = data.GetUserByUserName(userName)
-		if user != nil {
-			email = user.Email
-		}
+	}
+
+	user, err = data.GetUserByUserName(userName)
+	if user != nil {
+		email = user.Email
 	}
 
 	if err != nil {
