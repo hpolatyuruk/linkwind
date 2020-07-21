@@ -11,7 +11,7 @@ CREATE TABLE public.comments
     replycount integer NOT NULL DEFAULT 0,
     userid integer NOT NULL,
     commentedon timestamp with time zone NOT NULL,
-    id serial,
+    id serial NOT NULL,
     downvotes integer NOT NULL,
     CONSTRAINT comments_pkey PRIMARY KEY (id),
     CONSTRAINT "parentId_fk" FOREIGN KEY (parentid)

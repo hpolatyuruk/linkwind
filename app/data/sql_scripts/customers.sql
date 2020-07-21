@@ -4,7 +4,7 @@
 
 CREATE TABLE public.customers
 (
-    id integer NOT NULL DEFAULT nextval('customers_id_seq'::regclass),
+    id serial,
     email character varying(50) COLLATE pg_catalog."default" NOT NULL,
     name character varying(25) COLLATE pg_catalog."default" NOT NULL,
     domain character varying(50) COLLATE pg_catalog."default",

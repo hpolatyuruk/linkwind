@@ -19,7 +19,7 @@ CREATE TABLE public.users
     karma double precision NOT NULL DEFAULT 0,
     username character varying
     (15) COLLATE pg_catalog."default" NOT NULL,
-    id serial,
+    id serial NOT NULL,
     registeredon timestamp
     with time zone NOT NULL,
     customerid integer,
