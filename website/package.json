@@ -20,7 +20,7 @@
   "homepage": "https://github.com/hpolatyuruk/linkwind#readme",
   "devDependencies": {
     "bulma": "^0.8.0",
-    "node-sass": "^4.13.1"
+    "node-sass": "^7.0.0"
   },
   "dependencies": {
     "minimist": "^1.2.5"
